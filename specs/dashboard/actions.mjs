@@ -1,7 +1,7 @@
 // Module for derive-dashboard.mjs (no command of its own).
 import { sessionsOverview } from "./journal-model.mjs";
 // Which action comes next: the main action of each unit (data/journal-links.md → the `### {n}. {title}` row)
-// and the course's `next` (tasks/update-dashboard.md step 5 and Rules). It decides the command; the words
+// and the course's `next` (tasks/update-dashboard.md step 2 and Rules). It decides the command; the words
 // for it come from the agent (kept while the command is right) or from the language pack's `actions`
 // (English below), so that a changed command never keeps a label of another one.
 
@@ -90,7 +90,7 @@ function names(usedIn, n) {
     || new RegExp(`(^|\\D)${n}(\\D|$)`).test(usedIn);
 }
 
-// The course's next action (tasks/update-dashboard.md step 5, Rules → Template step, first unit).
+// The course's next action (tasks/update-dashboard.md step 2, Rules → Template step, first unit).
 // `states`: unit number → derived state; `selected`: the recommended unit of the overview.
 export function courseNext(journal, states, selected) {
   if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");

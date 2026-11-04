@@ -37,14 +37,14 @@ template:
     "Usable with learners now" (mandatory, translated): "yes" (nothing open) · "yes, with limits: {what}" (⏳ items or open
     concerns that do not stop the learners) · "not yet: {why}" (an error or a task learners cannot solve yet). Derived from the
     open ❌ and ⏳ items, never from the result word alone. The overview shows it as the **first** line of the unit's card
-    (`units[].usable` {state: yes | limited | no, missing: [what is still missing]}, `tasks/update-dashboard.md` step 3) —
+    (`units[].usable` {state: yes | limited | no, missing: [what is still missing]}, `tasks/update-dashboard.md` step 2) —
     before open points and process steps; keep the line current when a change after the check fixes something.
     After a change made after the check (`tasks/quick-fix.md`) the outcome line stays until the re-check, followed by
     " – {n} point(s) changed since – short re-check open" (translated).
     Counts take the form of their number ("1 point", "2 points", translated); "(s)" or "(e)" in a term marks that
     choice and is never written.
     One wording per state: the unit's status line, its Notes cell and the overview's `statusLabel` repeat these words
-    (`templates/session-skeleton.yaml` → `section_layout.overview`, `tasks/update-dashboard.md` step 3) — never a second
+    (`templates/session-skeleton.yaml` → `section_layout.overview`, `tasks/update-dashboard.md` step 2) — never a second
     phrase for the same state. Where the instructor meets the short re-check first (chat, closing summary), explain it in
     the same sentence: "I look over the changed pages once more, about {m} minutes" (translated).
     A language pack lists these words under `terms` (`passedMissing`, `recheckShort`, `recheckExplain`, `correctionOpen`,

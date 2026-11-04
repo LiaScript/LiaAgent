@@ -252,7 +252,14 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - Ältere Symbole (↻, ▶ ohne Variantenzeichen) werden erneuert, die Worte des Agenten bleiben.
 - Test 3: 15 → 9 Warnungen. Die übrigen haben zwei Ursachen: zwei veraltete Ergebniszeilen in den Prüfberichten (6 Kopien folgen ihnen) und nummerierte Einträge mit Datum am Anfang.
 
+**`update-dashboard.md` gekürzt (2026-11-04):**
+- Die Schritte 2–5 sagen jetzt, was das Skript berechnet und was beim Agenten bleibt (Texte, die Wahl einer kleinen Korrektur, Worte ohne Sprachpaket). Die Regeln, nach denen das Skript rechnet, stehen im getesteten Code statt im Text.
+- Schritt 10 und die Regeln nennen nur noch die Teile, die der Agent selbst schreibt.
+- Die Datei hat 25 KB statt 31 KB auf `main` (316 statt 405 Zeilen).
+- `check-specs.mjs`: 13 festgehaltene Sätze entfernt, deren Regeln jetzt die Tests in `check.mjs` absichern; 5 neue Sätze halten fest, dass die Task diese Arbeit an das Skript abgibt.
+
 **Offen:**
+- Dieselben Regeln stehen noch in anderen Dateien, vor allem in `data/journal-links.md` (Zeile für `### {n}. {title}`), `templates/session-skeleton.yaml` (Statusliste) und `templates/project-dashboard.yaml`. Dort lässt sich ebenso kürzen.
 - Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie jetzt einmal am Bericht, nicht mehr je Kopie (Test 3: 9 → 3 Warnungen).
 - Aktionszeilen von Gestaltung, Vorlagen, Assistenten, Prüfung, Veröffentlichung und Notizen.
 - Kursprozess, Stichpunkte für offene Punkte.

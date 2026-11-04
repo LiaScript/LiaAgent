@@ -1,5 +1,5 @@
 // Derives the mechanical fields of the Dashboard from journal.md, so the agent writes only the texts.
-// Derived (tasks/update-dashboard.md steps 2–4, 8): the unit list (agenda rows and subsections), each unit's
+// Derived (tasks/update-dashboard.md steps 2 and 8): the unit list (agenda rows and subsections), each unit's
 // `title`, `state`, `href`, `view`, `usable` and `statusLabel`, the state of its image step, process steps
 // for units that have none yet, the section `links`, and the date in `footer` (only when something changed).
 // The same status wording also goes into ## Sessions: each unit's status line and its Notes cell
@@ -25,7 +25,7 @@ import { courseNext, accepts, wordsOf, nextTitle, patchUnitActions, patchSection
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
 
-// Display state of a unit (tasks/update-dashboard.md step 3). States are exclusive; the later one wins.
+// Display state of a unit (tasks/update-dashboard.md step 2). States are exclusive; the later one wins.
 export function unitState(unit, { selected } = {}) {
   const report = unit.report;
   if (!unit.heading && !unit.material) return { state: "planned", why: "no planning sketch yet" };
