@@ -4062,8 +4062,11 @@ Run this task automatically after any task that changes project state:
    lists under "Left for you" is a section filled by hand — name it and propose
    filling or removing that line in the same form. "Not now" → write no
    Dashboard and say that the overview stays at its last state until then.
-10. Refresh the action lines (the line of every `### {n}. {title}` is written by `write-dashboard.mjs`:
-    its main action and 👁 the learners' view — step 5; the other sections' lines follow the rules below):
+10. Refresh the action lines. `write-dashboard.mjs` (step 8) writes the lines of `## Course Context`,
+    `## Outline`, `## Didactics`, `## Agenda`, `## Sessions` and every `### {n}. {title}` (main action and 👁
+    the learners' view — step 5), the one-line note under `## Sessions` and the "More options" cards of the
+    second way for the next unit, the template suggestion and a brief; your words stay where the command
+    is right. The other sections' lines follow the rules below:
     - For every heading listed in `data/journal-links.md` → Action lines (core `##`
       sections and every `### {n}. {title}` under `## Sessions`): replace the
       `<!-- class="journal-actions" -->` paragraph directly below the heading, or

@@ -379,7 +379,7 @@
  "actions": {
   "init-course": {"title": "Den Rahmen festlegen", "label": "Kurs starten", "why": "Thema, Zielgruppe und Format sind die Grundlage für Lernziele und Material."},
   "create-outline": {"title": "Gliederung und Lernziele", "label": "Gliederung erstellen", "why": "Klare Lernziele sagen, was die Lernenden am Ende können."},
-  "create-didactics": {"title": "Didaktik", "label": "Didaktik festlegen", "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen und den Lernenden passen."},
+  "create-didactics": {"title": "Didaktik", "label": "Didaktik planen", "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen und den Lernenden passen."},
   "suggest-templates": {"title": "Vorlagen für Aktivitäten", "label": "Vorlagen vorschlagen", "why": "Fertige Bausteine für die Aktivitäten – oder die Entscheidung, dass keiner nötig ist."},
   "develop-template": {"title": "Vorlagen für Aktivitäten", "label": "Baustein {id} entwickeln", "why": "Ein eigener Baustein für eine Aktivität, die kein fertiger abdeckt."},
   "adopt-template": {"title": "Vorlagen für Aktivitäten", "label": "Baustein {id} ausprobieren und übernehmen", "why": "Der Baustein ist fertig: ausprobieren, dann in den Kurs übernehmen."},
@@ -394,6 +394,18 @@
   "approve-unit": {"label": "{unit} {n} ansehen und freigeben", "why": "Die Prüfung ist bestanden; das Material wartet auf die Freigabe."},
   "view-unit": {"label": "So sehen es die Lernenden", "why": "Das geprüfte Material so ansehen, wie die Lernenden es sehen."},
   "check-course": {"title": "Prüfen und überarbeiten", "label": "Kurs prüfen", "why": "Die Kursprüfung kommt vor dem Veröffentlichen."},
-  "publish": {"title": "Veröffentlichen", "label": "Kurs veröffentlichen", "why": "Der geprüfte Kurs bekommt einen Link zum Teilen."}
+  "publish": {"title": "Veröffentlichen", "label": "Kurs veröffentlichen", "why": "Der geprüfte Kurs bekommt einen Link zum Teilen."},
+  "revise-context": {"label": "Kursrahmen überarbeiten"},
+  "revise-outline": {"label": "Gliederung überarbeiten"},
+  "revise-didactics": {"label": "Didaktik überarbeiten"},
+  "revise-agenda": {"label": "Ablaufplan überarbeiten"},
+  "visual-identity": {"label": "Gestaltung"},
+  "didactics-first": {"label": "Zuerst die Didaktik"},
+  "agenda-first": {"label": "Zuerst der Ablaufplan"},
+  "create-unit": {"label": "{unit} anlegen"},
+  "check-units": {"label": "{units} prüfen"},
+  "build-unit": {"title": "{unit} {n} vorbereiten lassen", "label": "{unit} {n} vorbereiten lassen", "why": "Nach einer kurzen Planungsskizze schreibt und prüft der Assistent das Material allein; danach wird es gemeinsam angesehen."},
+  "note-planned": {"label": "_Die {units} sind im Ablaufplan geplant und entstehen nacheinander, beginnend mit {unit} 1._"},
+  "note-progress": {"label": "_{n} von {N} {units} angelegt; weiter geht es nach dem Material von {unit} {k}._"}
  }
 }

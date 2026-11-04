@@ -2054,3 +2054,55 @@ test("write-dashboard writes nothing while words are missing and names them", ()
     assert.equal(readFileSync(journalFile, "utf8"), text, "journal unchanged");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ── Action lines of the sections, the one-line note under ## Sessions and the cards under "More options" ──
+import { patchSectionActions, patchSessionsNote, exploreCards } from "./actions.mjs";
+import { wordsOf } from "./actions.mjs";
+
+test("section action lines: ▶️ create while empty, ✏️ revise once saved; right links keep their words, older icons are renewed", () => {
+  const source = deriveJournal({}, { report: failReport })
+    .replace("## Outline – Goals\n", "## Outline – Goals\n\n<!-- class=\"journal-actions\" -->\n[↻ Revise my goals](agent:teaching/create-outline) `:create-outline`\n")
+    .replace("## Didactics – Methods\n", "## Didactics – Methods\n\n<!-- class=\"journal-actions\" -->\n[▶️ Create didactics](agent:teaching/create-didactics) `:create-didactics` · [▶️ Templates](agent:teaching/suggest-templates) `:suggest-templates`\n")
+    .replace("## Sessions – Lessons\n", "## Sessions – Lessons\n\n<!-- class=\"journal-actions\" -->\n[▶ Create Lesson](agent:teaching/create-session) `:create-session <number?>`\n");
+  const journal = readJournal(source);
+  const words = expected => wordsOf(expected, journal, { unit: "Lesson", units: "Lessons" });
+  const { source: patched } = patchSectionActions(source, journal, words);
+  assert.match(patched, /^\[✏️ Revise my goals\]\(agent:teaching\/create-outline\) `:create-outline`$/m, "the agent's words, the current icon");
+  assert.match(patched, /^\[✏️ Revise didactics\]\(agent:teaching\/create-didactics\) `:create-didactics` · \[🎨 Visual identity\]\(agent:artist\/create-visuals\) `:agent artist` → `:create-visuals`$/m,
+    "a saved section is revised, not created; a link the table does not allow there goes");
+  assert.match(patched, /^\[▶️ Create Lesson\]\(agent:teaching\/create-session\) `:create-session <number\?>` · \[🔍 Check Lessons\]\(agent:teaching\/validate-course\) `:validate-course`$/m,
+    "the hint in the command stays; checking comes once a unit has material");
+  assert.equal(patchSectionActions(patched, readJournal(patched), words).changes.length, 0, "a second run changes nothing");
+  const empty = readFileSync(new URL("../templates/journal.md", import.meta.url), "utf8");
+  assert.equal(patchSectionActions(empty, readJournal(empty), expected => wordsOf(expected, readJournal(empty), {})).changes.length, 0, "the empty journal is already right");
+});
+
+test("the one-line note under ## Sessions follows how many units are created; other italic lines stay", () => {
+  const words = journal => (expected, values) => wordsOf(expected, journal, { unit: "Lesson", units: "Lessons", ...values });
+  const base = deriveJournal({}, { report: failReport }).replace("## Sessions – Lessons\n", "## Sessions – Lessons\n\n_Managed by the tasks._\n\n<!--- comment\n### {n}. {title}\n--->\n\n_No units yet – they are created after the didactics (and the agenda, if one is planned)._\n");
+  const journal = readJournal(base);
+  const { source } = patchSessionsNote(base, journal, words(journal));
+  assert.match(source, /^_2 of 3 Lessons created; the next one follows after the material of Lesson 2\._$/m);
+  assert.doesNotMatch(source, /No units yet/);
+  assert.match(source, /^_Managed by the tasks\._$/m, "another italic line stays");
+  assert.match(source, /--->\n\n_2 of 3/, "the note stays outside the comment");
+  const none = readJournal(source.replace(/^### [12]\. .*$/gm, "Text"));
+  assert.match(patchSessionsNote(source, { ...none, units: none.units.map(unit => ({ ...unit, heading: null })) }, words(none)).source, /^_The Lessons are planned in the agenda and are created one after another, starting with Lesson 1\._$/m);
+  const all = { ...journal, units: journal.units.map(unit => ({ ...unit, heading: unit.heading ?? { title: "T" } })) };
+  assert.doesNotMatch(patchSessionsNote(source, all, words(all)).source, /created; the next one|^_\d+ of/m, "all created: no note");
+});
+
+test("cards under More options: the second way for the next unit, the templates while they are not next; the agent's other cards stay", () => {
+  const journal = readJournal(deriveJournal({}, { report: failReport }));
+  const unplanned = { ...journal, units: journal.units.map(unit => unit.n === "1" ? { ...unit, approved: true } : unit) };
+  const plan = courseNext(unplanned, new Map([["1", "done"], ["2", "planned"], ["3", "planned"]]), "3");
+  const ways = href => exploreCards(unplanned, plan, href).cards.map(card => card.href).filter(item => /session/.test(item));
+  assert.deepEqual(ways(plan.href), ["agent:teaching/build-session?number=3"]);
+  assert.deepEqual(ways("agent:teaching/build-session?number=3"), ["agent:teaching/create-session?number=3"], "the agent chose the other way");
+  const data = { ...deriveData(), explore: [{ icon: "💬", title: "Ask", label: "Help", href: "agent:teaching/help", command: ":help" },
+    { icon: "➕", title: "Old", label: "Old", href: "agent:teaching/build-session?number=9", command: ":build-session 9" }] };
+  const open = readJournal(deriveJournal({}, { report: failReport }).replace("## Agenda – Schedule", "## Templates\n\n* __Template selection:__ open\n\n## Agenda – Schedule"));
+  const explore = derive(open, data).data.explore;
+  assert.deepEqual(explore.map(item => item.href), ["agent:teaching/help", "agent:teaching/suggest-templates"], "unit 1 is worked on: the template suggestion is a card; a stale managed card goes");
+  assert.equal(explore[1].icon, "➕");
+});

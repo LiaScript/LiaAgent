@@ -259,6 +259,8 @@ export function statusText(unit, terms) {
   if (!unit.material) return terms.skeletonOnly;
   const { total, placed, open } = unit.images;
   const report = unit.report;
+  // An older report without a visible outcome line: its wording is unknown, the status stays as written.
+  if (report?.result && !report.outcome) return null;
   if (!report?.outcome) return !open ? terms.materialWritten : placed ? fill(terms.imagesPartial, { n: placed, m: total }) : terms.imagesMissing;
   if (unit.done && !report.changedSince && !open) return terms.checked;
   const outcome = report.outcome.replace(datedOutcome, "").replace(/\s+/g, " ").trim();
@@ -271,12 +273,26 @@ export function statusText(unit, terms) {
 // Writes the status of each unit into ## Sessions: its line "{n}. {title} – {status}" in the status list and
 // its Notes cell in the technical table. Only lines and cells that exist change; returns the new text and
 // one entry per changed line.
+// The overview part of ## Sessions: from its heading to the first ## or ### heading outside an HTML comment
+// (the template's comment shows a "### {n}. …" example).
+export function sessionsOverview(lines) {
+  const start = lines.findIndex(line => /^## Sessions\b/.test(line));
+  if (start < 0) return null;
+  let comment = false;
+  for (let index = start + 1; index < lines.length; index++) {
+    const line = lines[index];
+    if (comment) { comment = !line.includes("-->"); continue; }
+    if (/^\s*<!--/.test(line) && !line.includes("-->")) { comment = true; continue; }
+    if (/^(## |### )/.test(line)) return { start, end: index };
+  }
+  return { start, end: lines.length };
+}
+
 export function patchSessions(source, units) {
   const lines = source.split("\n");
-  const start = lines.findIndex(line => /^## Sessions\b/.test(line));
-  if (start < 0) return { source, changes: [] };
-  let end = lines.findIndex((line, index) => index > start && /^(## |### )/.test(line));
-  if (end < 0) end = lines.length;
+  const region = sessionsOverview(lines);
+  if (!region) return { source, changes: [] };
+  const { start, end } = region;
   const changes = [];
   let comment = false, details = false, header = null;
   for (let index = start + 1; index < end; index++) {

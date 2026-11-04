@@ -244,10 +244,17 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - Bewusst beim Agenten bleibt die Wahl, welcher Schritt ein fehlendes Teil herstellt, das kein Bild ist.
 - Test 3: 15 → 9 Warnungen. Test 1 (altes Layout ohne Bild-Einträge): Eine Warnung kommt dazu, weil das Skript dort keine offenen Bilder erkennen kann und nach der Regel „Bedenken klären“ voranstellt.
 
+**Abschnitte, Einzeiler, Karten (2026-11-04):**
+- Aktionszeilen von Kursrahmen, Gliederung, Didaktik und Ablaufplan: ▶️ „erstellen“, solange der Abschnitt leer ist, danach ✏️ „überarbeiten“.
+- Aktionszeile von Lerneinheiten: anlegen; „vorbereiten lassen“ nach einer freigegebenen Einheit; prüfen, sobald Material da ist; vorher „Zuerst die Didaktik“ bzw. „Zuerst der Ablaufplan“.
+- Der Einzeiler unter `## Sessions` folgt der Zahl der angelegten Einheiten. Sind alle angelegt, entfällt er.
+- Karten unter „Weitere Möglichkeiten“: der zweite Weg für die nächste Einheit, „Vorlagen vorschlagen“ und eigene Bausteine, solange sie nicht der nächste Schritt sind; immer mit ➕.
+- Ältere Symbole (↻, ▶ ohne Variantenzeichen) werden erneuert, die Worte des Agenten bleiben.
+- Test 3: 15 → 9 Warnungen. Die übrigen haben zwei Ursachen: zwei veraltete Ergebniszeilen in den Prüfberichten (6 Kopien folgen ihnen) und nummerierte Einträge mit Datum am Anfang.
+
 **Offen:**
-- Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie. Nach der Korrektur folgen alle Kopien automatisch.
-- `explore`: die zweite Möglichkeit „vorbereiten lassen“ (`build-session`) und „Vorlagen vorschlagen“ als Karte, sobald sie nicht der nächste Schritt sind.
-- Aktionszeilen der übrigen Abschnitte (`## Sessions`, `## Agenda` …) und der Einzeiler unter `## Sessions`.
+- Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst. `validate-journal` meldet dieselbe Ursache je Kopie noch einmal; seit die Kopien berechnet werden, reicht eine Meldung am Bericht.
+- Aktionszeilen von Gestaltung, Vorlagen, Assistenten, Prüfung, Veröffentlichung und Notizen.
 - Kursprozess, Stichpunkte für offene Punkte.
 - `update-dashboard.md` kürzen. Dafür müssen die festgehaltenen Sätze in `check-specs.mjs` mitgeändert werden.
 - `validate-journal.mjs` auf `journal-model.mjs` umstellen, damit es nur noch einen Leser gibt.

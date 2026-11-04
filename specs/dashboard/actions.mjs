@@ -1,4 +1,5 @@
 // Module for derive-dashboard.mjs (no command of its own).
+import { sessionsOverview } from "./journal-model.mjs";
 // Which action comes next: the main action of each unit (data/journal-links.md → the `### {n}. {title}` row)
 // and the course's `next` (tasks/update-dashboard.md step 5 and Rules). It decides the command; the words
 // for it come from the agent (kept while the command is right) or from the language pack's `actions`
@@ -24,7 +25,21 @@ export const englishActions = {
   "approve-unit": { label: "Look at {unit} {n} and approve", why: "The check passed; the material waits for your approval." },
   "view-unit": { label: "How learners see it", why: "The checked material as the learners see it." },
   "check-course": { title: "Check and revise", label: "Check the course", why: "The course check comes before publishing." },
-  publish: { title: "Publish", label: "Publish course", why: "The checked course gets a link to share." }
+  publish: { title: "Publish", label: "Publish course", why: "The checked course gets a link to share." },
+  // Action lines of the sections and the cards under "More options".
+  "revise-context": { label: "Revise course frame" },
+  "revise-outline": { label: "Revise outline" },
+  "revise-didactics": { label: "Revise didactics" },
+  "revise-agenda": { label: "Revise agenda" },
+  "visual-identity": { label: "Visual identity" },
+  "didactics-first": { label: "Didactics first" },
+  "agenda-first": { label: "Agenda first" },
+  "create-unit": { label: "Create {unit}" },
+  "check-units": { label: "Check {units}" },
+  "build-unit": { title: "Let {unit} {n} be prepared", label: "Let {unit} {n} be prepared", why: "After a short planning sketch the assistant writes and checks the material alone; you look at it afterwards." },
+  // The one-line note under ## Sessions (tasks/update-dashboard.md → Rules).
+  "note-planned": { label: "_The {units} are planned in the agenda and are created one after another, starting with {unit} 1._" },
+  "note-progress": { label: "_{n} of {N} {units} created; the next one follows after the material of {unit} {k}._" }
 };
 
 // The global process steps of templates/journal.md, by position: the title of `next` for a course action.
@@ -162,7 +177,7 @@ export function patchUnitActions(source, journal, wordsFor) {
     let main = expected && links[0] && accepts(expected, links[0].href) ? links[0].text : null;
     if (!expected) main = links[0]?.text ?? null;
     else if (!main) {
-      const words = wordsFor(expected, unit);
+      const words = wordsFor(expected, { n: unit.n });
       if (!words) { missing.push({ where: `action line of ${unit.n}`, action: expected }); continue; }
       main = `[${expected.icon} ${words.label}](${expected.href}) ${expected.code}`;
     }
@@ -177,4 +192,122 @@ export function patchUnitActions(source, journal, wordsFor) {
     else lines.splice(at + 1, 0, "", '<!-- class="journal-actions" -->', next);
   }
   return { source: lines.join("\n"), changes, missing };
+}
+
+// The action lines of the core sections (data/journal-links.md → Action lines): ▶️ create while a section is
+// empty, ✏️ revise once it is saved. `extras`: further links the table allows there (kept when present).
+function sectionLines(journal, nextUnplanned, approvedOne) {
+  const revise = (key, create, cmd, filled) => filled ? action(`revise-${key}`, "teaching", cmd, {}, "✏️") : action(create, "teaching", cmd);
+  const sessions = !journal.filled.Didactics ? [action("didactics-first", "teaching", "create-didactics")]
+    : journal.agendaRequired === "yes" && !journal.hasAgenda ? [action("agenda-first", "teaching", "create-agenda")]
+    : [action("create-unit", "teaching", "create-session"),
+      ...(nextUnplanned && approvedOne ? [action("build-unit", "teaching", "build-session", { number: nextUnplanned.n })] : []),
+      ...(journal.units.some(unit => unit.material) ? [action("check-units", "teaching", "validate-course", {}, "🔍")] : [])];
+  return [
+    { key: "Course Context", links: [revise("context", "init-course", "init-course", journal.filled["Course Context"])], extras: ["agent:teaching/analyze-existing"] },
+    { key: "Outline", links: [revise("outline", "create-outline", "create-outline", journal.filled.Outline)], extras: [] },
+    { key: "Didactics", links: [revise("didactics", "create-didactics", "create-didactics", journal.filled.Didactics), action("visual-identity", "artist", "create-visuals")], extras: [] },
+    { key: "Agenda", links: [revise("agenda", "create-agenda", "create-agenda", journal.filled.Agenda)], extras: [] },
+    { key: "Sessions", links: sessions, extras: [] }
+  ];
+}
+
+// Icons compared without the emoji variation selector; ↻ is the older icon for revising.
+const bareIcon = text => String(text).replace(/\uFE0F/g, "").replace(/^↻/, "✏").trim();
+const sameIcon = (label, icon) => bareIcon(label).startsWith(bareIcon(icon));
+const withIcon = (link, icon) => link.label.startsWith(icon) ? link.text : link.text.replace(/^\[[^\s\]]+/, `[${icon}`);
+
+// Rewrites the action lines of the core sections. A link that is already right – same command, same kind of
+// icon – keeps its words (only an older form of its icon is renewed); links the table does not allow go.
+export function patchSectionActions(source, journal, wordsFor) {
+  const lines = source.split("\n");
+  const changes = [];
+  const missing = [];
+  const linkPattern = /\[([^\]]+)\]\(([^)\s]+)\)(\s*`[^`]*`(?:\s*→\s*`[^`]*`)?)?/g;
+  const nextUnplanned = journal.units.find(unit => !unit.heading && !unit.material);
+  const approvedOne = journal.units.some(unit => unit.approved);
+  for (const { key, links, extras } of sectionLines(journal, nextUnplanned, approvedOne)) {
+    const at = lines.findIndex(line => new RegExp(`^## ${key}\\b`).test(line));
+    if (at < 0) continue;
+    let marker = at + 1;
+    while (marker < lines.length && !lines[marker].trim()) marker++;
+    if (lines[marker]?.trim() !== '<!-- class="journal-actions" -->') continue;
+    const old = lines[marker + 1] ?? "";
+    const present = [...old.matchAll(linkPattern)].map(match => ({ text: match[0].trim(), href: match[2], label: match[1] }));
+    const parts = [];
+    let lacking = false;
+    for (const expected of links) {
+      const kept = present.find(link => accepts(expected, link.href) && sameIcon(link.label, expected.icon));
+      if (kept) { parts.push(withIcon(kept, expected.icon)); continue; }
+      const words = wordsFor(expected);
+      if (!words) { missing.push({ where: `action line of ## ${key}`, action: expected }); lacking = true; break; }
+      parts.push(`[${expected.icon} ${words.label}](${expected.href}) ${expected.code}`);
+    }
+    if (lacking) continue;
+    parts.push(...present.filter(link => extras.some(href => link.href.startsWith(href))).map(link => link.text));
+    const next = parts.join(" · ");
+    if (next === old) continue;
+    changes.push({ path: `## ${key} action line`, from: old, to: next, why: "actions that fit the state of the section" });
+    lines[marker + 1] = next;
+  }
+  return { source: lines.join("\n"), changes, missing };
+}
+
+// The one-line note under ## Sessions once the agenda plans the units (tasks/update-dashboard.md → Rules):
+// none created yet → planned in the agenda, starting with unit 1; some → "{n} of {N} created …"; all → none.
+export function patchSessionsNote(source, journal, wordsFor) {
+  if (!journal.hasAgenda) return { source, changes: [], missing: [] };
+  const created = journal.units.filter(unit => unit.heading);
+  const total = journal.units.length;
+  const key = !created.length ? "note-planned" : created.length < total ? "note-progress" : null;
+  const words = key && wordsFor({ key }, { n: created.length, N: total, k: created.at(-1)?.n });
+  if (key && !words) return { source, changes: [], missing: [{ where: "one-line note under ## Sessions", action: { key, icon: "", href: "", code: "" } }] };
+  const lines = source.split("\n");
+  const region = sessionsOverview(lines);
+  if (!region) return { source, changes: [], missing: [] };
+  const { start, end } = region;
+  // The note itself: an italic line that speaks about the units being created (the template's empty-state
+  // note, its pack translation, or one of the two notes here) – never another italic line.
+  const known = [...(journal.pack?.unitLines ?? []), "after the didactics", "nach der Didaktik"].filter(line => /^_|after|nach/.test(line))
+    .map(line => line.replace(/^_|_$/g, "").split(/\s+[–-]\s+/).at(-1).toLowerCase().slice(0, 20));
+  const isNote = line => /^_.*_$/.test(line) && (/(starting with|beginnend mit|\d+ (of|von) \d+)/i.test(line) || known.some(tail => line.toLowerCase().includes(tail)));
+  let comment = false, note = -1, before = -1;
+  for (let index = start + 1; index < end; index++) {
+    const line = lines[index];
+    if (comment || /^\s*<!--/.test(line)) { comment = !line.includes("-->"); continue; }
+    if (isNote(line.trim()) && note < 0) note = index;
+    if (before < 0 && (/^\d+\.\s/.test(line) || /<details>/.test(line) || /^\|/.test(line))) before = index;
+  }
+  const wanted = words?.label ?? null;
+  const old = note >= 0 ? lines[note] : undefined;
+  if ((old ?? null) === wanted) return { source, changes: [], missing: [] };
+  if (wanted && note >= 0) lines[note] = wanted;
+  else if (wanted) lines.splice(before >= 0 ? before : end, 0, wanted, "");
+  else lines.splice(note, lines[note + 1]?.trim() === "" ? 2 : 1);
+  return { source: lines.join("\n"), changes: [{ path: "## Sessions one-line note", from: old, to: wanted ?? undefined, why: key ? `${created.length} of ${total} units created` : "all units created" }], missing: [] };
+}
+
+// The cards under "More options" this module manages (Rules → first unit, Template step): the second way for
+// the next unit, the template suggestion and a brief's action while they are not `next`, and the agenda
+// while a brief is. Every other card stays the agent's.
+const managedCard = /^agent:(teaching\/(build-session\?number=|create-session\?number=|suggest-templates$|manage-templates\?name=)|development\/develop-template\?id=)/;
+export function exploreCards(journal, expected, nextHref) {
+  const cards = [];
+  if (!expected) return { cards, managed: managedCard };
+  const unit = expected.params.number;
+  if (expected.key === "plan-unit" && journal.units.some(item => item.approved)) {
+    // Two ways for the next unit: the one that is not `next` becomes a card.
+    cards.push(String(nextHref ?? "").startsWith("agent:teaching/build-session")
+      ? action("plan-unit", "teaching", "create-session", { number: unit }, "➕")
+      : action("build-unit", "teaching", "build-session", { number: unit }, "➕"));
+  }
+  const { selection, adopted, briefs } = journal.templates;
+  const brief = briefs.find(item => !adopted.includes(item.id));
+  const briefAction = brief && (brief.state === "ready to test"
+    ? action("adopt-template", "teaching", "manage-templates", { name: brief.id }, "➕")
+    : action("develop-template", "development", "develop-template", { id: brief.id }, "➕"));
+  if (journal.filled.Didactics && selection === "open" && !brief && expected.key !== "suggest-templates") cards.push(action("suggest-templates", "teaching", "suggest-templates", {}, "➕"));
+  if (briefAction && !accepts(briefAction, expected.href)) cards.push(briefAction);
+  if (briefAction && accepts(briefAction, expected.href) && journal.agendaRequired === "yes" && !journal.hasAgenda) cards.push(action("create-agenda", "teaching", "create-agenda", {}, "➕"));
+  return { cards, managed: managedCard };
 }

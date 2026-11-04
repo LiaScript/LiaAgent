@@ -20,7 +20,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { readJournal, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
-import { courseNext, accepts, wordsOf, nextTitle, patchUnitActions } from "./actions.mjs";
+import { courseNext, accepts, wordsOf, nextTitle, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards } from "./actions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -86,6 +86,7 @@ export function derive(journal, input, { date } = {}) {
 
   // The next action decides the recommended unit; only "done" matters for it, which does not depend on it.
   const unitWord = journal.terminology ?? journal.pack?.unitWord?.one ?? data.unitLabel?.one ?? "unit";
+  const unitsWord = journal.headings.find(heading => heading.key === "Sessions")?.suffix ?? journal.pack?.unitWord?.many ?? data.unitLabel?.many ?? "units";
   const doneStates = new Map(journal.units.map(facts => [facts.n, unitState(facts).state]));
   const expected = courseNext(journal, doneStates, data.selected);
   const nextUnit = expected && (expected.params.number ?? expected.params.file);
@@ -165,12 +166,28 @@ export function derive(journal, input, { date } = {}) {
         set(data.next, "icon", expected.icon, "next.icon", "icon of the next action");
       }
     } else {
-      const words = wordsOf(expected, journal, { unit: unitWord, n: nextUnit, id: expected.params.id ?? expected.params.name });
+      const words = wordsOf(expected, journal, { unit: unitWord, units: unitsWord, n: nextUnit, id: expected.params.id ?? expected.params.name });
       const title = nextTitle(expected, data, unitWord) ?? words?.title ?? words?.label;
       if (!words || !title) missing.push({ where: "next", action: expected, title });
       else set(data, "next", { icon: expected.icon, title, why: words.why, label: words.label, href: expected.href, command: expected.command },
         "next", `next action by the journal: ${expected.command}`);
     }
+  }
+
+  // "More options": the cards of the second way for the next unit, of the templates and of a brief while they
+  // are not `next` (actions.mjs → exploreCards); a right card keeps its words, a managed card no longer
+  // right goes. Never the icon of `next`: these cards use ➕.
+  if (expected) {
+    const { cards, managed } = exploreCards(journal, expected, data.next?.href);
+    const explore = Array.isArray(data.explore) ? data.explore : [];
+    const result = explore.filter(item => !managed.test(String(item.href ?? "")) || cards.some(card => accepts(card, item.href)))
+      .map(item => cards.some(card => accepts(card, item.href)) && item.icon === data.next?.icon ? { ...item, icon: "➕" } : item);
+    for (const card of cards.filter(card => !explore.some(item => accepts(card, item.href)))) {
+      const words = wordsOf(card, journal, { unit: unitWord, units: unitsWord, n: card.params.number, id: card.params.id ?? card.params.name });
+      if (!words) { missing.push({ where: "explore", action: card }); continue; }
+      result.push({ icon: card.icon, title: words.title ?? words.label, description: words.why, label: words.label, href: card.href, command: card.command });
+    }
+    if (result.length || data.explore) set(data, "explore", result, "explore", "cards of the second way, the templates and a brief");
   }
 
   // Unit words from the terminology and the ## Sessions suffix.
@@ -187,22 +204,37 @@ export function derive(journal, input, { date } = {}) {
     const now = date ?? today(journal.language, old);
     if (old && old !== now) set(data, "footer", data.footer.replace(old, now), "footer", "date of the derived state");
   }
-  return { data, changes, sessions, missing, unitWord };
+  return { data, changes, sessions, missing, unitWord, unitsWord };
 }
 
 // The lines of ## Sessions that follow the derived data: status lines, Notes cells and the units' action
 // lines – patched into `source` (the journal text to be written), for one write together with the block.
 export function patchJournal(source, journal, derived) {
-  const status = patchSessions(source, derived.sessions);
-  const wordsFor = (expected, unit) => wordsOf(expected, journal, { unit: derived.unitWord, n: unit.n });
-  const actions = patchUnitActions(status.source, journal, wordsFor);
-  return { source: actions.source, changes: [...status.changes, ...actions.changes], missing: actions.missing };
+  const wordsFor = (expected, values = {}) => wordsOf(expected, journal, { unit: derived.unitWord, units: derived.unitsWord, ...values });
+  const steps = [
+    text => patchSessions(text, derived.sessions),
+    text => patchUnitActions(text, journal, wordsFor),
+    text => patchSectionActions(text, journal, wordsFor),
+    text => patchSessionsNote(text, journal, wordsFor)
+  ];
+  let text = source;
+  const changes = [];
+  const missing = [];
+  for (const step of steps) {
+    const result = step(text);
+    text = result.source;
+    changes.push(...result.changes);
+    missing.push(...(result.missing ?? []));
+  }
+  return { source: text, changes, missing };
 }
 
 // What the agent still has to write because no language pack has the words of an action.
 export const missingText = item => item.where === "next"
   ? `- next: the next action is ${item.action.href} (command "${item.action.command}", icon ${item.action.icon}${item.title ? `, title "${item.title}"` : ""}) – write its title, label and why in the course language into the draft's next and run again`
-  : `- ${item.where}: the main action is [${item.action.icon} <label>](${item.action.href}) ${item.action.code} – write that action line in the course language (keep the link and the command) and run again`;
+  : item.where === "explore" ? `- explore: add the card ${item.action.href} (command "${item.action.command}", icon ➕) with title, description and label in the course language to the draft and run again`
+  : item.where.startsWith("one-line note") ? `- ${item.where}: write it in the course language (${item.action.key === "note-planned" ? "the units are planned in the agenda and created one after another, starting with unit 1" : "{n} of {N} units created; the next one follows after the material of unit {k}"}) and run again`
+  : `- ${item.where}: the action is [${item.action.icon} <label>](${item.action.href}) ${item.action.code} – write that link in the course language (keep the link and the command) and run again`;
 
 const shown = value => value === undefined ? "–" : typeof value === "string" ? `"${value.length > 70 ? `${value.slice(0, 69)}…` : value}"` : JSON.stringify(value).slice(0, 90);
 export const describe = change => `- ${change.path}: ${shown(change.from)} → ${shown(change.to)} (${change.why})`;
