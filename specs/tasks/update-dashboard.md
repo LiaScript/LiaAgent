@@ -61,7 +61,9 @@ Run this task automatically after any task that changes project state:
    because a course title exists. In multi-file mode resolve real material paths
    from `## Course Context` → `__File Structure:__`; in single-file mode inspect
    the matching chapter of the root `README.md`.
-3. Derive a display state for each unit:
+3. Derive a display state for each unit — **computed by `write-dashboard.mjs`** (step 8) from the journal:
+   the unit list, `title`, `state`, `href`, `view`, `usable`, `statusLabel` and the image step's state. Do
+   not work them out by hand; the rules below say what it computes. Write the texts that fit that state.
    - States are exclusive; if two seem to fit, take the later one in this list.
    - `planned` — in the agenda or skeleton only, not yet worked out. The
      recommended next unit without a skeleton stays `planned`; mark it with
@@ -170,9 +172,15 @@ Run this task automatically after any task that changes project state:
 8. Keep the `## Dashboard` heading line unchanged and replace the whole JSON block
    below it **in one write**: write the complete JSON with the file-write tool
    to `.cache/dashboard.json` and run `node specs/dashboard/write-dashboard.mjs
-   .cache/dashboard.json` (on its own). It checks the data, replaces the whole
+   .cache/dashboard.json` (on its own). It first sets every field that follows
+   from the journal (step 3, plus missing process steps of a unit, `links`,
+   `unitsTitle`, `unitLabel` and the date in `footer`) and lists each one it
+   changed — read that list: a text of yours that contradicts a changed state
+   needs rewriting. Then it checks the data, replaces the whole
    block in one step and runs the validation of step 9; never edit the block
    field by field, never with shell heredocs or inline scripts.
+   `node specs/dashboard/derive-dashboard.mjs --check` shows without writing which
+   derived fields of the overview no longer match the journal.
    **Fresh cache:** after each run the script stores `_journalHash` (the hash of
    the block it wrote) in the cache file. If `.cache/dashboard.json` carries it,
    change only the keys the triggering write affects — plus every text the

@@ -5,8 +5,11 @@
 // with that draft refuses to write when the journal block has changed since ("cache stale"), so small
 // changes can be made in the cache with the edit tool instead of a whole new draft
 // (tasks/update-dashboard.md step 8). A draft without `_journalHash` is always accepted.
+// Before writing, the fields that follow from the journal (unit list, state, href, view, usable,
+// statusLabel, image step, links, unit words, date) are derived from it (derive-dashboard.mjs) and
+// replace the draft's values; the script prints every field it set. --no-derive writes the draft as it is.
 // Run from the course project root:
-//   node specs/dashboard/write-dashboard.mjs <draft.json> [journal.md]
+//   node specs/dashboard/write-dashboard.mjs <draft.json> [journal.md] [--no-derive]
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { createHash } from "node:crypto";
@@ -14,9 +17,12 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import "./dashboard.js";
 import { countWrite } from "./write-count.mjs";
+import { deriveForJournal, describe } from "./derive-dashboard.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const [draftFile, journalArg] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const noDerive = args.includes("--no-derive");
+const [draftFile, journalArg] = args.filter(arg => !arg.startsWith("--"));
 if (!draftFile || !existsSync(draftFile)) {
   console.error("Usage: node specs/dashboard/write-dashboard.mjs <draft.json> [journal.md]");
   console.log("Exit code: 1");
@@ -31,6 +37,14 @@ let cacheHash;
 try {
   data = JSON.parse(readFileSync(draftFile, "utf8"));
   if (data && typeof data === "object" && !Array.isArray(data)) ({ _journalHash: cacheHash, ...data } = data);
+  if (!noDerive && journal && existsSync(journal) && data && typeof data === "object" && !Array.isArray(data)) {
+    const derived = deriveForJournal(journal, data);
+    data = derived.data;
+    if (derived.changes.length) {
+      console.log(`Derived from the journal (${derived.changes.length} field${derived.changes.length === 1 ? "" : "s"} set – no need to write them yourself):`);
+      derived.changes.forEach(change => console.log(describe(change)));
+    }
+  }
   globalThis.LiaDashboard.buildModel(data);
 } catch (error) {
   console.error(`Draft rejected, journal unchanged: ${error.message}`);

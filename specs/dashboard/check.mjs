@@ -1647,3 +1647,242 @@ test("the empty journal has the template step after the didactics and the select
     assert.doesNotMatch(run.stdout + run.stderr, /Hints:|Warnings:/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ── derive-dashboard.mjs: the fields that follow from the journal are computed, not written by hand ──
+import { readJournal, usableState as reportUsable } from "./journal-model.mjs";
+import { derive, unitState } from "./derive-dashboard.mjs";
+
+// A journal with an agenda of three units: unit 1 checked (FAIL, one point changed since, images 1 of 2),
+// unit 2 with a planning sketch only, unit 3 only in the agenda.
+const deriveJournal = (dashboard, { report = "", decisions = "" } = {}) => `<!--
+language: en
+-->
+
+# Fractions
+
+## Dashboard – Overview
+
+\`\`\`json @Dashboard.View
+${JSON.stringify(dashboard, null, 2)}
+\`\`\`
+
+## Course Context – Frame
+
+* __Terminology:__
+  1. sessions-called: Lesson
+
+## Outline – Goals
+
+Text
+
+## Agenda – Schedule
+
+<!-- data-type="none" -->
+| No. | Lesson | Time |
+|---|---|---|
+| 1 | Halves and quarters (required) | 45 min |
+| 2 | Comparing fractions (required) | 45 min |
+| 3 | Fractions in recipes | 45 min |
+
+## Sessions – Lessons
+
+1. Halves and quarters – check: correction needed (2) – 1 point changed since – short re-check open – images 1 of 2
+2. Comparing fractions – planning sketch ✅ · material open
+
+<details><summary>Technical overview</summary>
+
+<!-- data-type="none" -->
+| # | Title | Type | Method | Skeleton | Material | Done | Notes |
+|---|-------|------|--------|----------|----------|------|-------|
+| 1 | Halves and quarters | explore | none | ✅ | ✅ | ❌ | check |
+| 2 | Comparing fractions | explore | none | ✅ | ❌ | ❌ | sketch |
+
+</details>
+
+### 1. Halves and quarters
+
+<!-- data-key="decisions" -->
+**Decisions:**
+
+${decisions}
+
+${report}
+
+#### Images
+
+<section>
+
+#### pizza
+
+* __Status:__ inserted
+* __Source:__ own
+
+</section>
+
+<section>
+
+#### cake
+
+* __Status:__ wanted
+* __Source:__ own
+
+</section>
+
+### 2. Comparing fractions
+
+**Summary:** Text
+
+## Notes Backup – Notes
+
+Text
+`;
+const failReport = `#### Validation report – Lesson 1
+
+<section data-key="validation-report">
+
+**Outcome:** correction needed (2) (2026-11-01) – 1 point changed since – short re-check open
+
+**Usable with learners now:** not yet: the self-check cannot be solved yet.
+
+**Still missing:**
+
+- ⏳ 1 picture on „Cut the cake – 2“ (the cake): nothing found – at the step "Insert images".
+
+<details><summary>Technical report</summary>
+
+__Result:__ FAIL
+__Mode:__ session
+
+</details>
+
+</section>`;
+const steps = [
+  { title: "Plan the lesson", state: "done", why: "W1", result: "Sketch" },
+  { title: "Work out the material together", state: "done", why: "W2" },
+  { title: "Insert images", state: "optional", why: "W3" },
+  { title: "Check and revise", state: "planned", why: "W4" }
+];
+const deriveData = () => ({
+  title: "Fractions", subtitle: "My own words", footer: "As of 2026-11-01",
+  links: [{ label: "Course Context", href: "#course-context" }, { label: "Sessions", href: "#sessions-–-units" }, { label: "Website", href: "https://example.org" }],
+  units: [
+    { id: 1, title: "Halves", state: "draft", summary: "Kept as written", process: { title: "Halves", steps: structuredClone(steps) } },
+    { id: 2, title: "Comparing fractions", state: "planned" },
+    { id: 9, title: "Removed lesson", state: "planned" }
+  ]
+});
+
+test("unit state follows the journal: sketch, draft, approval, check result, changes after the check, Done", () => {
+  const unit = (facts = {}) => ({ n: "1", heading: { title: "T" }, material: true, done: false, approved: false, report: null, ...facts });
+  const report = (facts = {}) => ({ result: "PASS", changedSince: 0, deferred: false, ...facts });
+  const cases = [
+    [{ heading: null, material: false }, "planned"],
+    [{ material: false }, "planned"],
+    [{ material: false }, "current", { selected: "1" }],
+    [{}, "draft"],
+    [{ approved: true }, "review"],
+    [{ report: report({ result: "FAIL" }) }, "revision"],
+    [{ report: report({ result: "FAIL", changedSince: 2 }) }, "review"],
+    [{ report: report({ result: "PASS with concerns" }) }, "current"],
+    [{ report: report({ deferred: true }), done: true, approved: true }, "current"],
+    [{ report: report(), done: true, approved: false }, "current"],
+    [{ report: report(), done: false, approved: true }, "current"],
+    [{ report: report(), done: true, approved: true }, "done"]
+  ];
+  for (const [facts, expected, options] of cases) assert.equal(unitState(unit(facts), options).state, expected, JSON.stringify(facts));
+});
+
+test("the agenda title column is found by its header; a bold title is cut from its objective", () => {
+  const agenda = "## Agenda\n\n<!-- data-type=\"none\" -->\n| Hour | Kind | Topic and objective |\n|---|---|---|\n| 1 | Lesson | **Halves.** Cut a pizza fairly |\n\n## Sessions\n";
+  assert.deepEqual(readJournal(`# C\n\n${agenda}`).units.map(unit => unit.agendaTitle), ["Halves"]);
+});
+
+test("the journal model reads units, a report in the course language, image entries and the missing items", () => {
+  const journal = readJournal(deriveJournal({}, { report: failReport }));
+  assert.deepEqual(journal.units.map(unit => [unit.n, unit.title, unit.agendaTitle]), [["1", "Halves and quarters", "Halves and quarters"], ["2", "Comparing fractions", "Comparing fractions"], ["3", null, "Fractions in recipes"]]);
+  const [first, second, third] = journal.units;
+  assert.equal(first.report.result, "FAIL");
+  assert.equal(first.report.changedSince, 1);
+  assert.equal(first.report.anchor, "#validation-report-–-lesson-1");
+  assert.deepEqual(first.report.missing, ["1 picture on „Cut the cake – 2“"], "parentheses dropped, cut at the colon, the dash inside quotes kept");
+  assert.equal(reportUsable(first.report.usableText), "no");
+  assert.deepEqual(first.images, { total: 2, placed: 1, open: 1 });
+  assert.equal(first.status, "check: correction needed (2) – 1 point changed since – short re-check open – images 1 of 2");
+  assert.equal(second.heading.anchor, "#2.-comparing-fractions");
+  assert.equal(second.material, false);
+  assert.equal(third.heading, null);
+  assert.equal(journal.terminology, "Lesson");
+});
+
+test("derive sets the mechanical fields and leaves every text of the agent as it is", () => {
+  const journal = readJournal(deriveJournal(deriveData(), { report: failReport }));
+  const { data, changes } = derive(journal, deriveData(), { date: "2026-11-04" });
+  const [one, two, three] = data.units;
+  assert.deepEqual(data.units.map(unit => unit.id), [1, 2, 3], "unit 9 is neither in the agenda nor in ## Sessions");
+  assert.equal(one.title, "Halves and quarters");
+  assert.equal(one.state, "review", "FAIL with a change after the check waits for the short re-check");
+  assert.equal(one.href, "#1.-halves-and-quarters");
+  assert.deepEqual(one.view, { href: "agent:teaching/preview?file=1", command: ":preview 1" });
+  assert.deepEqual(one.usable, { state: "no", missing: ["1 picture on „Cut the cake – 2“"] });
+  assert.equal(one.statusLabel, "check: correction needed (2) – 1 point changed since – short re-check open – images 1 of 2");
+  assert.equal(one.process.steps[2].state, "current", "an open image entry makes the image step current once the material exists");
+  assert.equal(one.summary, "Kept as written");
+  assert.equal(one.process.steps[0].result, "Sketch");
+  assert.equal(data.subtitle, "My own words");
+  assert.equal(two.state, "planned");
+  assert.equal(two.href, "#2.-comparing-fractions");
+  assert.equal(two.view, undefined);
+  assert.deepEqual(two.process.steps.map(step => step.state), ["planned", "planned", "optional", "planned"], "a unit without steps gets the same steps, not started");
+  assert.equal(three.title, "Fractions in recipes", "a new unit takes its title from the agenda");
+  const titled = deriveData();
+  titled.units.push({ id: 3, title: "Recipes with fractions", state: "planned" });
+  assert.equal(derive(journal, titled).data.units[2].title, "Recipes with fractions", "the agenda row does not overwrite a title the overview already has");
+  assert.equal(three.href, undefined);
+  assert.deepEqual(data.links, [{ label: "Frame", href: "#course-context-–-frame" }, { label: "Lessons", href: "#sessions-–-lessons" }, { label: "Website", href: "https://example.org" }],
+    "listed section links follow their translated heading; no section is added, other links stay");
+  assert.deepEqual(data.unitLabel, { one: "Lesson", many: "Lessons" });
+  assert.equal(data.footer, "As of 2026-11-04");
+  assert.ok(changes.every(change => change.why), "every change names its reason");
+  dashboard.buildModel(data);
+  assert.deepEqual(derive(journal, data, { date: "2026-11-05" }).changes, [], "a second run changes nothing, not even the date");
+});
+
+test("derive: without image entries the image step keeps its state, all placed make it done; Done needs the approval", () => {
+  const journal = readJournal(deriveJournal({}, { report: failReport }));
+  journal.units[0].images = { total: 0, placed: 0, open: 0 };
+  assert.equal(derive(journal, deriveData()).data.units[0].process.steps[2].state, "optional");
+  const marked = deriveData();
+  marked.units[0].process.steps[2].state = "current";
+  assert.equal(derive(journal, marked).data.units[0].process.steps[2].state, "current", "older journals track images as markers only");
+  journal.units[0].images = { total: 2, placed: 2, open: 0 };
+  assert.equal(derive(journal, deriveData()).data.units[0].process.steps[2].state, "done");
+  const passed = failReport.replace("__Result:__ FAIL", "__Result:__ PASS").replace(" – 1 point changed since – short re-check open", "").replace(/\n- ⏳.*\n/, "\n");
+  const done = text => text.replace("| ✅ | ✅ | ❌ | check |", "| ✅ | ✅ | ✅ | checked |");
+  assert.equal(derive(readJournal(done(deriveJournal({}, { report: passed }))), deriveData()).data.units[0].state, "current", "without a recorded approval");
+  assert.equal(derive(readJournal(done(deriveJournal({}, { report: passed, decisions: "- **2026-11-02:** material approved" }))), deriveData()).data.units[0].state, "done");
+});
+
+test("write-dashboard derives before writing and says what it set; --no-derive writes the draft as it is", () => {
+  const dir = mkdtempSync(join(tmpdir(), "derive-write-"));
+  try {
+    const journalFile = join(dir, "journal.md");
+    const draft = join(dir, "draft.json");
+    const writer = fileURLToPath(new URL("./write-dashboard.mjs", import.meta.url));
+    writeFileSync(journalFile, deriveJournal(deriveData(), { report: failReport }));
+    writeFileSync(draft, JSON.stringify(deriveData()));
+    const run = spawnSync(process.execPath, [writer, draft, journalFile], { encoding: "utf8", cwd: dir });
+    assert.match(run.stdout, /Derived from the journal \(\d+ fields set/);
+    assert.match(run.stdout, /units\[1\]\.view: – → /);
+    const written = JSON.parse(readFileSync(journalFile, "utf8").match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
+    assert.equal(written.units[0].state, "review");
+    const checker = fileURLToPath(new URL("./derive-dashboard.mjs", import.meta.url));
+    assert.equal(spawnSync(process.execPath, [checker, "--check", journalFile], { encoding: "utf8", cwd: dir }).status, 0, "the written block matches the journal");
+    writeFileSync(draft, JSON.stringify(deriveData()));
+    spawnSync(process.execPath, [writer, draft, journalFile, "--no-derive"], { encoding: "utf8", cwd: dir });
+    const raw = JSON.parse(readFileSync(journalFile, "utf8").match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
+    assert.equal(raw.units[0].state, "draft");
+    const check = spawnSync(process.execPath, [checker, "--check", journalFile], { encoding: "utf8", cwd: dir });
+    assert.equal(check.status, 1);
+    assert.match(check.stdout, /units\[1\]\.state: "draft" → "review"/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
