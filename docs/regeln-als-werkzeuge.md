@@ -253,7 +253,7 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - Test 3: 15 → 9 Warnungen. Die übrigen haben zwei Ursachen: zwei veraltete Ergebniszeilen in den Prüfberichten (6 Kopien folgen ihnen) und nummerierte Einträge mit Datum am Anfang.
 
 **Offen:**
-- Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst. `validate-journal` meldet dieselbe Ursache je Kopie noch einmal; seit die Kopien berechnet werden, reicht eine Meldung am Bericht.
+- Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie jetzt einmal am Bericht, nicht mehr je Kopie (Test 3: 9 → 3 Warnungen).
 - Aktionszeilen von Gestaltung, Vorlagen, Assistenten, Prüfung, Veröffentlichung und Notizen.
 - Kursprozess, Stichpunkte für offene Punkte.
 - `update-dashboard.md` kürzen. Dafür müssen die festgehaltenen Sätze in `check-specs.mjs` mitgeändert werden.

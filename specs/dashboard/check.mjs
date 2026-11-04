@@ -2106,3 +2106,18 @@ test("cards under More options: the second way for the next unit, the templates 
   assert.deepEqual(explore.map(item => item.href), ["agent:teaching/help", "agent:teaching/suggest-templates"], "unit 1 is worked on: the template suggestion is a card; a stale managed card goes");
   assert.equal(explore[1].icon, "➕");
 });
+
+test("an outdated report outcome is named once at the report, not again in the copies that follow it", () => {
+  const dir = mkdtempSync(join(tmpdir(), "stale-copies-"));
+  try {
+    const file = join(dir, "journal.md");
+    const old = text => text.replaceAll("short re-check open", "re-check open");
+    writeFileSync(file, old(deriveJournal({ ...deriveData(), units: [{ id: 1, title: "Halves and quarters", state: "review", statusLabel: old("check: correction needed (2) – 1 point changed since – short re-check open – images 1 of 2") }] }, { report: failReport }))
+      .replace("| check |", "| revised |"));
+    const run = spawnSync(process.execPath, [fileURLToPath(new URL("./validate-journal.mjs", import.meta.url)), file], { encoding: "utf8" });
+    const stale = run.stdout.split("\n").filter(line => /uses outdated wording/.test(line));
+    assert.equal(stale.filter(line => /report's outcome/.test(line)).length, 1);
+    assert.ok(!stale.some(line => /^- unit 1: (status line|statusLabel) /.test(line)), "status line and statusLabel only copy the report");
+    assert.ok(stale.some(line => /Notes cell "revised"/.test(line)), "a word of its own is still named");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

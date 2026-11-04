@@ -543,6 +543,9 @@ model.decisions.filter(item => !item.source && reports.some(report => report.anc
 // "Changed after the check" and the unit's Notes cell name the same number (tasks/quick-fix.md).
 const sessionLines = section("Sessions").split("\n");
 const datedLine = /^\s*[-*]\s+(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\/\d{1,2}\/\d{4})\s+·/;
+// Units whose report outcome itself uses outdated words: status line, statusLabel and Notes cell copy it
+// (write-dashboard.mjs), so one warning at the report says it all.
+const staleReports = new Map();
 for (const report of reports) {
   const rest = sessionLines.slice(report.index + 1);
   const end = rest.findIndex(line => /^#{1,4}\s/.test(line));
@@ -570,6 +573,7 @@ for (const report of reports) {
   // Outdated wording (R11-D1): recommend the current terms, never the report's old words.
   const staleOutcome = outdatedIn(bare);
   if (staleOutcome.length) {
+    staleReports.set(report.unit, bare.toLowerCase());
     warnings.push(`unit ${report.unit}: the report's outcome "${short(bare.replace(dateInParens, ""), 70)}" ${staleText(staleOutcome)} – write it in report, status line, statusLabel and Notes cell (language pack → terms, templates/session-validation.yaml → outcome_words)`);
     continue;
   }
@@ -582,10 +586,12 @@ for (const report of reports) {
     if (!lower.includes(word.toLowerCase()) || (changed && !lower.includes(changed[1].toLowerCase()))) warnings.push(`unit ${report.unit}: ${where} "${short(String(text), 70)}" does not carry the report's outcome "${expected}" – one wording per state: write "${expected}" (plus other open state such as the image count) in status line, statusLabel and Notes cell`);
   }
 }
-// Outdated wording outside the report (R11-D1): status line, statusLabel and Notes cell.
+// Outdated wording outside the report (R11-D1): status line, statusLabel and Notes cell – without the words
+// they only copy from an outdated report outcome, which is already named above.
 model.units.forEach(unit => {
+  const outcomeText = staleReports.get(String(unit.id)) ?? "";
   for (const [where, text] of [["status line", statusLines.has(unit.id) ? statusOf(unit) : null], ["statusLabel", unit.statusLabel], ["Notes cell", notesCells.get(unit.id)]]) {
-    const stale = outdatedIn(text);
+    const stale = outdatedIn(text).filter(item => !outcomeText.includes(item.part.toLowerCase()));
     if (stale.length) warnings.push(`unit ${unit.id}: ${where} "${short(String(text), 70)}" ${staleText(stale)}`);
   }
 });
