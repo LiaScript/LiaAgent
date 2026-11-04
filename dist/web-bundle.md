@@ -3960,7 +3960,12 @@ Run this task automatically after any task that changes project state:
    missing" once some are in. A step that is `done` returns to an earlier state only
    through a check result (FAIL, concerns), never through a later decision or new
    work: new work of another kind is its own step.
-5. After a check with FAIL or open concerns, `next` is resolving them ("Resolve concerns" / "Revise", translated), never another check of the same state — for open concerns that is `validate-course {n}`, which then goes straight through them without a new check (`tasks/validate-course.md` step 0). A FAIL whose open points are all `:quick-fix` cases (one change each, no content decision) gets the small correction as action (✏️ `quick-fix` with its description, "Correct", translated), not `coauthor-materials` (`data/journal-links.md` → Action lines).
+5. **The command of `next`, the recommended unit `selected` and each unit's main action are computed by
+   `write-dashboard.mjs`** (step 8) by the rules of this step and of Rules (next names one step, template
+   step, first unit). Your words stay while your command is right — also a ✏️ `quick-fix` with its
+   description where it fits, which only you can judge; a wrong command gets the words of the language
+   pack, and without a pack the script names the words you write. The rules:
+   After a check with FAIL or open concerns, `next` is resolving them ("Resolve concerns" / "Revise", translated), never another check of the same state — for open concerns that is `validate-course {n}`, which then goes straight through them without a new check (`tasks/validate-course.md` step 0). A FAIL whose open points are all `:quick-fix` cases (one change each, no content decision) gets the small correction as action (✏️ `quick-fix` with its description, "Correct", translated), not `coauthor-materials` (`data/journal-links.md` → Action lines).
    Choose **exactly one** prominent next action (`next`) with an understandable
    `title`, `why`, `label`, `href`, readable `command` and `icon` (the action
    symbol from `data/journal-links.md` → Markdown Format; the same for actions in
@@ -4057,7 +4062,8 @@ Run this task automatically after any task that changes project state:
    lists under "Left for you" is a section filled by hand — name it and propose
    filling or removing that line in the same form. "Not now" → write no
    Dashboard and say that the overview stays at its last state until then.
-10. Refresh the action lines:
+10. Refresh the action lines (the line of every `### {n}. {title}` is written by `write-dashboard.mjs`:
+    its main action and 👁 the learners' view — step 5; the other sections' lines follow the rules below):
     - For every heading listed in `data/journal-links.md` → Action lines (core `##`
       sections and every `### {n}. {title}` under `## Sessions`): replace the
       `<!-- class="journal-actions" -->` paragraph directly below the heading, or

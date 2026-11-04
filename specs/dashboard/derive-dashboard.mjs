@@ -4,6 +4,9 @@
 // for units that have none yet, the section `links`, and the date in `footer` (only when something changed).
 // The same status wording also goes into ## Sessions: each unit's status line and its Notes cell
 // (journal-model.mjs → statusText; the check report's outcome line is its source once a check ran).
+// Actions (actions.mjs): the command of `next` and of each unit's action line in ## Sessions, and the
+// recommended unit `selected`. Their words stay the agent's while the command is right; a changed command
+// takes the words of the language pack (`actions`) – without a pack the agent writes them (`missing`).
 // Untouched: every text the agent writes – subtitle, summaries, why/result/next of steps, next, explore,
 // decisions, plan, notice – and the global course process.
 //
@@ -17,6 +20,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { readJournal, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
+import { courseNext, accepts, wordsOf, nextTitle, patchUnitActions } from "./actions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -79,6 +83,16 @@ export function derive(journal, input, { date } = {}) {
   const freshSteps = () => template.process.steps.map(step => ({
     title: step.title, state: isImageStep(step, terms) ? "optional" : "planned", ...(step.why ? { why: step.why } : {})
   }));
+
+  // The next action decides the recommended unit; only "done" matters for it, which does not depend on it.
+  const unitWord = journal.terminology ?? journal.pack?.unitWord?.one ?? data.unitLabel?.one ?? "unit";
+  const doneStates = new Map(journal.units.map(facts => [facts.n, unitState(facts).state]));
+  const expected = courseNext(journal, doneStates, data.selected);
+  const nextUnit = expected && (expected.params.number ?? expected.params.file);
+  if (nextUnit && data.selected !== "" && String(data.selected) !== String(nextUnit)) {
+    set(data, "selected", typeof data.selected === "number" ? Number(nextUnit) : String(nextUnit), "selected", "unit of the next action");
+  }
+  const missing = [];
 
   // Units: agenda rows and subsections. Without an agenda the units the overview already lists stay as well
   // (a course without a separate agenda takes them from the outline).
@@ -143,6 +157,22 @@ export function derive(journal, input, { date } = {}) {
     set(data, "links", links, "links", "anchors of the section headings");
   }
 
+  // next: the command follows the journal; the agent's words stay while the command is right.
+  if (expected) {
+    if (data.next && accepts(expected, data.next.href)) {
+      if (data.next.href === expected.href) {
+        set(data.next, "command", expected.command, "next.command", "readable command of the next action");
+        set(data.next, "icon", expected.icon, "next.icon", "icon of the next action");
+      }
+    } else {
+      const words = wordsOf(expected, journal, { unit: unitWord, n: nextUnit, id: expected.params.id ?? expected.params.name });
+      const title = nextTitle(expected, data, unitWord) ?? words?.title ?? words?.label;
+      if (!words || !title) missing.push({ where: "next", action: expected, title });
+      else set(data, "next", { icon: expected.icon, title, why: words.why, label: words.label, href: expected.href, command: expected.command },
+        "next", `next action by the journal: ${expected.command}`);
+    }
+  }
+
   // Unit words from the terminology and the ## Sessions suffix.
   const sessionsSuffix = journal.headings.find(heading => heading.key === "Sessions")?.suffix;
   if (sessionsSuffix) set(data, "unitsTitle", sessionsSuffix, "unitsTitle", "suffix of ## Sessions");
@@ -157,8 +187,22 @@ export function derive(journal, input, { date } = {}) {
     const now = date ?? today(journal.language, old);
     if (old && old !== now) set(data, "footer", data.footer.replace(old, now), "footer", "date of the derived state");
   }
-  return { data, changes, sessions };
+  return { data, changes, sessions, missing, unitWord };
 }
+
+// The lines of ## Sessions that follow the derived data: status lines, Notes cells and the units' action
+// lines – patched into `source` (the journal text to be written), for one write together with the block.
+export function patchJournal(source, journal, derived) {
+  const status = patchSessions(source, derived.sessions);
+  const wordsFor = (expected, unit) => wordsOf(expected, journal, { unit: derived.unitWord, n: unit.n });
+  const actions = patchUnitActions(status.source, journal, wordsFor);
+  return { source: actions.source, changes: [...status.changes, ...actions.changes], missing: actions.missing };
+}
+
+// What the agent still has to write because no language pack has the words of an action.
+export const missingText = item => item.where === "next"
+  ? `- next: the next action is ${item.action.href} (command "${item.action.command}", icon ${item.action.icon}${item.title ? `, title "${item.title}"` : ""}) – write its title, label and why in the course language into the draft's next and run again`
+  : `- ${item.where}: the main action is [${item.action.icon} <label>](${item.action.href}) ${item.action.code} – write that action line in the course language (keep the link and the command) and run again`;
 
 const shown = value => value === undefined ? "–" : typeof value === "string" ? `"${value.length > 70 ? `${value.slice(0, 69)}…` : value}"` : JSON.stringify(value).slice(0, 90);
 export const describe = change => `- ${change.path}: ${shown(change.from)} → ${shown(change.to)} (${change.why})`;
@@ -168,11 +212,10 @@ export function deriveForJournal(journalFile, draft, options) {
   const source = readFileSync(journalFile, "utf8");
   const journal = readJournal(source, { projectDir: dirname(resolve(journalFile)), packs: loadPacks() });
   const derived = derive(journal, draft, options);
-  // The status lines and Notes cells of ## Sessions that differ from the derived wording.
-  const sessionChanges = patchSessions(source, derived.sessions).changes;
-  return { ...derived, changes: [...derived.changes, ...sessionChanges], sessionChanges };
+  // The lines of ## Sessions that differ from the derived state.
+  const patched = patchJournal(source, journal, derived);
+  return { ...derived, journal, changes: [...derived.changes, ...patched.changes], missing: [...derived.missing, ...patched.missing] };
 }
-export { patchSessions };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
@@ -196,8 +239,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2);
   }
   const { _journalHash, ...base } = input;
-  const { data, changes } = deriveForJournal(journalFile, base);
-  if (!changes.length) {
+  const { data, changes, missing } = deriveForJournal(journalFile, base);
+  if (missing.length) {
+    console.log("Words still to write (no language pack has them):");
+    missing.forEach(item => console.log(missingText(item)));
+  }
+  if (!changes.length && !missing.length) {
     console.log("Dashboard matches the journal: no derived field differs.");
     console.log("Exit code: 0");
     process.exit(0);

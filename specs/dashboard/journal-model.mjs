@@ -25,6 +25,7 @@ export const englishTerms = {
   imagesPartial: "material written · images {n} of {m}",
   checkCorrection: "check: correction needed ({n})",
   checked: "checked ✅",
+  viewMaterial: "How learners see it",
   imageStep: "Insert images",
   passedMissing: "passed – still missing: {what}",
   recheckShort: "{n} point(s) changed since – short re-check open",
@@ -72,7 +73,38 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
     return { ...unit, inAgenda: Boolean(agendaRow), title: unit.heading?.title ?? unit.tableTitle ?? null, agendaTitle: agendaRow?.title ?? null };
   });
 
-  return { language, terms, headings, terminology, hasAgenda: agenda.length > 0, units: list, projectDir };
+  // A section is filled once it holds more than its one-line note ("_Still empty – …_") and its action line.
+  const filled = key => {
+    const lines = stripComments(section(key)).split("\n").map(line => line.trim()).filter(line => line && !/\]\(agent:/.test(line) && !/^(-{3,}|\*{3,})$/.test(line));
+    return lines.length > 1 || (lines.length === 1 && !/^_.*_$/.test(lines[0]));
+  };
+  const validationSummary = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
+  return {
+    language, terms, pack, headings, terminology, hasAgenda: agenda.length > 0, units: list, projectDir,
+    filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
+    agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
+    templates: readTemplates(section("Templates")),
+    validation: { mode: validationSummary.match(/\bMode:\s*(\w+)/)?.[1] ?? null, result: validationSummary.match(/\bResult:\s*(PASS with concerns|PASS|FAIL)/)?.[1] ?? null },
+    published: /^\s*[*-]\s+__State:__\s*published/m.test(section("Publishing"))
+  };
+}
+
+// ## Templates (templates/course-templates.yaml): the selection line before <section> (missing = open), the
+// adopted entries (`__Catalog id:__`) and the briefs `### {id} (in development)` with their state and units.
+function readTemplates(text) {
+  const plain = stripComments(text);
+  const entries = plain.split(/^(?=### )/m).slice(1).map(block => ({
+    heading: block.match(/^### (.+?)\s*$/m)?.[1] ?? "",
+    field: name => block.match(new RegExp(`^\\s*[*-]\\s+__${name}:__[ \\t]*(.*)$`, "m"))?.[1].trim() ?? "",
+    block
+  }));
+  const usedIn = block => (block.split(/__Used in:__/)[1] ?? "").split(/^\s*[*-]\s+__/m)[0].replace(/\s+/g, " ").trim();
+  return {
+    selection: plain.split(/^<section\b/m)[0].match(/^\s*[*-]\s+__Template selection:__[ \t]*(.*)$/m)?.[1].trim() ?? "open",
+    adopted: entries.map(entry => entry.field("Catalog id").replace(/`/g, "")).filter(Boolean),
+    briefs: entries.filter(entry => / \(in development\)$/.test(entry.heading))
+      .map(entry => ({ id: entry.heading.replace(/ \(in development\)$/, ""), state: entry.field("State"), usedIn: usedIn(entry.block) }))
+  };
 }
 
 // The units table of ## Agenda (templates/course-agenda.yaml): the table after `<!-- data-type="none" -->`,

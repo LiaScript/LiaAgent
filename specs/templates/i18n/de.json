@@ -375,5 +375,25 @@
   ["(?<!\\p{L})überarbeitet(?!\\p{L})", "recheckShort"],
   ["(?<!kurze )Nachprüfung offen", "recheckShort"],
   ["Korrektur nötig \\(\\d+\\)(?=.*seither)", "correctionOpen"], ["Skelett ✅", "skeleton"]
- ]
+ ],
+ "actions": {
+  "init-course": {"title": "Den Rahmen festlegen", "label": "Kurs starten", "why": "Thema, Zielgruppe und Format sind die Grundlage für Lernziele und Material."},
+  "create-outline": {"title": "Gliederung und Lernziele", "label": "Gliederung erstellen", "why": "Klare Lernziele sagen, was die Lernenden am Ende können."},
+  "create-didactics": {"title": "Didaktik", "label": "Didaktik festlegen", "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen und den Lernenden passen."},
+  "suggest-templates": {"title": "Vorlagen für Aktivitäten", "label": "Vorlagen vorschlagen", "why": "Fertige Bausteine für die Aktivitäten – oder die Entscheidung, dass keiner nötig ist."},
+  "develop-template": {"title": "Vorlagen für Aktivitäten", "label": "Baustein {id} entwickeln", "why": "Ein eigener Baustein für eine Aktivität, die kein fertiger abdeckt."},
+  "adopt-template": {"title": "Vorlagen für Aktivitäten", "label": "Baustein {id} ausprobieren und übernehmen", "why": "Der Baustein ist fertig: ausprobieren, dann in den Kurs übernehmen."},
+  "create-agenda": {"title": "Ablaufplan", "label": "Ablaufplan erstellen", "why": "Reihenfolge und Zeit der Einheiten im Unterricht."},
+  "plan-unit": {"label": "{unit} {n} planen", "why": "Die Planungsskizze legt Inhalte, Aufgaben und Selbsttest fest, bevor Material entsteht."},
+  "work-out": {"label": "{unit} {n} ausarbeiten", "why": "Texte, Aufgaben und Selbsttest entstehen gemeinsam; jeder Teil wird vorher gezeigt."},
+  "insert-images": {"label": "Bilder für {unit} {n} einfügen", "why": "Die markierten Stellen bekommen ihre Bilder."},
+  "check-unit": {"label": "{unit} {n} prüfen", "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt."},
+  "recheck-unit": {"label": "{unit} {n} kurz nachprüfen", "why": "Nach der Prüfung wurde etwas geändert; die kurze Nachprüfung sieht die geänderten Seiten noch einmal an."},
+  "revise-unit": {"label": "{unit} {n} überarbeiten", "why": "Die Prüfung hat Punkte gefunden, die korrigiert werden müssen."},
+  "resolve-concerns": {"label": "{unit} {n} prüfen: Bedenken klären", "why": "Die Prüfung ist mit Bedenken bestanden, die eine Entscheidung brauchen."},
+  "approve-unit": {"label": "{unit} {n} ansehen und freigeben", "why": "Die Prüfung ist bestanden; das Material wartet auf die Freigabe."},
+  "view-unit": {"label": "So sehen es die Lernenden", "why": "Das geprüfte Material so ansehen, wie die Lernenden es sehen."},
+  "check-course": {"title": "Prüfen und überarbeiten", "label": "Kurs prüfen", "why": "Die Kursprüfung kommt vor dem Veröffentlichen."},
+  "publish": {"title": "Veröffentlichen", "label": "Kurs veröffentlichen", "why": "Der geprüfte Kurs bekommt einen Link zum Teilen."}
+ }
 }

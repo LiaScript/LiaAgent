@@ -7,8 +7,9 @@
 // (tasks/update-dashboard.md step 8). A draft without `_journalHash` is always accepted.
 // Before writing, the fields that follow from the journal (unit list, state, href, view, usable,
 // statusLabel, image step, links, unit words, date) are derived from it (derive-dashboard.mjs) and
-// replace the draft's values, and each unit's status line and Notes cell in ## Sessions get the same
-// wording in the same write; the script prints every field it set. --no-derive writes the draft as it is.
+// replace the draft's values, and each unit's status line, Notes cell and action line in ## Sessions
+// follow in the same write; the script prints every field it set. When no language pack has the words of
+// a changed action, it writes nothing and names the words to write. --no-derive writes the draft as it is.
 // Run from the course project root:
 //   node specs/dashboard/write-dashboard.mjs <draft.json> [journal.md] [--no-derive]
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -18,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import "./dashboard.js";
 import { countWrite } from "./write-count.mjs";
-import { deriveForJournal, describe, patchSessions } from "./derive-dashboard.mjs";
+import { deriveForJournal, describe, patchJournal, missingText } from "./derive-dashboard.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -35,17 +36,22 @@ const blockHash = text => createHash("sha256").update(text).digest("hex").slice(
 
 let data;
 let cacheHash;
-let sessions = [];
+let derived = null;
 try {
   data = JSON.parse(readFileSync(draftFile, "utf8"));
   if (data && typeof data === "object" && !Array.isArray(data)) ({ _journalHash: cacheHash, ...data } = data);
   if (!noDerive && journal && existsSync(journal) && data && typeof data === "object" && !Array.isArray(data)) {
-    const derived = deriveForJournal(journal, data);
+    derived = deriveForJournal(journal, data);
     data = derived.data;
-    sessions = derived.sessions;
     if (derived.changes.length) {
       console.log(`Derived from the journal (${derived.changes.length} field${derived.changes.length === 1 ? "" : "s"} set – no need to write them yourself):`);
       derived.changes.forEach(change => console.log(describe(change)));
+    }
+    if (derived.missing.length) {
+      console.error("Words still to write, journal unchanged (no language pack has them):");
+      derived.missing.forEach(item => console.error(missingText(item)));
+      console.log("Exit code: 1");
+      process.exit(1);
     }
   }
   globalThis.LiaDashboard.buildModel(data);
@@ -70,7 +76,8 @@ if (cacheHash && cacheHash !== blockHash(current)) {
 }
 const json = JSON.stringify(data, null, 2);
 // The block and the status lines / Notes cells of ## Sessions in one write (one preview reload).
-const next = patchSessions(source.replace(block, () => "```json @Dashboard.View\n" + json + "\n```"), sessions).source;
+const replaced = source.replace(block, () => "```json @Dashboard.View\n" + json + "\n```");
+const next = derived ? patchJournal(replaced, derived.journal, derived).source : replaced;
 if (next === source) console.log("Dashboard unchanged.");
 else {
   writeFileSync(journal, next);

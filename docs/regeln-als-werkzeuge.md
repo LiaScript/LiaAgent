@@ -237,9 +237,18 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - Neue Wörter im Sprachpaket: `skeletonOnly`, `checked`.
 - An den Journalen aus Test 1–3 sinken Fehler und Warnungen, es kommen keine neuen hinzu (Test 3: 15 → 11 Warnungen).
 
+**Nächster Schritt und Aktionszeilen (2026-11-04):**
+- `specs/dashboard/actions.mjs` enthält die Entscheidungstabellen: die Hauptaktion je Einheit (`journal-links.md`) und den nächsten Schritt des Kurses (`update-dashboard.md` Schritt 5 und Regeln, mit Template-Schritt und empfohlener Einheit).
+- `write-dashboard.mjs` setzt den Befehl von `next`, die empfohlene Einheit `selected` und die Aktionszeile jeder Einheit. Dort steht die Hauptaktion und daneben 👁 „So sehen es die Lernenden“.
+- Für die Texte gilt die Mischregel: Ist der Befehl richtig, bleiben die Worte des Agenten. Zusätzliche Parameter und eine „kleine Korrektur“ mit Beschreibung zählen auch als richtig. Ist der Befehl falsch, kommen die Worte aus dem Sprachpaket (`actions`, Deutsch und Englisch). Ohne passendes Paket schreibt das Skript nichts und nennt die Worte, die der Agent schreiben muss.
+- Bewusst beim Agenten bleibt die Wahl, welcher Schritt ein fehlendes Teil herstellt, das kein Bild ist.
+- Test 3: 15 → 9 Warnungen. Test 1 (altes Layout ohne Bild-Einträge): Eine Warnung kommt dazu, weil das Skript dort keine offenen Bilder erkennen kann und nach der Regel „Bedenken klären“ voranstellt.
+
 **Offen:**
 - Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie. Nach der Korrektur folgen alle Kopien automatisch.
-- `next`/`explore`, Template-Schritt, Kursprozess, Stichpunkte für offene Punkte, Aktionszeilen, Einzeiler unter `## Sessions`.
+- `explore`: die zweite Möglichkeit „vorbereiten lassen“ (`build-session`) und „Vorlagen vorschlagen“ als Karte, sobald sie nicht der nächste Schritt sind.
+- Aktionszeilen der übrigen Abschnitte (`## Sessions`, `## Agenda` …) und der Einzeiler unter `## Sessions`.
+- Kursprozess, Stichpunkte für offene Punkte.
 - `update-dashboard.md` kürzen. Dafür müssen die festgehaltenen Sätze in `check-specs.mjs` mitgeändert werden.
 - `validate-journal.mjs` auf `journal-model.mjs` umstellen, damit es nur noch einen Leser gibt.
 

@@ -1675,6 +1675,10 @@ ${JSON.stringify(dashboard, null, 2)}
 
 Text
 
+## Didactics – Methods
+
+Text
+
 ## Agenda – Schedule
 
 <!-- data-type="none" -->
@@ -1956,5 +1960,97 @@ test("write-dashboard writes the status lines and Notes cells in the same write 
     assert.match(text, /\| ✅ \| ✅ \| ❌ \| check: correction needed \(2\) – 1 point changed since – short re-check open – images 1 of 2 \|/);
     const check = spawnSync(process.execPath, [fileURLToPath(new URL("./derive-dashboard.mjs", import.meta.url)), "--check", journalFile], { encoding: "utf8", cwd: dir });
     assert.equal(check.status, 0, check.stdout);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ── Next action and action lines: the command follows the journal, the words stay the agent's while it is right ──
+import { courseNext, unitAction, patchUnitActions, accepts } from "./actions.mjs";
+
+const facts = (n, more = {}) => ({ n: String(n), heading: null, material: false, done: false, approved: false, report: null, images: { total: 0, placed: 0, open: 0 }, ...more });
+const course = (more = {}) => ({
+  language: "en", filled: { "Course Context": true, Outline: true, Didactics: true, Agenda: true }, agendaRequired: "yes", hasAgenda: true,
+  templates: { selection: "done – none needed", adopted: [], briefs: [] }, validation: { mode: null, result: null }, published: false,
+  units: [facts(1), facts(2)], ...more
+});
+const nextOf = (journal, selected) => courseNext(journal, new Map(journal.units.map(unit => [unit.n, unitState(unit).state])), selected)?.href ?? null;
+
+test("the course's next action follows the order of the course process", () => {
+  assert.equal(nextOf(course({ filled: { "Course Context": false } })), "agent:teaching/init-course");
+  assert.equal(nextOf(course({ filled: { "Course Context": true, Outline: false } })), "agent:teaching/create-outline");
+  assert.equal(nextOf(course({ filled: { "Course Context": true, Outline: true, Didactics: false } })), "agent:teaching/create-didactics");
+  assert.equal(nextOf(course({ hasAgenda: false, units: [], templates: { selection: "open", adopted: [], briefs: [] } })), "agent:teaching/suggest-templates");
+  assert.equal(nextOf(course({ hasAgenda: false, units: [] })), "agent:teaching/create-agenda", "templates decided: the required agenda");
+  assert.equal(nextOf(course()), "agent:teaching/create-session?number=1");
+  assert.equal(nextOf(course(), "2"), "agent:teaching/create-session?number=2", "the recommended unit, also before its sketch");
+  assert.equal(nextOf(course({ units: [facts(1, { heading: { title: "A" } }), facts(2)] })), "agent:teaching/coauthor-materials?number=1");
+  const brief = state => ({ selection: "open", adopted: [], briefs: [{ id: "maze", state, usedIn: "unit 2" }] });
+  assert.equal(nextOf(course({ templates: brief("brief") })), "agent:development/develop-template?id=maze");
+  assert.equal(nextOf(course({ templates: brief("ready to test") })), "agent:teaching/manage-templates?name=maze");
+  assert.equal(nextOf(course({ templates: brief("brief"), units: [facts(1, { heading: { title: "A" } }), facts(2)] })), "agent:teaching/coauthor-materials?number=1", "a brief for unit 2 waits while unit 1 is worked on");
+  const doneUnit = n => facts(n, { heading: { title: "A" }, material: true, done: true, approved: true, report: { result: "PASS", changedSince: 0, deferred: false } });
+  assert.equal(nextOf(course({ units: [doneUnit(1), doneUnit(2)] })), "agent:teaching/validate-course");
+  assert.equal(nextOf(course({ units: [doneUnit(1), doneUnit(2)], validation: { mode: "course", result: "PASS" } })), "agent:development/create-project");
+  const withApproved = course({ units: [doneUnit(1), facts(2)] });
+  assert.ok(accepts(courseNext(withApproved, new Map([["1", "done"], ["2", "planned"]])), "agent:teaching/build-session?number=2"), "after an approved unit, letting it be prepared is right too");
+});
+
+test("a unit's main action follows its state; a judgement call stays with the agent", () => {
+  const begun = more => facts(1, { heading: { title: "A" }, material: true, ...more });
+  const report = more => ({ result: "PASS", changedSince: 0, deferred: false, ...more });
+  const href = unit => unitAction(unit)?.href ?? null;
+  assert.equal(href(facts(1, { heading: { title: "A" } })), "agent:teaching/coauthor-materials?number=1");
+  assert.equal(href(begun()), "agent:teaching/validate-course?number=1");
+  assert.equal(href(begun({ images: { total: 2, placed: 0, open: 2 } })), "agent:artist/create-image?number=1", "images before the check");
+  assert.equal(href(begun({ report: report({ result: "FAIL" }) })), "agent:teaching/coauthor-materials?number=1");
+  assert.ok(accepts(unitAction(begun({ report: report({ result: "FAIL" }) })), "agent:teaching/quick-fix?number=1&description=Fix%20the%20hint"), "a small correction with its description is right too");
+  assert.equal(href(begun({ report: report({ result: "FAIL", changedSince: 1 }) })), "agent:teaching/validate-course?number=1", "short re-check");
+  assert.equal(href(begun({ report: report({ result: "PASS with concerns" }) })), "agent:teaching/validate-course?number=1");
+  assert.equal(href(begun({ report: report({ deferred: true }) })), null, "what produces a missing item other than images is the agent's call");
+  assert.equal(href(begun({ report: report(), done: true })), "agent:teaching/preview?file=1", "passed: look at it and approve");
+  assert.equal(unitAction(begun({ report: report(), done: true, approved: true })).key, "view-unit");
+});
+
+test("next keeps the agent's words while its command is right, else takes the pack's words; without a pack nothing is invented", () => {
+  const journal = readJournal(deriveJournal({}, { report: failReport }));
+  const right = { ...deriveData(), next: { title: "My title", why: "My why", label: "My label", href: "agent:artist/create-image?number=1&focus=cake", command: "x" } };
+  assert.equal(derive(journal, right).data.next.label, "My label", "extra parameters are fine");
+  const wrong = { ...deriveData(), next: { title: "T", why: "W", label: "Plan unit 2", href: "agent:teaching/create-session?number=2", command: ":create-session 2" } };
+  const { data } = derive(journal, wrong);
+  assert.equal(data.next.href, "agent:artist/create-image?number=1");
+  assert.equal(data.next.command, ":agent artist → :create-image 1");
+  assert.equal(data.next.label, "Insert images for Lesson 1");
+  assert.equal(data.next.title, "Insert images – Lesson 1", "the unit's step plus the unit");
+  assert.equal(data.selected, "1");
+  const french = readJournal(deriveJournal({}, { report: failReport }).replace("language: en", "language: fr"));
+  const result = derive(french, wrong);
+  assert.equal(result.data.next.label, "Plan unit 2", "no French words: the old next stays …");
+  assert.equal(result.missing[0].where, "next", "… and the agent is asked for them");
+});
+
+test("action lines: one main action of the unit, the learners' view next to it; a right link keeps its words", () => {
+  const journal = readJournal(deriveJournal({}, { report: failReport }));
+  const words = (expected, unit) => ({ label: `L${unit.n}` });
+  const source = deriveJournal({}, { report: failReport }).replace("### 1. Halves and quarters\n", "### 1. Halves and quarters\n\n<!-- class=\"journal-actions\" -->\n[🎨 My words](agent:artist/create-image?number=1) `:agent artist` → `:create-image 1` · [▶️ Plan unit 2](agent:teaching/create-session?number=2) `:create-session 2`\n");
+  const { source: patched, changes } = patchUnitActions(source, journal, words);
+  assert.match(patched, /^\[🎨 My words\]\(agent:artist\/create-image\?number=1\) `:agent artist` → `:create-image 1` · \[👁 How learners see it\]\(agent:teaching\/preview\?file=1\) `:preview 1`$/m,
+    "the right main action keeps its words, another unit's action goes, the learners' view comes");
+  assert.match(patched, /### 2\. Comparing fractions\n\n<!-- class="journal-actions" -->\n\[▶️ L2\]\(agent:teaching\/coauthor-materials\?number=2\) `:coauthor-materials 2`\n/, "a missing line is inserted below the heading");
+  assert.equal(changes.length, 2);
+  assert.equal(patchUnitActions(patched, readJournal(patched), words).changes.length, 0, "a second run changes nothing");
+});
+
+test("write-dashboard writes nothing while words are missing and names them", () => {
+  const dir = mkdtempSync(join(tmpdir(), "derive-words-"));
+  try {
+    const journalFile = join(dir, "journal.md");
+    const draft = join(dir, "draft.json");
+    const text = deriveJournal(deriveData(), { report: failReport }).replace("language: en", "language: fr");
+    writeFileSync(journalFile, text);
+    writeFileSync(draft, JSON.stringify({ ...deriveData(), next: { title: "T", why: "W", label: "L", href: "agent:teaching/create-outline", command: ":create-outline" } }));
+    const run = spawnSync(process.execPath, [fileURLToPath(new URL("./write-dashboard.mjs", import.meta.url)), draft, journalFile], { encoding: "utf8", cwd: dir });
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, /Words still to write/);
+    assert.match(run.stderr, /next: the next action is agent:artist\/create-image\?number=1/);
+    assert.equal(readFileSync(journalFile, "utf8"), text, "journal unchanged");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
