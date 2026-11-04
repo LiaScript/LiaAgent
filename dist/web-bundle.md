@@ -5524,6 +5524,7 @@ template:
     input: json-code-block
   notes:
     - 'Derived state only; source sections remain authoritative.'
+    - 'Fields marked (computed) are set by `write-dashboard.mjs` from the journal (`tasks/update-dashboard.md` step 2) – write the texts, not these.'
     - 'units[].state determines progress and totals; no separate counters.'
     - 'Exactly one highlighted next action, with why.'
     - 'A draft or a pending review never counts as done.'
@@ -5531,7 +5532,7 @@ template:
     - 'Keep the global process once units exist: the view offers it as a "whole course" entry above the units, so the instructor can switch between course and unit view.'
     - 'Every unit gets the same material steps from the start: a unit not yet started has all steps `planned` (its first step''s `next` says when it is due); `validate-journal.mjs` reports units without `process.steps` as soon as another unit has them.'
     - 'Course counter and unit cards count only required steps; a step in state `optional` (e.g. publishing) is an offer and is not counted.'
-    - 'A unit whose subsection exists has begun: give it the state that matches its work (e.g. `current`) or a `statusLabel`; `validate-journal.mjs` warns about `href` with `planned` and no `statusLabel`. The library itself shows a still `planned` unit with a done required step as "Started" (`state.started`), and derives progress sentences and the material partial count from the unit steps — no extra fields.'
+    - 'The library shows a still `planned` unit with a done required step as "Started" (`state.started`), and derives progress sentences and the material partial count from the unit steps — no extra fields.'
     - 'One ranking of the three measures of a unit: (1) `usable` — usable with learners now, from the check report, the first line of the card; (2) open points — the `statusLabel`, counting the points still open; (3) process steps — the counter. A unit that is usable never reads as "nothing finished": while no unit is done, the progress line names the usable ones ("Fully checked: none yet · Usable now: unit 2 (with limits)").'
     - 'Every unit with material gets `view`, its own 👁 button for the material as the learners see it (`validate-journal.mjs` warns without it). The planning link (`href`) is always named by the library ("See planning", translated) — never renamed, never the only way to the material.'
     - '`agent:` links additionally need `command` as the readable command, see `data/agent-links.md`.'
@@ -5542,17 +5543,17 @@ template:
     context: 'Target group and time frame'
     subtitle: 'Current state of work in plain words; no repeated counters'
     notice: 'Optional: provisional sample data or pending decisions'
-    unitsTitle: 'Label from `## Course Context` → Terminology (sessions-called)'
-    unitLabel: '{one, many}: the word for one unit and for several, in the course language, from `## Course Context` → Terminology (sessions-called) — used in the progress line "1 of 4 …"; `many` in the form that follows "of" (German: dative plural after "von", e.g. `{"one": "Modul", "many": "Modulen"}`)'
+    unitsTitle: '(computed) Label from `## Course Context` → Terminology (sessions-called)'
+    unitLabel: '(computed) {one, many}: the word for one unit and for several, in the course language, from `## Course Context` → Terminology (sessions-called) — used in the progress line "1 of 4 …"; `many` in the form that follows "of" (German: dative plural after "von", e.g. `{"one": "Modul", "many": "Modulen"}`)'
     labels: 'For German or English only `decide` and `prepare` (and, where the course has its own word for the learners, `usable.*` and `viewMaterial` — `tasks/update-dashboard.md` step 8); when the course language is neither German nor English: every fixed text of the library translated, keyed as listed in `specs/dashboard/README.md` → `labels`; counted texts as {one, many} with the placeholders listed there. Never `plan` in German or English (the planning link keeps its name)'
     units:
-      - id: 'Stable number from Sessions / Agenda'
+      - id: '(computed) Stable number from Sessions / Agenda'
         title: 'Unit title'
-        state: 'planned | current | draft | review | revision | done'
+        state: '(computed) planned | current | draft | review | revision | done'
         summary: 'Short, verifiable state; does not repeat `usable`'
-        usable: 'Once a check report exists: {state: yes | limited | no, missing: [what is still missing, short noun phrases such as "1 photo", "short re-check"]} — the report''s line "usable with learners now" (yes · yes, with limits · not yet); `missing` is required unless `yes`'
-        href: 'Anchor of the `### {n}. {title}` subsection, once a skeleton exists; the library names this link "See planning" (translated)'
-        view: 'Once the material exists: {href: "agent:teaching/preview?file={n}", command: ":preview {n}", label?} — the material as the learners see it; default label "How learners see it" (translated); `label` only to use the course''s word for learners'
+        usable: 'Once a check report exists: {state: yes | limited | no, missing: [what is still missing, short noun phrases such as "1 photo", "short re-check"]} — the report''s line "usable with learners now" (yes · yes, with limits · not yet); `missing` is required unless `yes` — (computed; `missing` stays yours while the state holds)'
+        href: '(computed) Anchor of the `### {n}. {title}` subsection, once a skeleton exists; the library names this link "See planning" (translated)'
+        view: 'Once the material exists: {href: "agent:teaching/preview?file={n}", command: ":preview {n}", label?} — the material as the learners see it; default label "How learners see it" (translated); `label` only to use the course''s word for learners — (computed)'
         process:  # same steps for every unit, also for units not yet started (all `planned`)
           title: 'Unit title'
           steps:
@@ -5563,7 +5564,7 @@ template:
               next: 'Optional: what to do next'
               statusLabel: 'Optional: plain-language refinement of the state'
           note: 'Optional: loops back or special cases'
-    selected: 'Optional: id of the recommended unit; empty string "" opens the whole-course view'
+    selected: '(computed while next is a unit action; "" keeps the whole-course view) Optional: id of the recommended unit; empty string "" opens the whole-course view'
     process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`)'
     next:
       icon: 'Action symbol as in Markdown labels (`▶️` run, `✏️` revise, `🔍` check, `👁` preview, `🚀` publish only, agent icon for a switch); default `▶️`'
@@ -5575,7 +5576,7 @@ template:
     decisions: 'Open points: list of {key, kind: decide|prepare|internal, title, why?, how (required unless internal), href?, command?, label?, icon?, source?}; `source: {check: n, date?}` marks a point that comes from the check of unit n (its `href` then links that report heading, `validate-journal.mjs` checks both); `label` is required when `href` is set and names the destination (e.g. "See outline"), never the question; a section anchor (`#…`) is shown as a plain text link, only an `agent:` link becomes a button'
     plan: 'Provisional planning {title?, note, rows: [{label, text}]} — only while no agenda exists'
     explore: 'Optional action cards with icon/title/description/label/href/command; icon is shown in the button, same symbols as `next.icon` but never the icon of `next` (default `▶️` for `agent:` links), so exactly one button stands for the next step'
-    links: 'Section links with label/href (full heading slug)'
+    links: '(computed anchors and labels of the listed sections) Section links with label/href (full heading slug)'
     footer: 'Date of the derived state'
   sections:
     - id: dashboard
@@ -5652,18 +5653,13 @@ template:
       overview: >-
         Directly below `## Sessions`, in this order:
         (1) a visible status list in the course language, one numbered line per unit in session order,
-        `{n}. {title} – {status}` with status "planning sketch ✅ · material open" (the fixed word for skeleton, `data/chat-wording.md` → Plain language), "material written · check open"
-        ("material written · images missing" while image spots are open and none is inserted yet, `tasks/create-image.md` → Image spots;
-        "material written · images {n} of {m}" once at least one of the m entries is inserted and others are still open — the count is
-        part of the status word, so a partial state stays visible; never "ready" or
-        "finished" before a check — a language pack lists these under `terms`),
-        "check: correction needed ({n})" (never a grade word such as "failed"; {n} as in the report's outcome),
-        "passed with concerns – your decision needed", "passed – still missing: {what}" or "checked ✅" — once a
-        report exists, the same words as its outcome line (`templates/session-validation.yaml` → `outcome_words`);
-        after changes made after the check "{outcome} – {n} point(s) changed since – short re-check open", where a
-        FAIL outcome counts the points still open: "check: correction needed: {open} of {n} points open" (one wording
-        per state in status line, Notes cell and `statusLabel`, never a second phrase such as "revised"; translated;
-        other open state such as "images {n} of {m}" follows after " – ");
+        `{n}. {title} – {status}`. The status carries the same words as the unit's Notes cell and the overview's
+        `statusLabel`; `write-dashboard.mjs` writes all three after every task (`specs/dashboard/journal-model.mjs`
+        → `statusText`, with the words of the language pack's `terms`): before a check from the planning sketch
+        ("planning sketch ✅ · material open", the fixed word for skeleton, `data/chat-wording.md` → Plain language),
+        the material and the image entries; once a report exists, its outcome line (`templates/session-validation.yaml`
+        → `outcome_words`) — never "ready" or "finished" before a check. A task that creates a unit writes its line
+        with the sketch status; other tasks leave the status to the script;
         (2) `<details><summary>{"Technical overview", translated}</summary>`, then `<!-- data-type="none" -->`
         and the table `| # | Title | Type | Method | Skeleton | Material | Done | Notes |` (the Method
         column only if `__Default Session Method:__` is not `none`), then `</details>`.
@@ -5671,7 +5667,7 @@ template:
         whichever task first writes it — instructor approval does not change it); Done ✅ = the latest
         `#### Validation Report` says `Result: PASS` (not "with concerns") with no open ⏳ item — set and
         reset by `:validate-course` in session and course mode alike.
-        Every task that changes a cell of the table rewrites that unit's status line in the same write,
+        `write-dashboard.mjs` rewrites every unit's status line and Notes cell from the table and the report,
         so list and table never disagree.
       entries: "Session skeletons as `### {{number}}. {{title}}` subsections below the overview"
       entry_order: >-
@@ -7581,13 +7577,10 @@ in any renderer (VS Code, GitHub, LiaScript without DevServer):
   with values, never raw placeholders (`{description}`). A value left out on
   purpose is shown as a translated hint in angle brackets (`<what?>`). If the
   label names a concrete fix, pass it in the link (`&description=…`) and in the
-  command. After a validation the **Dashboard's** main action is: FAIL → the
-  fix — ✏️ `quick-fix` with description when every open point is one it
-  covers (one change each, no content decision), otherwise
-  `coauthor-materials`; PASS / PASS with concerns → the Dashboard's `next`. The action line of a unit
-  (`### {n}. …`) only offers actions **for that unit** (e.g. preview, the
-  next step of its own process) — never the next unit's action. `quick-fix`
-  is never a main action without a description.
+  command. Which action comes next — in the Dashboard and in the action lines of
+  the core sections and units — is computed by `write-dashboard.mjs`
+  (`tasks/update-dashboard.md` step 2); it keeps your words while your command is right.
+  `quick-fix` is never a main action without a description.
 - Then, only in chat offers, ` — ` plus a short reason.
 - Never use `<button data-agent=…>`; the Markdown link is the only format.
 
@@ -7622,9 +7615,11 @@ source sections, only the few derived lines its "writes only" list names.
 Rules for action lines:
 
 - Links separated by ` · `, at most 6 per line, one line only, no headings.
-- A task that replaces a section writes its action line already in the state
-  after the save (e.g. ✏️ revise instead of ▶️ create); `update-dashboard`
-  leaves a correct line untouched — one write less.
+- The lines marked "computed" in the table below are written by `write-dashboard.mjs`
+  after every task (`tasks/update-dashboard.md` runs after each); a task does not
+  need to write them in its own save. Other lines: a task that replaces a section
+  writes its action line already in the state after the save (e.g. ✏️ revise
+  instead of ▶️ create).
 - Writing a section replaces its one-line note ("still empty – …") with the
   content; the provenance comment `<!--- Filled by … --->` stays invisible
   (name the task that actually wrote the section). Never write `{{…}}`
@@ -7641,14 +7636,14 @@ Rules for action lines:
 
 | Section | Action line (commands) |
 |---|---|
-| `## Course Context` | `init-course` (revise), `analyze-existing` (only for improve-existing courses) |
-| `## Outline` | `create-outline` |
-| `## Didactics` | `create-didactics`, `artist/create-visuals` |
+| `## Course Context` | computed: `init-course` (▶️ create, ✏️ revise once saved); `analyze-existing` (only for improve-existing courses) |
+| `## Outline` | computed: `create-outline` |
+| `## Didactics` | computed: `create-didactics`, `artist/create-visuals` |
 | `## Visual Identity` | `artist/create-visuals`, `artist/create-logo` |
 | `## Templates` | `suggest-templates`, 👁 `preview?file=specs/catalog/README.md` (the template catalog, command `:preview specs/catalog/README.md`), `manage-templates` |
-| `## Agenda` | `create-agenda` |
-| `## Sessions` | `create-session` (without params — asked in chat; only once `## Didactics` → `__Session Types:__` exist, before that `create-didactics`; when `Agenda required: yes` only once `## Agenda` is saved, before that `create-agenda`), `build-session?number={n}` for the next unit without skeleton once one unit has been worked out together and approved ("let it be prepared after a short sketch", translated — `tasks/update-dashboard.md` → Rules), `validate-course` (once a unit has material) |
-| `### {n}. {title}` | **exactly one main action** by state: skeleton without material → `coauthor-materials?number={n}`; material written with open image entries → `artist/create-image?number={n}` (the image step, before the check); material draft → `validate-course {n}`; check: correction needed → ✏️ `quick-fix?number={n}&description=…` when every open point is a quick-fix case (one change each, no content decision), otherwise `coauthor-materials?number={n}` (✏️ revise); passed with concerns → `validate-course {n}` ("Resolve concerns", translated — without a change since the report it goes straight through the concerns, no new check: `tasks/validate-course.md` step 0); passed with ⏳ ("passed – still missing: …") → the command of the step that produces what is missing (e.g. `artist/create-image?number={n}` for photos, `artist/generate-image` for generated images); checked ✅ → 👁 `preview` of the material; after one session has been worked out together and approved, other sessions may use `build-session` as main action. **Learners' view:** once the material exists, the line also carries 👁 `preview?file={n}` ("How learners see it", translated, with the course's word for learners) as second link after ` · ` — never only inside the `<details>` block; when the main action is that preview (checked ✅), once. The overview's unit gets the same link as `view` (`tasks/update-dashboard.md`); a link to the unit's planning is named "See planning" (translated), never "To unit {n}". All further commands (`promote-session`, `build-session`, `validate-syntax`, `preview`, `quick-fix`, `learner/review-as-persona`) go only into the session's `<details><summary>Technical settings and more actions</summary>` block right after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`) |
+| `## Agenda` | computed: `create-agenda` |
+| `## Sessions` | computed: `create-session` (without params — before the Session Types `create-didactics`, before a required agenda `create-agenda`), `build-session?number={n}` for the next unit without skeleton once one unit has been worked out together and approved ("let it be prepared after a short sketch", translated), `validate-course` once a unit has material |
+| `### {n}. {title}` | computed: **exactly one main action** of that unit by its state (`specs/dashboard/actions.mjs` → `unitAction`; e.g. checked ✅ → 👁 `preview`, check: correction needed → ✏️ `coauthor-materials?number={n}` or, when every open point is one small change, ✏️ `quick-fix?number={n}&description=…` — that choice is yours). **Learners' view:** once the material exists, the line also carries 👁 `preview?file={n}` ("How learners see it", translated) as second link after ` · ` — never only inside the `<details>` block. A link to the unit's planning is named "See planning" (translated), never "To unit {n}". All further commands (`promote-session`, `build-session`, `validate-syntax`, `preview`, `quick-fix`, `learner/review-as-persona`) go only into the session's `<details><summary>Technical settings and more actions</summary>` block right after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`) |
 | `## Agents` | `configure-agent` (agent asked in chat), `create-learner-persona`, `learner/switch` (only if personas exist) |
 | `## Validation` | `validate-course` (only once every unit of the agenda or overview has material) |
 | `## Publishing` | `development/create-project` (first publication, only if the publishing gate is PASS), `development/update-project` (once `__State:__` is published; same gate) |

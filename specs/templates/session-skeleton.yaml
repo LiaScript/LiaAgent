@@ -11,18 +11,13 @@ template:
       overview: >-
         Directly below `## Sessions`, in this order:
         (1) a visible status list in the course language, one numbered line per unit in session order,
-        `{n}. {title} – {status}` with status "planning sketch ✅ · material open" (the fixed word for skeleton, `data/chat-wording.md` → Plain language), "material written · check open"
-        ("material written · images missing" while image spots are open and none is inserted yet, `tasks/create-image.md` → Image spots;
-        "material written · images {n} of {m}" once at least one of the m entries is inserted and others are still open — the count is
-        part of the status word, so a partial state stays visible; never "ready" or
-        "finished" before a check — a language pack lists these under `terms`),
-        "check: correction needed ({n})" (never a grade word such as "failed"; {n} as in the report's outcome),
-        "passed with concerns – your decision needed", "passed – still missing: {what}" or "checked ✅" — once a
-        report exists, the same words as its outcome line (`templates/session-validation.yaml` → `outcome_words`);
-        after changes made after the check "{outcome} – {n} point(s) changed since – short re-check open", where a
-        FAIL outcome counts the points still open: "check: correction needed: {open} of {n} points open" (one wording
-        per state in status line, Notes cell and `statusLabel`, never a second phrase such as "revised"; translated;
-        other open state such as "images {n} of {m}" follows after " – ");
+        `{n}. {title} – {status}`. The status carries the same words as the unit's Notes cell and the overview's
+        `statusLabel`; `write-dashboard.mjs` writes all three after every task (`specs/dashboard/journal-model.mjs`
+        → `statusText`, with the words of the language pack's `terms`): before a check from the planning sketch
+        ("planning sketch ✅ · material open", the fixed word for skeleton, `data/chat-wording.md` → Plain language),
+        the material and the image entries; once a report exists, its outcome line (`templates/session-validation.yaml`
+        → `outcome_words`) — never "ready" or "finished" before a check. A task that creates a unit writes its line
+        with the sketch status; other tasks leave the status to the script;
         (2) `<details><summary>{"Technical overview", translated}</summary>`, then `<!-- data-type="none" -->`
         and the table `| # | Title | Type | Method | Skeleton | Material | Done | Notes |` (the Method
         column only if `__Default Session Method:__` is not `none`), then `</details>`.
@@ -30,7 +25,7 @@ template:
         whichever task first writes it — instructor approval does not change it); Done ✅ = the latest
         `#### Validation Report` says `Result: PASS` (not "with concerns") with no open ⏳ item — set and
         reset by `:validate-course` in session and course mode alike.
-        Every task that changes a cell of the table rewrites that unit's status line in the same write,
+        `write-dashboard.mjs` rewrites every unit's status line and Notes cell from the table and the report,
         so list and table never disagree.
       entries: "Session skeletons as `### {{number}}. {{title}}` subsections below the overview"
       entry_order: >-

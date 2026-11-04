@@ -258,8 +258,12 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - Die Datei hat 25 KB statt 31 KB auf `main` (316 statt 405 Zeilen).
 - `check-specs.mjs`: 13 festgehaltene Sätze entfernt, deren Regeln jetzt die Tests in `check.mjs` absichern; 5 neue Sätze halten fest, dass die Task diese Arbeit an das Skript abgibt.
 
+**Weitere Dateien gekürzt (2026-11-04):**
+- `data/journal-links.md` (Regelblatt, das 28 Tasks lesen): Hauptaktion nach einer Prüfung, Zeilen für `## Sessions` und `### {n}. {title}` verweisen auf das Skript; die Zeilen der Kernabschnitte sind als „computed“ markiert. 9,2 → 8,2 KB.
+- `templates/session-skeleton.yaml`: Die Aufzählung der Statuswörter ist ein Verweis auf `statusText`. 8,0 → 7,4 KB.
+- `templates/project-dashboard.yaml`: Felder, die das Skript setzt, tragen „(computed)“.
+
 **Offen:**
-- Dieselben Regeln stehen noch in anderen Dateien, vor allem in `data/journal-links.md` (Zeile für `### {n}. {title}`), `templates/session-skeleton.yaml` (Statusliste) und `templates/project-dashboard.yaml`. Dort lässt sich ebenso kürzen.
 - Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie jetzt einmal am Bericht, nicht mehr je Kopie (Test 3: 9 → 3 Warnungen).
 - Aktionszeilen von Gestaltung, Vorlagen, Assistenten, Prüfung, Veröffentlichung und Notizen.
 - Kursprozess, Stichpunkte für offene Punkte.
