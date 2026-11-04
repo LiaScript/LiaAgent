@@ -1886,3 +1886,75 @@ test("write-dashboard derives before writing and says what it set; --no-derive w
     assert.match(check.stdout, /units\[1\]\.state: "draft" → "review"/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ── One wording per state: status line, Notes cell and statusLabel come from one function ──
+import { statusText, patchSessions, englishTerms } from "./journal-model.mjs";
+
+test("the status wording follows sketch, material, images and – once checked – the report's outcome line", () => {
+  const unit = (facts = {}) => ({ n: "1", heading: { title: "T" }, material: true, done: false, report: null, images: { total: 0, placed: 0, open: 0 }, ...facts });
+  const report = (facts = {}) => ({ result: "PASS", outcome: "passed (2026-11-01)", changedSince: 0, ...facts });
+  const t = englishTerms;
+  assert.equal(statusText(unit({ heading: null, material: false }), t), null);
+  assert.equal(statusText(unit({ material: false }), t), "planning sketch ✅ · material open");
+  assert.equal(statusText(unit(), t), "material written · check open");
+  assert.equal(statusText(unit({ images: { total: 3, placed: 0, open: 3 } }), t), "material written · images missing");
+  assert.equal(statusText(unit({ images: { total: 3, placed: 1, open: 2 } }), t), "material written · images 1 of 3");
+  assert.equal(statusText(unit({ report: report({ result: "FAIL", outcome: "correction needed (2) (2026-11-01)" }) }), t), "check: correction needed (2)", "the date goes, \"check:\" comes before a FAIL");
+  assert.equal(statusText(unit({ report: report({ result: "FAIL", outcome: "check: correction needed (2) (01.11.2026)" }) }), t), "check: correction needed (2)", "never twice");
+  assert.equal(statusText(unit({ report: report({ outcome: "passed – still missing: 1 photo (2026-11-01)" }), images: { total: 2, placed: 1, open: 1 } }), t), "passed – still missing: 1 photo – images 1 of 2");
+  assert.equal(statusText(unit({ done: true, report: report() }), t), "checked ✅");
+  assert.equal(statusText(unit({ done: true, report: report({ outcome: "passed (2026-11-01) – 1 point changed since – short re-check open", changedSince: 1 }) }), t), "passed – 1 point changed since – short re-check open");
+  const de = JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8")).terms;
+  assert.equal(statusText(unit({ material: false }), { ...englishTerms, ...de }), "Planungsskizze ✅ · Material offen");
+  assert.equal(statusText(unit({ report: report({ result: "FAIL", outcome: "Korrektur nötig (3) (23.10.2026)" }) }), { ...englishTerms, ...de }), "Prüfung: Korrektur nötig (3)");
+});
+
+test("patchSessions rewrites status lines and Notes cells only, never a numbered line in a comment or a subsection", () => {
+  const source = `## Sessions – Lessons
+
+<!--- template:
+1. {{activity}}
+--->
+
+1. Halves – revised – check open
+2. Comparing – planning sketch ✅ · material open
+
+<details><summary>Technical overview</summary>
+
+| # | Title | Type | Method | Skeleton | Material | Done | Notes |
+|---|-------|------|--------|----------|----------|------|-------|
+| 1 | Halves | explore | none | ✅ | ✅ | ❌ | revised; check open |
+| 2 | Comparing | explore | none | ✅ | ❌ | ❌ | planning sketch ✅ · material open |
+
+</details>
+
+### 1. Halves
+
+1. An activity
+
+## Notes Backup
+`;
+  const { source: patched, changes } = patchSessions(source, [{ n: "1", title: "Halves", status: "check: correction needed (2)" }, { n: "2", title: "Comparing", status: "planning sketch ✅ · material open" }]);
+  assert.match(patched, /^1\. Halves – check: correction needed \(2\)$/m);
+  assert.match(patched, /^\| 1 \| Halves \| explore \| none \| ✅ \| ✅ \| ❌ \| check: correction needed \(2\) \|$/m);
+  assert.match(patched, /^1\. \{\{activity\}\}$/m, "the comment stays");
+  assert.match(patched, /^1\. An activity$/m, "the subsection stays");
+  assert.equal(changes.length, 2, "unit 2 is already right");
+});
+
+test("write-dashboard writes the status lines and Notes cells in the same write as the block", () => {
+  const dir = mkdtempSync(join(tmpdir(), "derive-status-"));
+  try {
+    const journalFile = join(dir, "journal.md");
+    const draft = join(dir, "draft.json");
+    writeFileSync(journalFile, deriveJournal(deriveData(), { report: failReport }).replace("1. Halves and quarters – check: correction needed (2) – 1 point changed since – short re-check open – images 1 of 2", "1. Halves and quarters – revised – check open"));
+    writeFileSync(draft, JSON.stringify(deriveData()));
+    const run = spawnSync(process.execPath, [fileURLToPath(new URL("./write-dashboard.mjs", import.meta.url)), draft, journalFile], { encoding: "utf8", cwd: dir });
+    assert.match(run.stdout, /## Sessions status line 1: /);
+    const text = readFileSync(journalFile, "utf8");
+    assert.match(text, /^1\. Halves and quarters – check: correction needed \(2\) – 1 point changed since – short re-check open – images 1 of 2$/m);
+    assert.match(text, /\| ✅ \| ✅ \| ❌ \| check: correction needed \(2\) – 1 point changed since – short re-check open – images 1 of 2 \|/);
+    const check = spawnSync(process.execPath, [fileURLToPath(new URL("./derive-dashboard.mjs", import.meta.url)), "--check", journalFile], { encoding: "utf8", cwd: dir });
+    assert.equal(check.status, 0, check.stdout);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

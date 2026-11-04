@@ -231,8 +231,14 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - `write-dashboard.mjs` wendet das vor jedem Schreiben an und listet, was es gesetzt hat (`--no-derive` schaltet das ab).
 - Getestet in `check.mjs` (6 neue Tests) und an den Journalen aus Test 1–3.
 
+**Nr. 3 (2026-11-04):**
+- `statusText()` in `journal-model.mjs` bildet den einen Wortlaut je Einheit. Vor einer Prüfung folgt er aus Planungsskizze, Material und Bild-Einträgen (Wörter aus `terms`), danach aus der Ergebniszeile des Prüfberichts.
+- `write-dashboard.mjs` schreibt ihn im selben Schreibvorgang in `statusLabel`, die Statuszeile und die Notizzelle.
+- Neue Wörter im Sprachpaket: `skeletonOnly`, `checked`.
+- An den Journalen aus Test 1–3 sinken Fehler und Warnungen, es kommen keine neuen hinzu (Test 3: 15 → 11 Warnungen).
+
 **Offen:**
-- Nr. 3: Statuszeile, Notizzelle und `statusLabel` aus `terms` berechnen. Bisher übernimmt `statusLabel` die Statuszeile, die der Agent schreibt.
+- Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie. Nach der Korrektur folgen alle Kopien automatisch.
 - `next`/`explore`, Template-Schritt, Kursprozess, Stichpunkte für offene Punkte, Aktionszeilen, Einzeiler unter `## Sessions`.
 - `update-dashboard.md` kürzen. Dafür müssen die festgehaltenen Sätze in `check-specs.mjs` mitgeändert werden.
 - `validate-journal.mjs` auf `journal-model.mjs` umstellen, damit es nur noch einen Leser gibt.

@@ -343,6 +343,8 @@
  },
  "terms": {
   "skeleton": "Planungsskizze",
+  "skeletonOnly": "Planungsskizze ✅ · Material offen",
+  "checked": "geprüft ✅",
   "writingRules": "Regeln für das Schreiben des Materials",
   "materialWritten": "Material geschrieben · Prüfung offen",
   "imagesMissing": "Material geschrieben · Bilder fehlen",

@@ -2,6 +2,8 @@
 // Derived (tasks/update-dashboard.md steps 2–4, 8): the unit list (agenda rows and subsections), each unit's
 // `title`, `state`, `href`, `view`, `usable` and `statusLabel`, the state of its image step, process steps
 // for units that have none yet, the section `links`, and the date in `footer` (only when something changed).
+// The same status wording also goes into ## Sessions: each unit's status line and its Notes cell
+// (journal-model.mjs → statusText; the check report's outcome line is its source once a check ran).
 // Untouched: every text the agent writes – subtitle, summaries, why/result/next of steps, next, explore,
 // decisions, plan, notice – and the global course process.
 //
@@ -14,7 +16,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { readJournal, usableState, loadPacks, anchorOf } from "./journal-model.mjs";
+import { readJournal, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -82,6 +84,7 @@ export function derive(journal, input, { date } = {}) {
   // (a course without a separate agenda takes them from the outline).
   const known = new Set(journal.units.map(unit => unit.n));
   const units = [];
+  const sessions = [];
   for (const facts of journal.units) {
     const unit = existing.get(facts.n) ?? (() => {
       const title = facts.title ?? facts.agendaTitle ?? `${facts.n}`;
@@ -100,7 +103,9 @@ export function derive(journal, input, { date } = {}) {
     set(unit, "href", facts.heading?.anchor, `${path}.href`, facts.heading ? "anchor of the subsection" : "no subsection yet");
     set(unit, "view", facts.material ? { ...(unit.view?.label ? { label: unit.view.label } : {}), href: `agent:teaching/preview?file=${facts.n}`, command: `:preview ${facts.n}` } : undefined,
       `${path}.view`, facts.material ? "material exists (Material ✅)" : "no material yet");
-    if (facts.status) set(unit, "statusLabel", facts.status, `${path}.statusLabel`, "status line in ## Sessions");
+    const status = statusText(facts, terms);
+    if (status) set(unit, "statusLabel", status, `${path}.statusLabel`, facts.report?.outcome ? "outcome of the check report" : "planning sketch, material and image entries");
+    sessions.push({ n: facts.n, title: facts.title, status });
 
     // usable follows the report's line "usable with learners now"; keep the agent's short "missing" while the state holds.
     const reported = facts.report && usableState(facts.report.usableText);
@@ -152,7 +157,7 @@ export function derive(journal, input, { date } = {}) {
     const now = date ?? today(journal.language, old);
     if (old && old !== now) set(data, "footer", data.footer.replace(old, now), "footer", "date of the derived state");
   }
-  return { data, changes };
+  return { data, changes, sessions };
 }
 
 const shown = value => value === undefined ? "–" : typeof value === "string" ? `"${value.length > 70 ? `${value.slice(0, 69)}…` : value}"` : JSON.stringify(value).slice(0, 90);
@@ -160,9 +165,14 @@ export const describe = change => `- ${change.path}: ${shown(change.from)} → $
 
 // Derive a draft object against the journal file; used by write-dashboard.mjs before it writes.
 export function deriveForJournal(journalFile, draft, options) {
-  const journal = readJournal(readFileSync(journalFile, "utf8"), { projectDir: dirname(resolve(journalFile)), packs: loadPacks() });
-  return derive(journal, draft, options);
+  const source = readFileSync(journalFile, "utf8");
+  const journal = readJournal(source, { projectDir: dirname(resolve(journalFile)), packs: loadPacks() });
+  const derived = derive(journal, draft, options);
+  // The status lines and Notes cells of ## Sessions that differ from the derived wording.
+  const sessionChanges = patchSessions(source, derived.sessions).changes;
+  return { ...derived, changes: [...derived.changes, ...sessionChanges], sessionChanges };
 }
+export { patchSessions };
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
@@ -200,7 +210,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     mkdirSync(cache, { recursive: true });
     const out = draftFile ?? join(cache, "dashboard.json");
     writeFileSync(out, JSON.stringify(data, null, 2) + "\n");
-    const run = spawnSync(process.execPath, [resolve(here, "write-dashboard.mjs"), out, journalFile, "--no-derive"], { encoding: "utf8" });
+    const run = spawnSync(process.execPath, [resolve(here, "write-dashboard.mjs"), out, journalFile], { encoding: "utf8" });
     process.stdout.write(run.stdout);
     process.stderr.write(run.stderr);
     process.exit(run.status ?? 1);

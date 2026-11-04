@@ -176,7 +176,10 @@ Run this task automatically after any task that changes project state:
    from the journal (step 3, plus missing process steps of a unit, `links`,
    `unitsTitle`, `unitLabel` and the date in `footer`) and lists each one it
    changed — read that list: a text of yours that contradicts a changed state
-   needs rewriting. Then it checks the data, replaces the whole
+   needs rewriting. In the same write it gives each unit's status line and
+   Notes cell in `## Sessions` the same wording as `statusLabel` (from the
+   check report's outcome line once a check ran) — a wrong state word is
+   fixed in the report, never in these copies. Then it checks the data, replaces the whole
    block in one step and runs the validation of step 9; never edit the block
    field by field, never with shell heredocs or inline scripts.
    `node specs/dashboard/derive-dashboard.mjs --check` shows without writing which
@@ -251,7 +254,8 @@ Run this task automatically after any task that changes project state:
          and only if it is missing (step 8);
       5. the layout changes of `migrate-journal.mjs`, only after the instructor's
          "Update" (step 9);
-      6. the one-line note under `## Sessions`, which follows the state (Rules → "The one-line note under `## Sessions`").
+      6. the one-line note under `## Sessions`, which follows the state (Rules → "The one-line note under `## Sessions`");
+      7. each unit's status line and Notes cell in `## Sessions`, written by `write-dashboard.mjs` (step 8).
 11. Confirm the dashboard was updated only after step 9 passed, and name the next
     recommended command. If the MCP gate is open (`data/agent-links.md`), `goto` the
     Dashboard slide, check with `get_state`, and post the next action as an

@@ -19,6 +19,12 @@ export function loadPacks(dir = resolve(here, "..", "templates", "i18n")) {
 // The English state words (templates/session-validation.yaml → outcome_words); a pack overrides them.
 export const englishTerms = {
   skeleton: "planning sketch",
+  skeletonOnly: "planning sketch ✅ · material open",
+  materialWritten: "material written · check open",
+  imagesMissing: "material written · images missing",
+  imagesPartial: "material written · images {n} of {m}",
+  checkCorrection: "check: correction needed ({n})",
+  checked: "checked ✅",
   imageStep: "Insert images",
   passedMissing: "passed – still missing: {what}",
   recheckShort: "{n} point(s) changed since – short re-check open",
@@ -205,4 +211,64 @@ export function usableState(text, packs = loadPacks()) {
   // "no" and "limited" first: "yes, with limits" also starts with "yes".
   return [["no", "usableNo"], ["limited", "usableLimited"], ["yes", "usableYes"]]
     .find(([, key]) => prefixes(key).some(item => value.startsWith(item)))?.[0] ?? null;
+}
+
+const datedOutcome = new RegExp(`\\s*\\(${datePattern.source}\\)`, "g");
+const fill = (term, values) => String(term).replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match);
+// "material written · images {n} of {m}" → "images {n} of {m}": the part that follows another state.
+const tail = term => String(term).split(" · ").slice(1).join(" · ") || String(term);
+
+// The one wording of a unit's state (templates/session-skeleton.yaml → section_layout.overview): the status
+// line, the Notes cell and the overview's statusLabel all carry it. Before a check it follows from the
+// planning sketch, the material and the image entries; once a report exists, its outcome line is the
+// source (without its date), "check: " before a FAIL, open images after " – "; Done ✅ → "checked ✅".
+export function statusText(unit, terms) {
+  if (!unit.heading && !unit.material) return null;
+  if (!unit.material) return terms.skeletonOnly;
+  const { total, placed, open } = unit.images;
+  const report = unit.report;
+  if (!report?.outcome) return !open ? terms.materialWritten : placed ? fill(terms.imagesPartial, { n: placed, m: total }) : terms.imagesMissing;
+  if (unit.done && !report.changedSince && !open) return terms.checked;
+  const outcome = report.outcome.replace(datedOutcome, "").replace(/\s+/g, " ").trim();
+  const prefix = report.result === "FAIL" ? String(terms.checkCorrection).match(/^[^:{(]+:/)?.[0] : null;
+  const text = prefix && !outcome.toLowerCase().startsWith(prefix.toLowerCase()) ? `${prefix} ${outcome}` : outcome;
+  const images = open ? (placed ? fill(tail(terms.imagesPartial), { n: placed, m: total }) : tail(terms.imagesMissing)) : null;
+  return images ? `${text} – ${images}` : text;
+}
+
+// Writes the status of each unit into ## Sessions: its line "{n}. {title} – {status}" in the status list and
+// its Notes cell in the technical table. Only lines and cells that exist change; returns the new text and
+// one entry per changed line.
+export function patchSessions(source, units) {
+  const lines = source.split("\n");
+  const start = lines.findIndex(line => /^## Sessions\b/.test(line));
+  if (start < 0) return { source, changes: [] };
+  let end = lines.findIndex((line, index) => index > start && /^(## |### )/.test(line));
+  if (end < 0) end = lines.length;
+  const changes = [];
+  let comment = false, details = false, header = null;
+  for (let index = start + 1; index < end; index++) {
+    const line = lines[index];
+    if (comment || /^\s*<!--/.test(line)) { comment = !line.includes("-->") ; continue; }
+    if (/<details>/.test(line)) details = true;
+    if (/<\/details>/.test(line)) { details = false; continue; }
+    const tableHeader = line.match(/^\|\s*#\s*\|(.*)\|\s*$/);
+    if (tableHeader) { header = tableHeader[1].split("|").map(cell => cell.trim()); continue; }
+    const row = line.match(/^\|\s*(\d+)\s*\|(.*)\|\s*$/);
+    const item = !details && line.match(/^(\d+)\.\s+(.+?)\s*$/);
+    const unit = units.find(entry => entry.n === (row?.[1] ?? item?.[1]));
+    if (!unit?.status) continue;
+    let next = line;
+    if (row && header && header.length >= 6) {
+      const cells = row[2].split("|").map(cell => cell.trim());
+      const at = header.indexOf("Notes") >= 0 ? header.indexOf("Notes") : header.length - 1;
+      cells[at] = unit.status;
+      next = `| ${row[1]} | ${cells.join(" | ")} |`;
+    } else if (item && unit.title) next = `${item[1]}. ${unit.title} – ${unit.status}`;
+    if (next !== line) {
+      changes.push({ path: `## Sessions ${row ? `Notes cell ${row[1]}` : `status line ${item[1]}`}`, from: row ? line.split("|").at(-2)?.trim() : item[2], to: unit.status, why: "one wording per state" });
+      lines[index] = next;
+    }
+  }
+  return { source: lines.join("\n"), changes };
 }
