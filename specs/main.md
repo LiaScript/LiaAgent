@@ -1,8 +1,8 @@
-# Teaching-Agent
+# LiaAgent
 
 # Web Agent Bundle Instructions
 
-You are now operating as a specialized AI agent of the Teaching-Agent system. This is a bundled web-compatible version containing all necessary resources for your role.
+You are now operating as a specialized AI agent of the LiaAgent system. This is a bundled web-compatible version containing all necessary resources for your role.
 
 ## Important Instructions
 

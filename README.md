@@ -1,8 +1,8 @@
-# Teaching-Agent 🎓
+# LiaAgent 🎓
 
 > A BMad-Method-powered, multi-agent AI assistant for structured course development with [LiaScript](https://liascript.github.io)
 
-**Teaching-Agent** helps educators design, structure, and author complete courses through guided, iterative workflows — from initial concept to published, interactive materials. It coordinates four specialized agents (teaching, visual design, learner review, and publishing) around a single project file, `journal.md`, that holds the entire course state.
+**LiaAgent** helps educators design, structure, and author complete courses through guided, iterative workflows — from initial concept to published, interactive materials. It coordinates four specialized agents (teaching, visual design, learner review, and publishing) around a single project file, `journal.md`, that holds the entire course state.
 
 It is **editor-agnostic**: the same specs build into configurations for Claude Code, GitHub Copilot, OpenAI Codex, Cursor, Windsurf, and any web chat.
 
@@ -15,7 +15,7 @@ It is **editor-agnostic**: the same specs build into configurations for Claude C
 The repository has **two layers**:
 
 1. **A sample course — "NIS2 Ready."** A complete, self-paced course (six units) on the EU NIS2 Directive that works as a real training resource on its own. NIS2 was chosen as a fitting example because it concerns public administration and critical infrastructure, so the subject matter is directly relevant to the sectors LiaScript courses are often written for.
-2. **The tooling behind it.** A separate LiaScript document — [`about-liascript.md`](./about-liascript.md) ("Behind the Scenes") — walks through the tools used to build the course — **LiaScript** itself, the **Teaching-Agent** multi-agent system, and the **`liaex` exporter** — and refers to concrete features in the course as examples. Written from scratch for readers new to all three, it documents *how* an interactive, accessible, standards-based Open Educational Resource is produced.
+2. **The tooling behind it.** A separate LiaScript document — [`about-liascript.md`](./about-liascript.md) ("Behind the Scenes") — walks through the tools used to build the course — **LiaScript** itself, the **LiaAgent** multi-agent system, and the **`liaex` exporter** — and refers to concrete features in the course as examples. Written from scratch for readers new to all three, it documents *how* an interactive, accessible, standards-based Open Educational Resource is produced.
 
 In short: the course is the example, and the tooling document explains how it was made — with open, standards-based, vendor-independent tools.
 
@@ -28,7 +28,7 @@ Taken verbatim from the course definition (`journal.md` → `## Outline` → *Ta
 Accordingly, the material is written at a **beginner** level: every legal or technical term is paraphrased in plain language before it is named, and no prior technical or legal background is assumed.
 
 > [!NOTE]
-> The rest of this README describes the **generic Teaching-Agent tooling** that produced the course. For the current state and contents of the NIS2 course itself, see [`journal.md`](./journal.md). For a gentle, from-scratch tour of the tools — best opened in the [LiaScript viewer](https://liascript.github.io/) rather than read as raw text, since it is itself interactive — see [`about-liascript.md`](./about-liascript.md).
+> The rest of this README describes the **generic LiaAgent tooling** that produced the course. For the current state and contents of the NIS2 course itself, see [`journal.md`](./journal.md). For a gentle, from-scratch tour of the tools — best opened in the [LiaScript viewer](https://liascript.github.io/) rather than read as raw text, since it is itself interactive — see [`about-liascript.md`](./about-liascript.md).
 
 ---
 
@@ -51,7 +51,7 @@ Accordingly, the material is written at a **beginner** level: every legal or tec
 
 ## How It Works
 
-Teaching-Agent follows **Spec-Driven Development**: you define *what* the course should achieve before writing any content.
+LiaAgent follows **Spec-Driven Development**: you define *what* the course should achieve before writing any content.
 
 1. **Define first, write later** — start with learning objectives, audience, and scope
 2. **Design didactics deliberately** — choose teaching methods, style, and persona *before* materials
@@ -161,8 +161,8 @@ Publishing (`:create-project`, `:update-project`) is **blocked until** `:validat
 ### 1. Get the project
 
 ```bash
-git clone <your-repo-url> teaching-agent
-cd teaching-agent
+git clone <your-repo-url> LiaAgent
+cd LiaAgent
 ```
 
 ### 2. Build the agent configuration for your editor

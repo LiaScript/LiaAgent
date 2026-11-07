@@ -1,5 +1,5 @@
 <!--
-author: Teaching-Agent
+author: LiaAgent
 version: 0.0.1
 language: de
 narrator: Deutsch Female
@@ -369,7 +369,7 @@ Zusätzliche Aktionen erscheinen aufklappbar. Eine leere Liste erzeugt keinen un
 
 ## Daten und Grenzen
 
-1. Die Fachanwendung liefert Zustände, Gründe und zulässige Aktionen. Die Bibliothek kennt keine Teaching-Agent-Voraussetzungen oder Veröffentlichungsfreigaben.
+1. Die Fachanwendung liefert Zustände, Gründe und zulässige Aktionen. Die Bibliothek kennt keine LiaAgent-Voraussetzungen oder Veröffentlichungsfreigaben.
 2. `Dashboard.View` hält Zähler, Fortschrittsanzeige und Auswahl konsistent. Unbekannte Zustände und doppelte Einheiten-IDs erzeugen einen sichtbaren Datenhinweis.
 3. Eine Auswahl verändert ausschließlich die Ansicht. Es gibt keine Schreibzugriffe auf Journal, Materialien oder Lernfortschritt.
 4. Lokale CSS-Variablen, responsives Layout und ein dunkles Farbschema sind enthalten. Eine Anpassung an manuell gewählte LiaScript-Themes ist ein späterer Schritt.

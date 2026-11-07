@@ -80,4 +80,4 @@ Use this task when:
 - `## Templates` is documentation and governance. It does not replace the actual LiaScript `import:` metadata line.
 - Keep the `## Course Context` conventions short. Put detailed examples and usage rules in `## Templates`.
 - Do not remove a template import unless no material or project section uses its macros anymore.
-- Never write to `specs/catalog/templates.json`; it is replaced on every update of the Teaching-Agent. Project entries go into `templates.local.json` (status `found` or `own`, never `checked`).
+- Never write to `specs/catalog/templates.json`; it is replaced on every update of LiaAgent. Project entries go into `templates.local.json` (status `found` or `own`, never `checked`).

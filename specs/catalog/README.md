@@ -1,5 +1,5 @@
 <!--
-author: Teaching-Agent
+author: LiaAgent
 version: 0.1.0
 language: en
 mode: Textbook

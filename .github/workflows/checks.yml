@@ -1,6 +1,6 @@
 name: Spec checks
 
-# Runs the guards of the Teaching-Agent specs on every push and pull request:
+# Runs the guards of the LiaAgent specs on every push and pull request:
 # key rules of the specs, the dashboard library and scripts, the empty journal,
 # and whether the generated agent files are up to date with specs/build.py.
 on:

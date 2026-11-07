@@ -1,4 +1,4 @@
-# Teaching-Agent
+# LiaAgent
 
 > 🎓 **Course Builder & Didactics Assistant** — Claude Code CLI
 > Claude Code reads files directly with its Read tool. When a command is invoked, **read the task file first**, then execute it.

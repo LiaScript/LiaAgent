@@ -1,4 +1,4 @@
-# Teaching-Agent
+# LiaAgent
 
 > 🎓 **Course Builder & Didactics Assistant** — OpenAI Codex CLI
 > Codex CLI has filesystem access. When a command is invoked, **read the task file first**, then execute it.

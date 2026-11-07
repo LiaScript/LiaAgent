@@ -1,5 +1,5 @@
 """
-Build script for Teaching-Agent configs.
+Build script for LiaAgent configs.
 
 Usage:
   python specs/build.py              # build all targets
@@ -201,7 +201,7 @@ def _nav_content(target_key: str, target: dict, agent: dict) -> str:
     coord = agent.get("agent_coordination", {})
 
     lines = [
-        "# Teaching-Agent",
+        "# LiaAgent",
         "",
         f"> 🎓 **Course Builder & Didactics Assistant** — {target['label']}",
         f"> {target.get('tool_note', '')}",

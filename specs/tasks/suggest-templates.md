@@ -140,7 +140,7 @@ JavaScript, charts, animations) are not proposed here.
 ## Notes
 
 - Checked means listed in the shared catalog with its check date: never present a `found` or `own` entry as checked, also not after reading its README.
-- The shared list is read-only: never write to `specs/catalog/templates.json`; it is replaced on every update of the Teaching-Agent. Project entries go into `templates.local.json`.
+- The shared list is read-only: never write to `specs/catalog/templates.json`; it is replaced on every update of LiaAgent. Project entries go into `templates.local.json`.
 - `## Templates` records only what the course uses: candidates and finds that were not adopted are not written there.
 - Catalog data is English; explain the templates in the course language (in German „Vorlage“, never „Template“).
 - Web chat without shell or file access: suggestions only from the catalog in the bundle, without the online search — say so in one sentence.

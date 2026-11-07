@@ -1,4 +1,4 @@
-# Teaching-Agent
+# LiaAgent
 
 > 🎓 **Course Builder & Didactics Assistant** — Windsurf IDE
 > Windsurf reads this file at startup. When a command is invoked, read the task file from the filesystem.

@@ -1,4 +1,4 @@
-# Teaching-Agent
+# LiaAgent
 
 > 🎓 **Course Builder & Didactics Assistant** — Cursor IDE
 > Use `@file:specs/tasks/<name>.md` to add a task file to context when a command is invoked.

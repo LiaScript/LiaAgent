@@ -7,7 +7,7 @@ Publishes an own, already adopted LiaScript template (`__Source:__ lia-templates
 it: the folder `lia-templates/{id}/` stays in the course project and becomes a nested git repository of
 its own (ignored by the course repository), gets the topic `liascript-template` and a version tag, and the
 course imports it from that tag. Later changes are published as new tags. Optionally the entry is offered
-to the shared template list of the Teaching-Agent.
+to the shared template list of LiaAgent.
 
 Use this task when:
 - An own template was adopted (`:manage-templates {id}`, `__Source:__ lia-templates/{id}/`) and the instructor wants to share it or use it in several projects
@@ -29,7 +29,7 @@ Use this task when:
 - `import:` lines switched to `https://raw.githubusercontent.com/{owner}/{repo}/{tag}/README.md` in the journal header, in `## Templates` and in **every** material that imports the template; `__Source:__ https://github.com/{owner}/{repo}@{tag}`
 - `templates.local.json`: the entry `{id}` (`status: "own"`) switched from the local import to the https import plus `repo` and `demo`
 - Course `.gitignore`: `lia-templates/{id}/`
-- Optional: a prepared pull request to the Teaching-Agent repository for the shared list
+- Optional: a prepared pull request to the LiaAgent repository for the shared list
 - `journal.md` → `## Dashboard` updated
 
 ## Steps
@@ -89,17 +89,17 @@ Use this task when:
    If the entry is missing, create it (and the file as `{ "version": 1, "templates": [ … ] }`) with `id`,
    `name`, `description` (English), `subjects` and `audiences` (from `## Course Context`), `macros` (from the
    README) and the fields above. Never `status: "checked"` in `templates.local.json`.
-5. **Shared list?** Ask whether the entry may be offered to the shared list of the Teaching-Agent: 🎛️ "Yes,
+5. **Shared list?** Ask whether the entry may be offered to the shared list of LiaAgent: 🎛️ "Yes,
    offer it" / "No" (translated). "No" → `shared: "declined"`. "Yes" → prepare a pull request to the
-   Teaching-Agent repository (`https://github.com/LiaScript/teaching-agent`) with its **own** terminal
+   LiaAgent repository (`https://github.com/LiaScript/LiaAgent`) with its **own** terminal
    confirmation: show the entry for the shared list — the project entry without `shared`, with
    `status: "checked"` and `checked` = the date of the author's own check (`node specs/dashboard/now.mjs`),
    so that the shared list's check passes — and the pull request text, which asks the maintainers to
    re-verify the import, the macros and the demo against the template's README before merging; then the
-   commands, each on its own: `gh repo fork LiaScript/teaching-agent --clone=false`,
-   `gh repo clone {user}/teaching-agent .cache/catalog-pr`, a branch `add-template-{id}` there, the entry
+   commands, each on its own: `gh repo fork LiaScript/LiaAgent --clone=false`,
+   `gh repo clone {user}/LiaAgent .cache/catalog-pr`, a branch `add-template-{id}` there, the entry
    added to `.cache/catalog-pr/specs/catalog/templates.json`, commit, push,
-   `gh pr create --repo LiaScript/teaching-agent --head {user}:add-template-{id}`, and afterwards (also
+   `gh pr create --repo LiaScript/LiaAgent --head {user}:add-template-{id}`, and afterwards (also
    after an error) `rm -r .cache/catalog-pr` — the clone is never left in the course project. Before the
    clone, the course `.gitignore` gets `.cache/` if it lacks it, so the clone can never become a gitlink of
    the course repository (part of this plan). Pull request opened →
@@ -127,4 +127,4 @@ Use this task when:
 
 - This task writes only: the files and the git repository in `lia-templates/{id}/` (documentation, `version:`), the `import:` lines of the journal header, of the entry in `## Templates` (`__Import:__`, `__Header entry:__`) and of the materials, the entry's `__Source:__`, the entry `{id}` in `templates.local.json` (`import`, `repo`, `demo`, `shared`), the course `.gitignore` (`lia-templates/{id}/`, `.cache/`), the temporary clone in `.cache/catalog-pr/` of step 5 (removed after the pull request), and `journal.md` → `## Dashboard` (through `tasks/update-dashboard.md`).
 - Every git and `gh` command runs only after the confirmation in the terminal, each on its own, inside the project.
-- Never write to `specs/catalog/templates.json` of this project; it is replaced on every update of the Teaching-Agent.
+- Never write to `specs/catalog/templates.json` of this project; it is replaced on every update of LiaAgent.
