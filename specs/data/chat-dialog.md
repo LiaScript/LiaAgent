@@ -14,10 +14,13 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   lines of the narrow chat) — also the whole version after a change — goes out as 2–3
   messages (content · distribution and time · open points); the form comes as
   a separate last message. If a form ends up more than a screen above after a
-  side question, post it again (it replaces the old one).
+  side question, post it again (it replaces the old one — close that one first,
+  Superseded forms).
 - **Superseded forms:** when you post a revised proposal, say that the previous
-  version is superseded (a new form closes the old one; with `close` pass a
-  `reason`). If an `answer` event refers to an older `ask` than your
+  version is superseded. Before sending a form that replaces an open one, close
+  the old one with `chat` `close: true` and a `reason` ("Replaced – new form
+  below ↓", translated; German „Ersetzt – neues Formular unten ↓“) — the preview
+  does not always close it by itself. If an `answer` event refers to an older `ask` than your
   latest one, do not act on it; ask for an answer in the new form.
 - **Reuse what is known:** in every interview (also the fast track), prefill
   what the instructor already said in this chat or the journal and ask only for
@@ -43,9 +46,21 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   page", translated) and what still runs ("only the overview is being
   updated"), so the status line below it does not read as "not saved yet".
   After a check the ✅ message carries the outcome and the line "usable with
-  learners now" in one line each and links the report; details follow after
+  learners now" as two paragraphs (blank line between, a single line break
+  becomes a space) and links the report; details follow after
   the overview update — never "I'll explain the result afterwards".
-  Never leave a status line standing for more than a minute without a follow-up — except a status that says you are waiting for the instructor.
+  Never leave a status line standing for more than a minute without a follow-up. While you wait for the instructor (an open form, a question) no status stands at all: the form or the question is the last message — a waiting status makes the chat say "still working" after a minute.
+- **Overview texts you change:** the overview is kept current without a question, but never silently.
+  When a chat answer admits that an overview text is wrong ("you are right", translated), say in that
+  answer that it will be corrected at the next overview write. The message before a write names every
+  overview text it changes; a change of meaning (a step becomes required, a point disappears) is a
+  question to the instructor, not an update. A yes/no decision gets buttons (`chat` with `inputs`), never
+  "just tell me whether I should". "✅ Saved" follows right after the write; a second question of the same
+  message comes as its own message afterwards.
+- **A new writing rule for all units** (saved in the rules for writing the material): units that already
+  have material were written without it. After the save, offer once to check them against the new rule
+  (one form: each such unit with "check briefly" – `:quick-fix {n}` – or "leave it"), and name the
+  offer in the save summary.
 - **Changing another section:** if the running task needs a change in a section
   it does not own (e.g. an objective in the outline while planning the lesson
   design), show the new wording and give it its own choice **in the first save
@@ -67,8 +82,12 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   all-or-nothing line replacer, not only for languages: a pair may replace a
   block of consecutive lines that occurs once, write several lines, and
   `"append"` adds lines at the end of the file); action lines and
-  one-line notes go into the same pass. Target for "own section + two foreign
-  sections + overview": at most 5 writes. The same for material files: several
+  one-line notes go into the same pass. A few lines in a foreign section
+  (didactics, writing rules) go through the line replacer, together with the
+  new lines of the own section in **one** map where possible — never rewrite a
+  whole foreign section for them. Target for "own section + two foreign
+  sections + overview": 2 writes (the sections in one map, then the overview
+  through `write-dashboard.mjs`), never more than 5. The same for material files: several
   line changes of one correction go into one write — one map for
   `node specs/dashboard/localize-journal.mjs <map.json> <material file>`, or the
   whole file written once after reading it — never one edit per line (every

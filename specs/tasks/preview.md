@@ -39,7 +39,8 @@ Dashboard, in the session action lines and in the chat offers of every agent
      when the target cannot be confirmed and is not the overview
      (`data/chat-wording.md` → Point, don't describe).
    - Otherwise post one chat line with a link back, named after the active agent:
-     `[👁 Back to the journal](agent:{active agent}/preview) `:preview``
+     `[👁 Back to the journal](agent:{active agent}/preview)` — the button link
+     only, no command in code font (`data/chat-wording.md` → Commands stay off the chat)
      (e.g. `agent:artist/preview` while the Artist works).
 4. **MCP gate closed:** tell the instructor how to open the file:
    `liadev --live -i {file}` (LiaScript DevServer), or the VS Code LiaScript

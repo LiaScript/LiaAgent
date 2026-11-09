@@ -10,14 +10,28 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   Use the course's own words (`## Course Context` → Terminology) instead of
   workflow jargon (journal, slug, persona, template, session, skeleton). On
   first mention describe a skeleton by its result ("a planning sketch of the
-  unit – contents, tasks, self-check, no text yet", translated); everywhere
+  unit – the plan of the unit's page, step by step: contents, tasks,
+  self-check, no text yet; learners never see it", translated); everywhere
   else — status list, overview, chat — use the one fixed word "planning
   sketch" (translated; a language pack lists it under `terms.skeleton`).
   Call the Coauthor subsection by its visible name only ("rules for writing
-  the material", translated) — never a compound of your own. One step has
+  the material", translated) — never a compound of your own; the first time
+  it appears in the chat, explain it in one plain sentence ("the voice and
+  wording rules I follow when I write the material", translated). Never name
+  a rule by its number or a field by its English label ("rule 9",
+  "Project-Specific Rules", "Coauthor"): quote the rule's words ("your rule
+  that every unit starts with the headphones hint", translated) — also in form
+  options and buttons. Another service or website gets a half sentence on
+  first mention ("Wikimedia Commons, a collection of free photos",
+  translated); "licence" is said as what it allows ("may be used if the
+  photographer is named", translated). One step has
   one label per unit everywhere: the step, `next`, the unit's action line and
-  chat offers (`tasks/update-dashboard.md` → `next` names one step).
-- **State words from the language pack:** with a language pack for the course language (`specs/templates/i18n/<code>.json`), its `terms` are the wording of every state — word for word in reports, status lines, the overview and the chat; never a synonym.
+  chat offers (`tasks/update-dashboard.md` → `next` names one step). The link to
+  the material in the chat carries the overview's button word for it (a
+  language pack: `terms.viewMaterial`), never a wording of your own.
+- **State words from the language pack:** with a language pack for the course language (`specs/templates/i18n/<code>.json`), its `terms` are the wording of every state — word for word in reports, status lines, the overview and the chat; never a synonym. The same holds for the overview's "usable with learners" line: quote it ("usable with learners: yes, with limits", translated), never a short form of your own such as "usable with restrictions".
+- **Grammar of state words:** a word the pack has only in the plural ("concerns", German „Bedenken“) is never made singular; one of them is "one point" (German „ein Punkt“). Counts of pictures use the image entries of the unit ("10 pictures, 9 of them in place"), never the places the material shows them – a picture shown twice is one picture.
+- **Commands stay off the chat:** never write a command (`:preview 1`) or code font for it in a chat message; offer the button link with its button word instead (`data/agent-links.md`).
 - **Name things as the overview does:** use exactly the words the page shows
   (read them with `read_section` from the Dashboard slide) — never JSON field
   names and never your own synonyms. The other assistants are named with their
@@ -85,7 +99,12 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   bring the instructor there. The reliable way is an anchor link in the chat
   message, `[label](#anchor)` (anchor rule: `tasks/update-dashboard.md`; never to a
   heading inside a `<section>` block — link its `##` heading and name the
-  subsection) — the course page resolves it itself. `goto` by heading (`section: "## Dashboard"`,
+  subsection) — the course page resolves it itself, **in the file it shows**:
+  while a material file is shown (`get_state` names another file than
+  `journal.md`, e.g. after "How learners see it"), a `#anchor` lands in that
+  file. Then first bring the journal back (`goto` with `file: "journal.md"`)
+  or send the button link `agent:teaching/preview` (default `journal.md`) instead of the
+  bare anchor. `goto` by heading (`section: "## Dashboard"`,
   with `file` for another course file) is allowed only for headings **before**
   the first `<section>` block that contains headings (the server's slide count
   is off after such blocks), never while `reload_pending` is set, and a page

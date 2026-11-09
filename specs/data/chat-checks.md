@@ -13,18 +13,29 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   a source, but is named so, never "read myself"), or *tried with answers*. A reference is listed only if its page itself
   was opened (in full, or as a named extract); a search summary is never a source. The rendered check is
   `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]` (on its own;
-  `--viewport` with the window size of the learners' device when the target group names one, e.g.
-  a tablet upright `--viewport 768x1024`; it prints slides, quizzes, read-aloud buttons, missing images
+  `--viewport` with the window size of the learners' device only when the target group states it in pixels; a device name alone
+  ("iPad") is no size – then run it without `--viewport`, which measures portrait and landscape
+  windows; it prints slides, quizzes, read-aloud buttons, missing images, fit on screen
   and errors) — if it cannot start, say so in one line. Claims about what learners see (buttons,
   feedback, solutions) count as *tried* only after a check that clicks.
   **Layout and devices:** a claim about what fits a screen or how a page looks
   on a device names the measured window from the check script's viewport
-  report ("measured at 810×1080 portrait", translated). Without such a
+  report ("measured at 810×1080 portrait", translated) and covers every window
+  it measured: when one window does not fit, the claim says so and takes the image
+  size from the script's warning — never "all questions fit" from one window. Without such a
   measurement say that it is not measured, ask the instructor to look at it on
   the learners' device, and add a preparation item. The check script opens a
   desktop browser window at the listed sizes — never call it "like a tablet"
   or name a device it did not run on. A missing warning is no proof that
-  something fits; never promise a fit before the change is measured.
+  something fits; never promise a fit before the change is measured. **Plain
+  words:** sizes in pixels stand only in the report's technical part; the chat,
+  the report's visible part and the overview say "a browser window of tablet
+  size, upright / sideways" (translated), an image size as a share of the
+  present one ("about two thirds as high"), computed once from the chosen value
+  against the measured one and then repeated in the same words, and scrolling as an order ("scroll
+  a little first, then all three pictures are visible together") — never "fits
+  once scrolled". A fit claim that turned out wrong is withdrawn in so many words
+  ("Earlier I wrote that all questions fit – that was only measured upright.").
   Statements about where learners' data goes depend on the publishing path
   (web page: stays in the browser; learning-platform package: results may go
   to the platform) — name the path, never state one as universal.

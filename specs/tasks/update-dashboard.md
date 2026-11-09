@@ -61,36 +61,59 @@ Run this task automatically after any task that changes project state:
    the list the script prints after the run:
    - the units (agenda rows and `### {n}. {title}` subsections), their `title`, `state`, `href` (the
      subsection's anchor), `view` (once the material exists), `usable` (the report's line "usable with
-     learners now") and `statusLabel`, and the same status wording in each unit's status line and Notes
+     learners now"), `approved` (the dated approval in the unit's decisions) and `statusLabel`, and the same status wording in each unit's status line and Notes
      cell in `## Sessions` — from the check report's outcome line once a check ran, so a wrong state word
      is fixed in the report, never in these copies;
-   - the image step's state (from the `#### Images` entries) and the steps of a unit that has none yet;
+   - the check step's state once the check passed and the instructor approved (`done`, also while own
+     photos are still to come — the unit then no longer holds the course back: `next` moves on to the next
+     unit, inserting the photo stays a ➕ card);
+   - the course steps that follow from the journal: building blocks while no template is chosen ("checked per
+     unit – none needed so far (k of N)", `done` once every unit's sketch says none), the course check after
+     the last unit (its label names the units approved so far), publishing by `Delivery` (see Rules);
+   - the image step's state (from the `#### Images` entries) and the steps of a unit that has none yet
+     (those of another unit, else the language pack's `unitSteps` — so the first agenda's units get
+     them too);
+   - `selected`: the course view (`""`) until the unit of `next` is begun, then that unit;
+   - `unitsNote`, the one-line note under `## Sessions`, shown above the units;
    - the command of `next`, the recommended unit `selected`, the action lines of step 10 and the "More
-     options" cards of the second way for the next unit, the template suggestion and a brief;
-   - `links`, `unitsTitle`, `unitLabel` and the date in `footer`.
+     options" cards of the second way for the next unit, the template suggestion and a brief, the
+     agenda card `alongside` the next button while templates are next and the required agenda is missing,
+     and the card "Also possible: suggest building blocks" (translated) alongside it while the selection in
+     `## Templates` is open and templates are not next;
+   - `links`, `unitsTitle`, `unitLabel` and `footer` (“As of {date}”).
    The rules it applies are tested code: `specs/dashboard/derive-dashboard.mjs` (unit state),
    `actions.mjs` (next action and action lines), `journal-model.mjs` (status wording). Its inputs are
    records of yours: the instructor's approval of a unit's material is a dated decision line written
    with the approval form (`tasks/quick-fix.md` → Approval after a review, `tasks/coauthor-materials.md`
    step 7) — a review with fixes alone is no approval; Done ✅ and the report are written by
    `:validate-course`.
-3. **Words stay yours.** Where the script finds your command right it keeps your `title`, `label`, `why`
-   and action-line words — also a ✏️ `quick-fix` with its description instead of revising, where every
-   open point is one small change (only you can judge that), and the command of a step that produces a
-   missing item that is not an image. Where it changes a command it takes the words of the language
-   pack (`templates/i18n/{lang}.json` → `actions`); without a pack it writes nothing and names the words
-   you write into the draft or the line — then run it again.
+3. **Words stay yours, button words come from the pack.** Where the script finds your command right it
+   keeps your `title` and `why` — also a ✏️ `quick-fix` with its description instead of revising, where
+   every open point is one small change (only you can judge that), and the command of a step that
+   produces a missing item that is not an image. Button words (`next.label`, the action lines) come from
+   the language pack (`templates/i18n/{lang}.json` → `actions`) whenever it has the action, so overview,
+   action lines and chat use one word; a step text that quotes the old word is updated with it. Where it
+   changes a command it takes all words of the pack; without a pack it keeps your label or, for a new
+   command, writes nothing and names the words you write into the draft or the line — then run it again.
+   When it changes the command, a step text that still names the old next action is listed under
+   "Words still to write": rewrite that step (its state and words) — the current course step is the one
+   `next` advances.
+   **A course step just finished** (context, outline, didactics, agenda saved): leave `next` as it is —
+   the script sets command and words — and quote the button word from its list in the step texts and
+   the chat link.
 4. **The texts of each unit** (yours): `summary` never contradicts the unit's state and does not repeat
-   `usable`, the first line of its card. Every unit has the same process steps from the start; fill
+   `usable`, the first line of its card. Every unit has the same process steps from the start (computed, step 2); fill
    `why`, `result` (what exists, e.g. "{n} inserted" for the image step) and `next` (what remains, e.g.
    the remaining images plus the `__To do:__` lines of the image entries) from evidence. A generated
    draft is not instructor approval, and a session PASS is not a course publication PASS. A step that is
    `done` returns to an earlier state only through a check result (FAIL, concerns), never through a
    later decision or new work: new work of another kind is its own step. A persona review alone never
    changes the state; a change it leads to makes the unit `review` until the re-check.
-5. **The words of `next`**, when the script keeps your command: an understandable `title`, `why` and
-   `label` (Rules → "next names one step"). Further optional actions go as cards into `explore`.
-6. **Open points (mandatory checklist).** Re-read all source sections and add
+5. **The words of `next`**, when the script keeps your command: an understandable `title` and `why`, and
+   a `label` only where the pack has none (Rules → "next names one step"). Further optional actions go as cards into `explore`.
+6. **Open points (mandatory checklist).** `validate-journal.mjs` lists the preparations the course frame
+   names ("Preparations named in the course frame"); every listed sentence gets a `prepare` item with a
+   link to the course frame, or an `internal` note why not. Re-read all source sections and add
    every hit to `decisions`:
    - A `## Course Context` summary value that contradicts its technical field
      (e.g. a described layout vs. `File Structure: Mode`).
@@ -105,7 +128,7 @@ Run this task automatically after any task that changes project state:
      unknown `__State:__`, or is `ready to test` without its folder `lia-templates/{id}/README.md`
      (hint `template-brief` of the validation script) → `decide`, key `template-brief-{id}`; `how` says
      what is missing and who completes it (the brief together with the instructor, the folder through the
-     development assistant). Plain words: German "Vorlage" or "Baustein", never "Template".
+     development assistant). Plain words: German "Baustein", never "Template" or "Vorlage".
    Never fix foreign sections silently — listing them is this task's job. Every
    item gets a unique `key` (the hint key printed by the validation script, e.g.
    `provisional`, `slug`, `type-name`, `preparation`, `file-structure`, `template-brief`; several items for one
@@ -130,7 +153,7 @@ Run this task automatically after any task that changes project state:
    to `.cache/dashboard.json` and run `node specs/dashboard/write-dashboard.mjs
    .cache/dashboard.json` (on its own). It first sets every field that follows
    from the journal (step 2: the unit fields, missing process steps, `links`,
-   `unitsTitle`, `unitLabel` and the date in `footer`) and lists each one it
+   `unitsTitle`, `unitLabel` and `footer`) and lists each one it
    changed — read that list: a text of yours that contradicts a changed state
    needs rewriting. In the same write it gives each unit's status line and
    Notes cell in `## Sessions` the same wording as `statusLabel` (from the
@@ -241,7 +264,7 @@ Run this task automatically after any task that changes project state:
   says; (2) open points (`statusLabel`, counting the points still open); (3) process
   steps (the step counter). Status words never discourage a unit that is usable: no
   "nothing finished" in `subtitle`, `summary` or `why` while a unit is usable — the
-  library's progress line then names it ("Fully checked: none yet · Usable now: …").
+  library's progress line then names it ("Approved: none yet · Usable now: …").
 - **The planning link** (`href`) is always named "See planning" by the library
   (translated) — never set `labels.plan` in German or English, never a label that
   hides the target ("To unit 1").
@@ -250,7 +273,7 @@ Run this task automatically after any task that changes project state:
   belong only in `command` and `href`.
 - Use the terminology from `## Course Context` → `__Terminology:__`
   (`sessions-called`) for `unitsTitle` and all unit wording.
-- **`next` names one step.** The script sets these words itself when it changes the command. `next.title` is exactly the title of the step it advances, as the process panel shows it: when `next` belongs to a unit, that unit's current step plus the unit ("Insert images – unit 1", translated) — the course step stays visible in the course process, never in `next.title`; otherwise the current course step. `next.label` is the same step as an action with the same key noun (title "Outline and learning objectives" → button "Create outline"; "Insert images – unit 1" → "Insert images for unit 1"). Name each unit step by its result ("Plan the unit" for the planning sketch); the step, `next`, the unit's action line and chat offers use the same words. A command that serves another purpose in the same unit (images after the text) gets its own step (step 4) — never a new label for an existing step.
+- **`next` names one step.** The script sets these words itself when it changes the command, and `next.label` whenever the language pack has the action. `next.title` is exactly the title of the step it advances, as the process panel shows it: when `next` belongs to a unit, that unit's current step plus the unit ("Insert images – unit 1", translated) — the course step stays visible in the course process, never in `next.title`; otherwise the current course step. `next.label` is the same step as an action with the same key noun (title "Outline and learning objectives" → button "Create outline"; "Insert images – unit 1" → "Insert images for unit 1"). Name each unit step by its result ("Plan the unit" for the planning sketch); the step, `next`, the unit's action line and chat offers use the same words. A command that serves another purpose in the same unit (images after the text) gets its own step (step 4) — never a new label for an existing step.
 - `process.steps[].result` states what exists, without a leading status word (the library adds its own label), and only what holds for every item.
 - `explore` items never use the icon of `next`: optional actions use ➕ or the icon of their agent, so exactly one ▶️ button stands for the next step.
 - The JSON block is only ever written through `specs/dashboard/write-dashboard.mjs` (step 8) — one write, never field by field.
@@ -267,18 +290,30 @@ Run this task automatically after any task that changes project state:
 - Use "finished/done" only for units whose check passed without an open ⏳ item (Done ✅) and that are approved. Instructor approval is "approved", never "finished" — in process steps, `why` texts and `note`.
 - Keep the global process steps stable from the empty journal on: the agenda step
   is listed as `optional` until `Agenda required` is set, then `planned` (yes) or
-  removed with a `note` (no). The last step, publishing, stays `optional` until the
-  publishing gate is PASS, then `planned`, and `done` once `## Publishing` →
-  `__State:__` starts with `published` (an English key, never translated). Never let the number of steps change without a `note`.
-- **Template step:** the global step "Templates for activities" (translated, German "Vorlagen für
-  Aktivitäten" — never "Template" in a German text for the instructor) stands between the didactics and
+  removed with a `note` (no). The last step, publishing, is `planned` (counted, computed with the label
+  "needed – after all units are checked", translated) when the course frame says learners open the course
+  by link or platform (`## Course Context` → Course Profile → `Delivery:`), otherwise `optional` until the
+  publishing gate is PASS; `done` once `## Publishing` → `__State:__`
+  starts with `published` (an English key, never translated). Its `why` never contradicts its state; where the link will live (a public page or
+  the school's platform) is a `decide` item before the course check when the frame does not say it. Never let the number of steps change without a `note`.
+- **Template step:** the global step "Templates for activities" (translated, German "Bausteine für
+  Aktivitäten" — never "Template" and never "Vorlage" in a German text for the instructor; to teachers
+  „Vorlage“ means a photocopy master) stands between the didactics and
   the agenda and is counted. Its state comes from `## Templates` (the line that starts with
   `## Templates`, layout `templates/course-templates.yaml`) — the line `__Template selection:__`
   (missing = `open`) and the briefs `### {id} (in development)`:
   1. `planned` while `## Didactics` is not saved.
-  2. Didactics saved, selection `open` (also a missing selection line) and no brief: the step is `current`.
-  3. A brief not yet adopted exists — whatever the selection value (`open`, or a `done – …` that does
-     not name it) — and takes precedence over 2: `current`, `result` by the briefs' `__State:__` —
+  2. Didactics saved, selection `open` (also a missing selection line), no brief, and the template
+     suggestion is `next` (no agenda saved and no unit planned yet): the step is `current`.
+  3. Selection still `open`, no brief, but the agenda is saved or the first unit is planned: `planned`
+     (not `current`), `next` = "Checked with every planning sketch – so far: {unit n}: none / needs …"
+     (translated, from the units' building-blocks lines, `templates/session-skeleton.yaml`) — never a
+     deadline such as "before the material of unit 1". The step `current` is always the one `next`
+     advances (step 3).
+  4. A brief not yet adopted exists — whatever the selection value (`open`, or a `done – …` that does
+     not name it) — and takes precedence over 2 and 3: `current` while the brief's action is `next`,
+     otherwise `planned` (the step `current` is the one `next` advances; `write-dashboard.mjs` names
+     another current step under "Words still to write"); `result` by the briefs' `__State:__` —
      "{n} in development" (translated, German "{n} in Entwicklung") for `brief` and `in development`,
      "{n} ready to test" (German "{n} bereit zum Ausprobieren") for `ready to test`, both joined with
      " · " when both occur (`validate-journal.mjs` warns about "in development" once every open brief is
@@ -286,12 +321,12 @@ Run this task automatically after any task that changes project state:
      without the brief (`planned`, `current` while it is being created, `done` once saved). Whether the
      brief, the template suggestion, the agenda or a unit is `next` and which becomes a card is computed
      (step 2).
-  4. Selection `done – …` (ids or `none needed`) without an open brief: `done`, `result` = the names of
+  5. Selection `done – …` (ids or `none needed`) without an open brief: `done`, `result` = the names of
      the adopted entries as `## Templates` shows them — every entry except `### Dashboard`, also one
      without `__Catalog id:__`; "none needed" (translated) only when there is no such entry.
   **Existing journals:** a Dashboard whose `process.steps` lack this step gets it at the next run,
-  directly after the didactics step, in the state above (a missing selection line is `open`, but rule 2
-  keeps `next` with an agenda or unit in progress), and `process.note` gets one appended sentence
+  directly after the didactics step, in the state above (a missing selection line is `open`; with an agenda or unit in progress
+  rule 3 applies and `next` stays with them), and `process.note` gets one appended sentence
   (e.g. "New: the step “Templates for activities” – ready-made building blocks for activities, or your
   own.", translated); the definition of "finished" in the note stays as it is.
 - `plan` (provisional planning) only while Outline/Didactics assign content to

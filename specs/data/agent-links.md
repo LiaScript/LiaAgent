@@ -139,33 +139,50 @@ Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/l
   `reload_pending` is set, check `get_state` for at most about 10 s in the same
   turn, then send the lasting completion message with the link. The last thing a
   turn leaves in the chat is a lasting message (or a form) that says what
-  happens next and what the instructor can do meanwhile — a status line may
-  stay only when it says you are waiting for the instructor. Work whose result
+  happens next and what the instructor can do meanwhile — no status line stays
+  (a standing status makes the chat say "still working" after a minute, even
+  while you only wait for an answer). Work whose result
   the instructor waits for runs in the foreground; never end a turn while
   announced work runs in the background — if that cannot be avoided, set a
   wake-up at the announced time (a timer or monitor) and then send a status with
-  a new estimate. Every announced check runs in the same turn, or the summary
+  the remaining time. Every announced check runs in the same turn, or the summary
   says in one line that it could not run and what was checked instead.
+- **After an interrupted turn:** when an event arrives and your previous turn
+  ended without the message it announced (an error, a lost connection, a
+  cut-off), say so first in one plain line ("I was interrupted while saving –
+  I'm finishing it now", translated), finish that step, then answer the new
+  message. Never describe interrupted work as still running.
+- **Status lines carry no findings:** a status says what you are doing ("checking the numbers against the sources", translated), never a result ("numbers match except one"); a finding goes into a lasting message and is resolved there. Nor does it claim a state of the page ("the overview is up to date"): the preview reloads only after a write, and a status line can hold that reload back — after a write follows a lasting message, and only that one may say "the overview shows …".
 - **Progress feedback:** after any confirmation or chat message, the **first
-  tool call** is a `chat` status with the expected duration — before any
-  reading or formulating (a start confirmation is followed by "Saving …, about
-  2 minutes", translated, not by a minute of silence). Before any step that takes longer than a few seconds
+  tool call** is a `chat` status without a duration — sent before anything is
+  known, before any reading or formulating ("One moment, I'm reading …",
+  translated, German „Moment, ich lese …“; a start confirmation is followed by
+  "Saving …", not by a minute of silence). **Durations:** the first lasting
+  message names **one** total duration; later statuses name only the remaining
+  time ("about 2 minutes left", translated, German „noch etwa 2 Minuten“) —
+  never a new total. Reference values: a planning sketch with its form takes
+  about 3 minutes; a material part about 2 minutes, plus 1–2 minutes for its fact
+  check; a part you have already drafted is sent at once, without a duration. A
+  remaining time is never larger than the total minus the time passed and is
+  never repeated unchanged: when it has run out, say in one line what still takes
+  time ("Still checking one number against a second source", translated). Before any step that takes longer than a few seconds
   (reading files, writing sections), send a one-line status. Before generating
   a long proposal (a full draft, a summary table) or formulating a long section
   write (a unit's journal section, a material file) send a fresh status line
-  with its duration ("Writing the proposal – about a minute …") right after the
-  last file read, before you start formulating: without a sign of life the chat soon tells the
+  with the remaining time ("Writing the proposal – about a minute left …") in the
+  same tool-call block as the last file read — not after thinking about it, before you start formulating: without a sign of life the chat soon tells the
   instructor that the assistant may not be connected. File changes count as a
   sign of life; long thinking without a write does not. In a run with several
   steps send a status at every change of sub-step ("step {i} of {n}: …",
   translated) and at least every 60 s; right before any draft or generation
   that takes longer than about 20 s (a material part, a long map, a report,
-  the overview data) a status that names it and its duration. A check or task announced at more than 3 minutes sends one
+  the overview data) a status that names it and the remaining time. A check or task announced at more than 3 minutes sends one
   lasting chat message at about half time with an interim result ("Texts and
   tasks checked, nothing wrong so far; now the sources", translated) — status
   lines alone are easily overlooked. Never draft the whole overview for a small change when the cache
-  is fresh (`tasks/update-dashboard.md` step 8). A status that says you are waiting for the
-  instructor is replaced at once when the answer arrives. When the instructor is testing a material page (recent
+  is fresh (`tasks/update-dashboard.md` step 8). A chat message without `status` clears the status
+  line: a proposal sent in parts carries the status ("Part 2 of 3 follows …", translated) on every
+  part but the last, so the line never stands empty while you still write. When the instructor is testing a material page (recent
   `activity` events), say before writing that the page will reload and their
   test answers will be reset; prefer to write after they finish.
 - **Long runs:** events and chat messages reach you only **between** two tool
@@ -198,9 +215,9 @@ Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/l
 - **Every click gets an answer:** each `command` event gets its own chat reply
   within seconds — also when the same task is already running ("We are already
   on it — continue here: …"). Never drop a click silently. Estimate durations
-  generously and round up (a unit proposal about 2 minutes, saving with foreign
-  sections 1–2 minutes); when the announced time is over, send a status with a
-  new estimate. **Effort for the instructor** (how long the next unit will
+  generously and round up (a planning sketch with its form about 3 minutes, saving with foreign
+  sections 1–2 minutes); when the announced time is over, send a status with the
+  remaining time, never a new total. **Effort for the instructor** (how long the next unit will
   take) names its basis — the measured time of an earlier unit from the journal
   or the chat ("unit 2 took about 40 minutes including your review", translated)
   — and gives the instructor's own time apart from waiting time. If the first
@@ -212,11 +229,11 @@ Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/l
   `reply_to`. **Order of the first reply:** (1) the status as first tool call
   (Progress feedback), (2) the lasting line when the work takes more than
   about 20 s — (3) except while the language switch of Language before the
-  frame runs: then only the status, and the greeting after the reload.
+  frame runs: then only the status, and the greeting right after its write.
 - **Typed answers:** forms have no text field — an option that announces a
   typed reply says where to type ("Other – I'll type it in the chat below",
-  translated) and needs no extra prompt message; send at most a
-  `status` and wait for the `chat` event. Answer every event with
+  translated) and needs no extra prompt message; send nothing more (no
+  status) and wait for the `chat` event. Answer every event with
   `reply_to` = its `entry`: if the result reports `newer_user_messages`, send
   nothing else — above all no form — before `read_chat`; then a status that you
   are reading the new message, and answer it before you go on. A message written

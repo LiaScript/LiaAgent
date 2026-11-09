@@ -43,7 +43,10 @@ in any renderer (VS Code, GitHub, LiaScript without DevServer):
   label names a concrete fix, pass it in the link (`&description=…`) and in the
   command. Which action comes next — in the Dashboard and in the action lines of
   the core sections and units — is computed by `write-dashboard.mjs`
-  (`tasks/update-dashboard.md` step 2); it keeps your words while your command is right.
+  (`tasks/update-dashboard.md` step 2); it keeps a right command and takes the
+  button word from the language pack when the pack has the action. When a task
+  replaces a section, leave the action line below its heading as it is — the
+  script renews it in the same save.
   `quick-fix` is never a main action without a description.
 - Then, only in chat offers, ` — ` plus a short reason.
 - Never use `<button data-agent=…>`; the Markdown link is the only format.
