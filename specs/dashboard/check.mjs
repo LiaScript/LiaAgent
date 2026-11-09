@@ -1141,7 +1141,7 @@ test("check-material counts read-aloud texts in hints apart, and says when no im
   assert.doesNotMatch(describeFit(fitOnScreen({ view: { top: 78, bottom: 400 }, question: 100, options: [{ top: 130, bottom: 400, images: [] }, { top: 410, bottom: 520, images: [100] }] }), { width: 810, height: 480 }), /at most 0 px/);
 });
 
-test("validate-journal wants the report's outcome words in the unit's status line and statusLabel (R10-D5) and names the cache patch for a missing href (R10-D4)", () => {
+test("validate-journal wants the report's outcome words in the unit's status line and statusLabel (R10-D5) and names write-dashboard for a missing href (R10-D4)", () => {
   const units = label => [{ id: 1, title: "E1", state: "review", href: "#1.-e1", statusLabel: label, usable: { state: "limited", missing: ["1 Foto"] }, process: { steps: [{ title: "Material", state: "done" }] } }];
   const report = "#### Prüfbericht – Einheit 1\n\n<section data-key=\"validation-report\">\n\n**Ergebnis:** bestanden – es fehlt noch: 1 Foto (23.10.2026) – 1 Punkt seither geändert – kurze Nachprüfung offen\n\n**Jetzt mit den Lernenden nutzbar:** ja, mit Einschränkungen: 1 Foto\n\n**Nach der Prüfung geändert:**\n\n- 23.10.2026 · S1 · Satz gekürzt · Kurzprüfung\n\n<details>\n\n__Result:__ PASS\n\n</details>\n\n</section>\n\n";
   const sessionsOf = status => `## Sessions – Einheiten\n\n1. E1 – ${status}\n\n### 1. E1\n\nText\n\n${report}`;
@@ -1155,7 +1155,7 @@ test("validate-journal wants the report's outcome words in the unit's status lin
   assert.match(other.output, /unit 1: statusLabel "überarbeitet – Prüfung offen" does not carry/);
   const missing = validate({ title: "Kurs", next, units: [{ id: 1, title: "E1", state: "current", process: { steps: [{ title: "Material", state: "planned" }] } }] }, "## Sessions – Einheiten\n\n### 1. E1\n\nText\n\n");
   assert.equal(missing.status, 2, missing.output);
-  assert.match(missing.output, /unit 1 has a skeleton but no href .* patch units\[1\]\.href, its statusLabel and first process step in the overview cache and run write-dashboard\.mjs in the same save as the skeleton/);
+  assert.match(missing.output, /unit 1 has a skeleton but no href .* run write-dashboard\.mjs in the same save as the skeleton .* derives the href, the statusLabel and the planning step/);
 });
 
 test("a unit card starts with 'usable with learners'; the progress line names usable units instead of 'nothing finished' (R11-S1)", () => {
@@ -1903,7 +1903,8 @@ test("derive sets the mechanical fields and leaves every text of the agent as it
   assert.equal(two.state, "planned");
   assert.equal(two.href, "#2.-comparing-fractions");
   assert.equal(two.view, undefined);
-  assert.deepEqual(two.process.steps.map(step => step.state), ["planned", "planned", "optional", "planned"], "a unit without steps gets the same steps, not started");
+  assert.deepEqual(two.process.steps.map(step => step.state), ["done", "planned", "optional", "planned"], "a unit without steps gets the same steps; its saved planning sketch makes the first one done");
+  assert.deepEqual(three.process.steps.map(step => step.state), ["planned", "planned", "optional", "planned"], "a unit without a sketch has not started");
   assert.equal(three.title, "Fractions in recipes", "a new unit takes its title from the agenda");
   const titled = deriveData();
   titled.units.push({ id: 3, title: "Recipes with fractions", state: "planned" });
@@ -1916,6 +1917,16 @@ test("derive sets the mechanical fields and leaves every text of the agent as it
   assert.ok(changes.every(change => change.why), "every change names its reason");
   dashboard.buildModel(data);
   assert.deepEqual(derive(journal, data, { date: "2026-11-05" }).changes, [], "a second run changes nothing, not even the date");
+});
+
+test("derive keeps the agent's inflected unitLabel.many while it belongs to the ## Sessions suffix", () => {
+  const journal = readJournal(deriveJournal(deriveData(), { report: failReport }));
+  const inflected = deriveData();
+  inflected.unitLabel = { one: "Lesson", many: "Lessonsx" };
+  assert.deepEqual(derive(journal, inflected).data.unitLabel, { one: "Lesson", many: "Lessonsx" }, "a form after a preposition (German 'von 4 Modulen') stays");
+  const renamed = deriveData();
+  renamed.unitLabel = { one: "Module", many: "Modules" };
+  assert.deepEqual(derive(journal, renamed).data.unitLabel, { one: "Lesson", many: "Lessons" }, "a renamed unit word follows the suffix");
 });
 
 test("derive: without image entries the image step keeps its state, all placed make it done; Done needs the approval", () => {

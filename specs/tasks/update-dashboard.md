@@ -229,7 +229,7 @@ Run this task automatically after any task that changes project state:
          and only if it is missing (step 8);
       5. the layout changes of `migrate-journal.mjs`, only after the instructor's
          "Update" (step 9);
-      6. the one-line note under `## Sessions`, which follows the state (Rules → "The one-line note under `## Sessions`");
+      6. the one-line note under `## Sessions`, which follows the state (computed, `actions.mjs` → `sessionsNote`);
       7. each unit's status line and Notes cell in `## Sessions`, written by `write-dashboard.mjs` (step 8).
 11. Confirm the dashboard was updated only after step 9 passed, and name the next
     recommended command. If the MCP gate is open (`data/agent-links.md`), `goto` the

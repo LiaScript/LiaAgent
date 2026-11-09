@@ -172,6 +172,9 @@ export function derive(journal, input, { date, previous } = {}) {
       set(checkStep, "state", "current", `${path} step "${checkStep.title}".state`, "passed, waiting for the instructor's approval");
       set(checkStep, "statusLabel", approvalWord, `${path} step "${checkStep.title}".statusLabel`, "terms.approvalOpen");
     }
+    // The planning step is done once the planning sketch (### {n}. {title}) is saved.
+    const planStep = unitStepOf({ key: "plan-unit" }, steps);
+    if (planStep && facts.heading && planStep.state !== "done") set(planStep, "state", "done", `${path} step "${planStep.title}".state`, "planning sketch saved");
     // The material step is done once the material exists and a check ran or the instructor approved it –
     // also after "let it be prepared", where no one approves the draft before the check (SK60).
     const materialStep = unitStepOf({ key: "work-out" }, steps);
@@ -332,7 +335,10 @@ export function derive(journal, input, { date, previous } = {}) {
   const sessionsSuffix = journal.headings.find(heading => heading.key === "Sessions")?.suffix;
   if (sessionsSuffix) set(data, "unitsTitle", sessionsSuffix, "unitsTitle", "suffix of ## Sessions");
   if (journal.terminology || sessionsSuffix) {
-    const label = { one: journal.terminology ?? data.unitLabel?.one ?? sessionsSuffix, many: sessionsSuffix ?? data.unitLabel?.many ?? journal.terminology };
+    // An inflected plural the agent wrote ("von 4 Modulen") stays while it starts with the suffix's word.
+    const own = data.unitLabel?.many;
+    const keepsOwn = own && sessionsSuffix && own.toLowerCase().startsWith(sessionsSuffix.toLowerCase());
+    const label = { one: journal.terminology ?? data.unitLabel?.one ?? sessionsSuffix, many: keepsOwn ? own : sessionsSuffix ?? own ?? journal.terminology };
     set(data, "unitLabel", label, "unitLabel", "terminology (sessions-called) and suffix of ## Sessions");
   }
 

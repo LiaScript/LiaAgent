@@ -259,7 +259,7 @@ if (nextIcon) model.explore.filter(item => iconOf(item) === nextIcon).forEach(it
 const sessionsText = markReports(section("Sessions"));
 const sessionHeadings = [...sessionsText.matchAll(/^### (\d+)\. /gm)].map(match => match[1]);
 model.units.filter(unit => sessionHeadings.includes(unit.id) && !unit.href).forEach(unit =>
-  problems.push(`unit ${unit.id} has a skeleton but no href to its subsection in ## Sessions – patch units[${unit.id}].href, its statusLabel and first process step in the overview cache and run write-dashboard.mjs in the same save as the skeleton (tasks/build-session.md step 0), not only at the end of a run`));
+  problems.push(`unit ${unit.id} has a skeleton but no href to its subsection in ## Sessions – run write-dashboard.mjs in the same save as the skeleton (tasks/build-session.md step 0), not only at the end of a run – it derives the href, the statusLabel and the planning step`));
 if (/^#{5}\s/m.test(sessionsText.replace(/<section\b[^>]*>[\s\S]*?<\/section>/g, ""))) problems.push("level-5 heading (#####) in ## Sessions – every heading becomes its own slide; use bold labels (or wrap the block in <section>)");
 if (/<section\b[^>]*>\s*\n\s*#### Validation Report/.test(sessionsText)) problems.push("#### Validation Report heading inside <section> – the heading stays outside, everything below it goes into <section>");
 for (const report of sessionsText.split(/^(?=#### Validation Report)/m).slice(1)) {

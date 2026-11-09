@@ -51,7 +51,7 @@ If `journal.md` → `## Sessions` has no `### {number}. {title}` subsection yet,
 
 - **Check the sketch before the start:** before its save form, check the planning sketch against the `Required` lists of the session's Type and Method (`tasks/create-session-skeleton.md` step 7); name every gap in the sketch and offer the fix in the same form. What the sketch says about task types is a content decision of the instructor — the run produces it, never another task type.
 - **Sketch and start in one form** (when the run was asked for before the sketch, e.g. with "Let unit {n} be prepared"): the sketch's save form also carries the start confirmation — "Save and start preparing" (translated) next to "Change something" — so there is one form and one write, not two. That write adds the dated decision `- **{date}:** {terms.buildRequested}` (language pack, e.g. "preparation requested") to the unit's decisions: from it the overview shows "{unit} {n} is being prepared" with "nothing to do for you" (translated) until the check report exists, never the joint way's button. A click on that button during the run is a question, not a second run: answer with the current part and the remaining time.
-- **Overview patch in the same save:** right after the skeleton is saved, patch the overview cache (`.cache/dashboard.json`, `tasks/update-dashboard.md` step 8 → Fresh cache): `units[{n}].href` to the new subsection, its `statusLabel` (the new status line) and its first process step, then run `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` (a few seconds). The journal then passes `validate-journal.mjs` during the whole run; the full overview follows in step 4.
+- **Overview patch in the same save:** right after the skeleton is saved, run `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` on the fresh cache (`tasks/update-dashboard.md` step 8, a few seconds): it derives the unit's `href`, status and planning step. The journal then passes `validate-journal.mjs` during the whole run; the full overview follows in step 4.
 
 ### 1. Content loop (mechanical gate)
 
@@ -93,7 +93,7 @@ Only for `generated` images: for each `{image-slug}` created in Step 1b, run `ta
 
 ### 4. Finalize
 
-Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (if not already, together with its status line) — only if its `#### Validation Report` says `Result: PASS` and lists no open ⏳ item; with "PASS with concerns" Done stays ❌ and the closing summary names the deferred step. Run `tasks/update-dashboard.md`. Report the closing summary described in Output above:
+Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (if not already) — only if its `#### Validation Report` says `Result: PASS` and lists no open ⏳ item; with "PASS with concerns" Done stays ❌ and the closing summary names the deferred step. Run `tasks/update-dashboard.md`. Report the closing summary described in Output above:
 
 - **Measured duration:** the closing write adds the dated decision "prepared in {m} minutes (your time: {k} minutes for the sketch)" (translated) to the unit's decisions, so later estimates rest on it.
 - **Runs line** (fixed, translated): "Runs: content check {n} of at most 5 · persona review {n} of at most 3 (or: skipped – no learner profiles) · images {in} of {spots} (inserted and generated)" — in the report's technical part and in the terminal, never in the chat or the report's visible part (it is bookkeeping, not a result for the instructor).
@@ -101,7 +101,7 @@ Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (
 - **Duration hint** by its content, never by a name such as "the formula" (`data/duration-heuristic.md` → Naming the estimate).
 - **Usable first:** the line "usable with learners now" of the report comes before the outcome details, as on the overview card (`tasks/update-dashboard.md` → One ranking of the three measures).
 - **One offer** to try the unit as a learner (`try-as-learner?number={number}` when the MCP gate is open, otherwise `:create-learner-persona` when no personas exist), plus the overview's `next`.
-- **Approval stays with the instructor:** the material is written and checked (material step done, computed), the check step waits for the instructor ("passed – waiting for your approval", computed) — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" makes the material step `done`.
+- **Approval stays with the instructor:** the material is written and checked (material step done, computed), the check step waits for the instructor ("passed – waiting for your approval", computed) — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" completes the check step (computed).
 
 ## Writes per run
 
