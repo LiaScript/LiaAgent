@@ -346,6 +346,23 @@ if (visiblePlaceholders.length) problems.push(`${visiblePlaceholders.length} vis
   else if (value && typeof value === "object") Object.entries(value).forEach(([key, item]) => walkTexts(item, path ? `${path}.${key}` : key));
   else if (typeof value === "string" && value.includes("{{")) problems.push(`Dashboard ${path} shows a template placeholder: "${value}"${path === "footer" && value.includes("{{YYYY-MM-DD}}") ? ` – ${migrateHint}` : ""}`);
 })(JSON.parse(source.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}"), "");
+// Every agent: link (overview data and action lines) names an agent and a command of its `commands:` map in
+// agents/{agent}-agent.yaml; `switch` is reserved for the persona switch (data/agent-links.md).
+const agentCommands = (() => {
+  const dir = resolve(here, "..", "agents");
+  if (!existsSync(dir)) return null;
+  return Object.fromEntries(readdirSync(dir).filter(name => /-agent\.ya?ml$/.test(name)).map(name => {
+    const block = readFileSync(join(dir, name), "utf8").split(/^commands:\s*$/m)[1]?.split(/^\S/m)[0] ?? "";
+    return [name.replace(/-agent\.ya?ml$/, ""), new Set([...block.matchAll(/^ {2}:([\w-]+)/gm)].map(match => match[1]))];
+  }));
+})();
+const agentLinks = new Set([...hrefs.filter(href => href.startsWith("agent:")), ...[...source.matchAll(/\]\((agent:[^)\s]+)\)/g)].map(match => match[1])]);
+for (const link of agentCommands ? agentLinks : []) {
+  const [, agent, command] = link.match(/^agent:([\w-]+)\/([\w-]+)/) ?? [];
+  if (!agent) continue;
+  if (!agentCommands[agent]) problems.push(`link ${link}: no agent "${agent}" – agent: links name an agent of specs/agents/{agent}-agent.yaml`);
+  else if (command !== "switch" && !agentCommands[agent].has(command)) problems.push(`link ${link}: "${command}" is no command of the ${agent} agent – use a key of its commands: map`);
+}
 // Visible commands must not show raw placeholders like {description}.
 for (const href of hrefs) if (/\{[a-z_-]+\??\}/i.test(href)) problems.push(`link ${href} contains a raw placeholder – pass the value or omit the parameter`);
 (function walkCommands(value) {

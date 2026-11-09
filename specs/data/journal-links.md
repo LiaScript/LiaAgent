@@ -43,10 +43,7 @@ in any renderer (VS Code, GitHub, LiaScript without DevServer):
   label names a concrete fix, pass it in the link (`&description=…`) and in the
   command. Which action comes next — in the Dashboard and in the action lines of
   the core sections and units — is computed by `write-dashboard.mjs`
-  (`tasks/update-dashboard.md` step 2); it keeps a right command and takes the
-  button word from the language pack when the pack has the action. When a task
-  replaces a section, leave the action line below its heading as it is — the
-  script renews it in the same save.
+  (`tasks/update-dashboard.md` step 2), with the button word from the language pack.
   `quick-fix` is never a main action without a description.
 - Then, only in chat offers, ` — ` plus a short reason.
 - Never use `<button data-agent=…>`; the Markdown link is the only format.
@@ -83,17 +80,14 @@ Rules for action lines:
 
 - Links separated by ` · `, at most 6 per line, one line only, no headings.
 - The lines marked "computed" in the table below are written by `write-dashboard.mjs`
-  after every task (`tasks/update-dashboard.md` runs after each); a task does not
-  need to write them in its own save. Other lines: a task that replaces a section
+  after every task; a task leaves them as they are. Other lines: a task that replaces a section
   writes its action line already in the state after the save (e.g. ✏️ revise
-  instead of ▶️ create).
+  instead of ▶️ create), or leaves it to `tasks/update-dashboard.md`, which runs afterwards.
 - Writing a section replaces its one-line note ("still empty – …") with the
   content; the provenance comment `<!--- Filled by … --->` stays invisible
   (name the task that actually wrote the section). Never write `{{…}}`
   skeletons into the journal — `validate-journal.mjs` rejects visible ones.
-- A task that replaces a section without writing its action line (older
-  task texts) leaves it to `tasks/update-dashboard.md`, which runs afterwards and
-  restores it. Tasks that insert blocks into a session
+- Tasks that insert blocks into a session
   subsection (`#### Validation Report`, `#### Persona Reviews`, `#### Images`)
   insert them at their place in `templates/session-skeleton.yaml` →
   `section_layout.entry_order` (behind the skeleton fields), never before the
@@ -109,8 +103,8 @@ Rules for action lines:
 | `## Visual Identity` | `artist/create-visuals`, `artist/create-logo` |
 | `## Templates` | `suggest-templates`, 👁 `preview?file=specs/catalog/README.md` (the template catalog, command `:preview specs/catalog/README.md`), `manage-templates` |
 | `## Agenda` | computed: `create-agenda` |
-| `## Sessions` | computed: `create-session` (without params — before the Session Types `create-didactics`, before a required agenda `create-agenda`), `build-session?number={n}` for the next unit without skeleton once one unit has been worked out together and approved ("let it be prepared after a short sketch", translated), `validate-course` once a unit has material |
-| `### {n}. {title}` | computed: **exactly one main action** of that unit by its state (`specs/dashboard/actions.mjs` → `unitAction`; e.g. checked ✅ → 👁 `preview`, check: correction needed → ✏️ `coauthor-materials?number={n}` or, when every open point is one small change, ✏️ `quick-fix?number={n}&description=…` — that choice is yours). **Learners' view:** once the material exists, the line also carries 👁 `preview?file={n}` ("How learners see it", translated) as second link after ` · ` — never only inside the `<details>` block. A link to the unit's planning is named "See planning" (translated), never "To unit {n}". All further commands (`promote-session`, `build-session`, `validate-syntax`, `preview`, `quick-fix`, `learner/review-as-persona`) go only into the session's `<details><summary>Technical settings and more actions</summary>` block right after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`) |
+| `## Sessions` | computed (`actions.mjs` → `sectionLines`): `create-session`, `build-session?number={n}`, `validate-course` |
+| `### {n}. {title}` | computed: **exactly one main action** of that unit by its state (`specs/dashboard/actions.mjs` → `unitAction`); after a check that needs correction ✏️ `coauthor-materials?number={n}` or, when every open point is one small change, ✏️ `quick-fix?number={n}&description=…` — that choice is yours. **Learners' view:** once the material exists, the line also carries 👁 `preview?file={n}` ("How learners see it", translated) as second link after ` · ` — never only inside the `<details>` block. A link to the unit's planning is named "See planning" (translated), never "To unit {n}". All further commands (`promote-session`, `build-session`, `validate-syntax`, `preview`, `quick-fix`, `learner/review-as-persona`) go only into the session's `<details><summary>Technical settings and more actions</summary>` block right after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`) |
 | `## Agents` | `configure-agent` (agent asked in chat), `create-learner-persona`, `learner/switch` (only if personas exist) |
 | `## Validation` | `validate-course` (only once every unit of the agenda or overview has material) |
 | `## Publishing` | `development/create-project` (first publication, only if the publishing gate is PASS), `development/update-project` (once `__State:__` is published; same gate) |

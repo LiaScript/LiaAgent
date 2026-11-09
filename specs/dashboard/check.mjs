@@ -417,6 +417,18 @@ test("validate-journal accepts a clean Dashboard", () => {
   assert.equal(result.status, 0, result.output);
 });
 
+test("validate-journal accepts only commands of an agent's commands: map in agent: links (data and action lines)", () => {
+  const known = validate({ title: "Kurs", next, explore: [{ icon: "➕", title: "Bilder", description: "D", label: "Bilder", href: "agent:artist/create-image?number=1", command: ":create-image 1" },
+    { icon: "🎨", title: "Gestaltung", description: "D", label: "Wechseln", href: "agent:artist/switch", command: ":agent artist" }] },
+    "## Sessions\n\n<!-- class=\"journal-actions\" -->\n[👁 Ansehen](agent:learner/preview?file=1) `:preview 1`\n\n");
+  assert.equal(known.status, 0, known.output);
+  const typo = validate({ title: "Kurs", next: { ...next, href: "agent:teaching/creat-didactics" } });
+  assert.equal(typo.status, 2);
+  assert.match(typo.output, /agent:teaching\/creat-didactics: "creat-didactics" is no command of the teaching agent/);
+  const line = validate({ title: "Kurs", next }, "## Sessions\n\n<!-- class=\"journal-actions\" -->\n[Hilfe](agent:helper/help) `:help`\n\n");
+  assert.match(line.output, /agent:helper\/help: no agent "helper"/);
+});
+
 test("validate-journal reports an open point whose link has no label", () => {
   const result = validate({ title: "Kurs", next, decisions: [{ key: "a", title: "Frage?", how: "B", href: "#outline" }] });
   assert.equal(result.status, 2);

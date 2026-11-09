@@ -53,7 +53,7 @@ const required = {
   "data/chat-dialog.md": ["The write scripts count their writes (`.cache/writes.json`)", "**What the instructor does not want saved**","no status stands at all","`\"append\"` adds lines at the end of the file","Reuse what is known","Tables in the chat","Changing another section","header comment like the material header","what the instructor may do now"],
   "data/chat-checks.md": ["`--viewport` with the window size of the learners' device","**Layout and devices:**","A missing warning is no proof","Say how you checked","*search result only*","*looked at*","*read as an extract*"],
   "data/chat-companion.md": ["**Workaround for DevServer 1.2.19 (N63):**","replaces the server's general \"stay silent\"","| wrong, `trial` 2 (before `help`) |","| `solved` after at least one wrong check |","On the self-check","with a \"Back to planning\" button"],
-  "data/journal-links.md": ["preview?file=specs/catalog/README.md", "is computed by `write-dashboard.mjs`", "that choice is yours", "checked ✅ → 👁 `preview`","let it be prepared after a short sketch","**Learners' view:**","never \"To unit {n}\""],
+  "data/journal-links.md": ["preview?file=specs/catalog/README.md", "is computed by `write-dashboard.mjs`", "that choice is yours", "**Learners' view:**","never \"To unit {n}\""],
   "data/liascript-cheat-sheet.md": ["### Link targets", "A pair of `$` starts math everywhere outside code", "**The comment goes directly above the first answer line, not above the question.**", "**Matrix Quiz (graded, for matching tasks)**", "data-text-solved", "Each `#`, `##` and `###` heading **always starts a new slide**", "data-solution-button=\"false\"", "**Encode link targets.**", "**Image size.**", "`- [[?]] {|>}{Hint text}`", "A `vh` limit does not guarantee the fit", "**Controls as learners see them**", "never \"speaker\", \"loudspeaker\"", "A hint appears only when the learner taps the light bulb", "**No surface cues:**"],
   "templates/course-context.yaml": ["layout:", "Target Group"],
   "templates/course-outline.yaml": ["__Session Overview:__", "layout:"],
@@ -70,7 +70,7 @@ const required = {
   "templates/course-didactics.yaml": ["Didactic Framework", "copied from Course Context"],
   "templates/course-context.yaml": ["Target Group"],
   "workflows/course-development.yaml": [":try-as-learner", "offer :try-as-learner once (only with the preview / MCP gate open)", "change path", "One way to start", "write-dashboard.mjs"],
-  "agents/teaching-agent.yaml": ["right before **every** Dashboard write", "only if they do not already arrive as `<channel>` tags", "the labels, the first reply and its one action need them", ":try-as-learner", "once (only when the MCP gate is open; it runs in the preview)", "starts with `## Outline`", "read a task file **completely**", "`node specs/dashboard/now.mjs [<timestamp>]`", "`develop-template` changes only `__State:__` and `__Folder:__`"],
+  "agents/teaching-agent.yaml": ["once per command, before its first Dashboard write", "only if they do not already arrive as `<channel>` tags", "the labels, the first reply and its one action need them", ":try-as-learner", "once (only when the MCP gate is open; it runs in the preview)", "starts with `## Outline`", "read a task file **completely**", "`node specs/dashboard/now.mjs [<timestamp>]`", "`develop-template` changes only `__State:__` and `__Folder:__`"],
 };
 
 // Phrases match regardless of line breaks and indentation, so rewrapping a paragraph keeps them.
@@ -110,7 +110,7 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
 // growing back; raise one only with a reason (a new rule no script can carry).
 const budgets = {
-  "tasks/update-dashboard.md": 4302, "data/agent-links.md": 4200, "data/chat-wording.md": 1611, "data/chat-dialog.md": 1469,
+  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 4200, "data/chat-wording.md": 1611, "data/chat-dialog.md": 1469,
   "data/chat-checks.md": 722, "tasks/build-session.md": 3312, "tasks/validate-course.md": 4205, "tasks/quick-fix.md": 1706,
 };
 test("rule sheets and the main tasks stay within their word budget", () => {
@@ -603,7 +603,7 @@ test("older journals: the validator's migration hint leads to a confirmed migrat
   assert.match(task, /\*\*Older journal layout:\*\*/);
   assert.match(task, /`node specs\/dashboard\/migrate-journal\.mjs --check`/);
   assert.match(task, /"Update" \/ "Not now" \(tier "confirm in chat"\)/);
-  assert.match(task, /the layout changes of `migrate-journal\.mjs`, only after the instructor's\n\s+"Update"/);
+  assert.match(task, /the layout changes of `migrate-journal\.mjs`, only after the instructor's\s+"Update"/);
   assert.match(read("dashboard/validate-journal.mjs"), /older journal layout – run `node specs\/dashboard\/migrate-journal\.mjs`/);
 });
 
