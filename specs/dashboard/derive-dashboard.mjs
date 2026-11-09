@@ -19,8 +19,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { readJournal, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
-import { courseNext, accepts, wordsOf, nextTitle, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards } from "./actions.mjs";
+import { readJournal, englishUnitSteps, englishTerms, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
+import { courseNext, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote } from "./actions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -50,6 +50,13 @@ const isImageStep = (step, terms) => [terms.imageStep, "Insert images"].some(tit
   || /\b(bilder|images?|fotos?|photos?)\b/i.test(step.title ?? "");
 
 // The short "what is missing" of a usable line: the text after the colon, up to the first sentence end.
+// "yes, with limits: 1 photo (headphones); question 4 needs scrolling" → ["1 photo", "question 4 needs scrolling"].
+function limitsOf(text) {
+  const rest = String(text ?? "").split(/:\s*/).slice(1).join(": ").trim();
+  return rest.split(/;\s*/).map(item => item.replace(/\s*\([^()]*\)/g, "").replace(/[.!?]$/, "").trim()).filter(Boolean)
+    .map(item => item.length > 80 ? `${item.slice(0, 79)}…` : item).slice(0, 3);
+}
+
 function missingOf(text) {
   const rest = String(text ?? "").split(/:\s*/).slice(1).join(": ").trim();
   const first = rest.split(/(?<=[.!?])\s+|;\s*/)[0].replace(/[.!?]$/, "").trim();
@@ -66,7 +73,7 @@ function today(language, sample) {
 }
 
 // Returns { data, changes }: the data with every derived field set, and one entry per changed field.
-export function derive(journal, input, { date } = {}) {
+export function derive(journal, input, { date, previous } = {}) {
   const data = clone(input);
   const changes = [];
   const set = (target, key, value, path, why) => {
@@ -77,10 +84,11 @@ export function derive(journal, input, { date } = {}) {
   };
   const { terms } = journal;
   const existing = new Map((data.units ?? []).map(unit => [String(unit.id), unit]));
-  const template = (data.units ?? []).find(unit => unit.process?.steps?.length);
-
-  // A new unit, or one without steps, gets the same material steps as the others, all still to come.
-  const freshSteps = () => template.process.steps.map(step => ({
+  // A new unit, or one without steps, gets the same material steps as the others, all still to come; while
+  // no unit has steps yet, the steps of the language pack (`unitSteps`, English built in).
+  const template = (data.units ?? []).find(unit => unit.process?.steps?.length)?.process.steps
+    ?? journal.pack?.unitSteps ?? (journal.language === "en" ? englishUnitSteps : null);
+  const freshSteps = () => template.map(step => ({
     title: step.title, state: isImageStep(step, terms) ? "optional" : "planned", ...(step.why ? { why: step.why } : {})
   }));
 
@@ -90,7 +98,10 @@ export function derive(journal, input, { date } = {}) {
   const doneStates = new Map(journal.units.map(facts => [facts.n, unitState(facts).state]));
   const expected = courseNext(journal, doneStates, data.selected);
   const nextUnit = expected && (expected.params.number ?? expected.params.file);
-  if (nextUnit && data.selected !== "" && String(data.selected) !== String(nextUnit)) {
+  // A unit not begun yet (no subsection, no material) shows nothing of its own: the course view stays open.
+  const begun = journal.units.some(unit => unit.n === String(nextUnit) && (unit.heading || unit.material));
+  if (nextUnit && !begun && data.process?.steps?.length) set(data, "selected", "", "selected", "course view until the next unit is begun");
+  else if (nextUnit && String(data.selected) !== String(nextUnit)) {
     set(data, "selected", typeof data.selected === "number" ? Number(nextUnit) : String(nextUnit), "selected", "unit of the next action");
   }
   const missing = [];
@@ -120,13 +131,15 @@ export function derive(journal, input, { date } = {}) {
       `${path}.view`, facts.material ? "material exists (Material ✅)" : "no material yet");
     const status = statusText(facts, terms);
     if (status) set(unit, "statusLabel", status, `${path}.statusLabel`, facts.report?.outcome ? "outcome of the check report" : "planning sketch, material and image entries");
-    sessions.push({ n: facts.n, title: facts.title, status });
+    sessions.push({ n: facts.n, title: facts.title, status, begun: Boolean(facts.heading) });
 
-    // usable follows the report's line "usable with learners now"; keep the agent's short "missing" while the state holds.
+    // usable follows the report's line "usable with learners now"; keep the agent's short "missing" while the state
+    // holds – except for limits: every limit of the line is named, not only the ⏳ items (SK46).
     const reported = facts.report && usableState(facts.report.usableText);
+    const limits = reported === "limited" ? limitsOf(facts.report.usableText) : [];
     if (!facts.report) set(unit, "usable", undefined, `${path}.usable`, "no check report yet");
-    else if (reported && unit.usable?.state !== reported) {
-      const missing = facts.report.missing.length ? facts.report.missing.slice(0, 3) : [missingOf(facts.report.usableText) || "–"];
+    else if (reported && (unit.usable?.state !== reported || (limits.length && (unit.usable?.missing?.length ?? 0) !== limits.length))) {
+      const missing = limits.length ? limits : facts.report.missing.length ? facts.report.missing.slice(0, 3) : [missingOf(facts.report.usableText) || "–"];
       set(unit, "usable", reported === "yes" ? { state: "yes" } : { state: reported, missing },
         `${path}.usable`, "line \"usable with learners now\" of the check report");
     }
@@ -134,8 +147,37 @@ export function derive(journal, input, { date } = {}) {
     // The image step follows the image entries: open while one is open, done once all are placed. Without
     // entries it keeps its state (older journals track images only as markers in the material).
     const imageStep = unit.process?.steps?.find(step => isImageStep(step, terms));
-    const { total, placed, open } = facts.images;
-    if (imageStep && total) set(imageStep, "state", open ? (facts.material ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed`);
+    // Only own photos still missing: the step waits for the instructor ("planned") – it becomes current again
+    // when it is the next action (after the check, SK41).
+    const { total, placed, open, waiting = 0 } = facts.images;
+    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material ? "current" : "planned") : open ? "planned" : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
+    // Only own photos missing: the step says it waits for them, with the count (SK60).
+    const waitingWord = String(terms.imagesWaiting ?? englishTerms.imagesWaiting);
+    const waitingLabel = imageStep && total && open && open === waiting ? waitingWord.replace("{n}", placed).replace("{m}", total) : undefined;
+    if (imageStep && (waitingLabel || String(imageStep.statusLabel ?? "").startsWith(waitingWord.split("{")[0])) && imageStep.statusLabel !== waitingLabel) {
+      set(imageStep, "statusLabel", waitingLabel, `${path} step "${imageStep.title}".statusLabel`, waitingLabel ? "only own photos still to come" : "no own photo waiting any more");
+    }
+    // Approval (the decisions of the unit): the card names it, and the check step is done once the check passed
+    // without changes since and the instructor approved – also while own photos are still to come (SK52).
+    set(unit, "approved", facts.approved && facts.material ? true : undefined, `${path}.approved`, facts.approved ? "approval in the decisions of the unit" : "not approved");
+    const steps = unit.process?.steps ?? [];
+    const checkStep = unitStepOf({ key: "check-unit" }, steps);
+    const passed = facts.report?.result === "PASS" && !facts.report.changedSince;
+    const approvalWord = terms.approvalOpen ?? englishTerms.approvalOpen;
+    if (checkStep && passed && facts.approved) {
+      set(checkStep, "state", "done", `${path} step "${checkStep.title}".state`, "passed and approved by the instructor");
+      if (checkStep.statusLabel === approvalWord) set(checkStep, "statusLabel", undefined, `${path} step "${checkStep.title}".statusLabel`, "approved");
+    } else if (checkStep && passed) {
+      // Passed, the approval is the instructor's: the step is up next and says what it waits for (SK60).
+      set(checkStep, "state", "current", `${path} step "${checkStep.title}".state`, "passed, waiting for the instructor's approval");
+      set(checkStep, "statusLabel", approvalWord, `${path} step "${checkStep.title}".statusLabel`, "terms.approvalOpen");
+    }
+    // The material step is done once the material exists and a check ran or the instructor approved it –
+    // also after "let it be prepared", where no one approves the draft before the check (SK60).
+    const materialStep = unitStepOf({ key: "work-out" }, steps);
+    if (materialStep && materialStep !== checkStep && facts.material && (facts.report?.result || facts.approved)) {
+      set(materialStep, "state", "done", `${path} step "${materialStep.title}".state`, facts.approved ? "material approved" : "material written and checked");
+    }
     units.push(unit);
   }
   // Units the overview lists but the journal does not: removed only when an agenda decides which units exist.
@@ -149,7 +191,13 @@ export function derive(journal, input, { date } = {}) {
 
   // Section links the overview lists follow their heading line: its anchor, labelled with its translated
   // suffix (a translated heading changes the anchor). Which sections are linked stays the agent's choice.
-  if (Array.isArray(data.links)) {
+  // Without links (missing or empty) the overview lists the core sections the journal has.
+  const coreSections = ["Course Context", "Outline", "Didactics", "Agenda", "Sessions", "Notes Backup"];
+  if (!Array.isArray(data.links) || !data.links.length) {
+    const links = coreSections.map(key => journal.headings.find(heading => heading.key === key)).filter(Boolean)
+      .map(heading => ({ label: heading.suffix ?? heading.key, href: heading.anchor }));
+    if (links.length) set(data, "links", links, "links", "section links of the journal (none were given)");
+  } else {
     const links = data.links.map(link => {
       const href = String(link.href ?? "");
       const heading = journal.headings.find(item => href === anchorOf(item.key) || href.startsWith(`${anchorOf(item.key)}-–-`));
@@ -158,37 +206,127 @@ export function derive(journal, input, { date } = {}) {
     set(data, "links", links, "links", "anchors of the section headings");
   }
 
-  // next: the command follows the journal; the agent's words stay while the command is right.
+  // Course steps that follow from the journal (SK71, SK62, SK69). Indices as in actions.mjs → courseStep.
+  const courseSteps = data.process?.steps ?? [];
+  const fillTerm = (key, values) => String(terms[key] ?? englishTerms[key] ?? "").replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
+  const courseSet = (step, field, value, why) => set(step, field, value, `process step "${step.title}".${field}`, why);
+  // Building blocks: while no template is chosen or briefed, each planning sketch decides it for its unit.
+  const blocksStep = courseSteps[3];
+  const { selection: blocksSelection, adopted: adoptedTemplates, briefs: templateBriefs } = journal.templates;
+  if (blocksStep && journal.filled.Didactics && blocksSelection === "open" && !adoptedTemplates.length && !templateBriefs.length) {
+    const none = String(terms.noBlocks ?? "none").toLowerCase();
+    const sketched = journal.units.filter(unit => unit.blocks);
+    const noneNeeded = sketched.filter(unit => unit.blocks.toLowerCase().replace(/^[^\p{L}]+/u, "").startsWith(none));
+    const total = journal.units.length;
+    if (total && noneNeeded.length === total) {
+      courseSet(blocksStep, "state", "done", "every planning sketch: no building block needed");
+      courseSet(blocksStep, "result", fillTerm("blocksNone", {}), "every planning sketch: no building block needed");
+      courseSet(blocksStep, "statusLabel", undefined, "decided for every unit");
+      courseSet(blocksStep, "next", undefined, "decided for every unit");
+    } else if (sketched.length && noneNeeded.length === sketched.length && blocksStep.state !== "done") {
+      courseSet(blocksStep, "statusLabel", fillTerm("blocksPerUnit", { unit: unitWord, k: sketched.length, N: total }), "decided with each planning sketch");
+      courseSet(blocksStep, "next", undefined, "the label says it");
+    }
+  }
+  // Checking the course: after the last unit; meanwhile it names the units already approved.
+  const checkCourseStep = courseSteps[6];
+  const approvedUnits = journal.units.filter(unit => unit.approved && unit.material);
+  if (checkCourseStep && ["planned", "optional"].includes(checkCourseStep.state)) {
+    const label = approvedUnits.length ? fillTerm("checkCourseLater", { unit: unitWord, units: approvedUnits.map(unit => `${unitWord} ${unit.n}`).join(", ") }) : undefined;
+    if (label || String(checkCourseStep.statusLabel ?? "").startsWith(fillTerm("checkCourseLater", { unit: unitWord }).split("{")[0].split(" – ")[0])) courseSet(checkCourseStep, "statusLabel", label, "units approved so far");
+  }
+  // Publishing: required when learners open the course by link or platform (Course Profile → Delivery).
+  const publishStep = courseSteps[7];
+  if (publishStep && ["link", "platform"].includes(journal.delivery) && publishStep.state === "optional") {
+    courseSet(publishStep, "state", "planned", `learners open the course by ${journal.delivery}`);
+    courseSet(publishStep, "statusLabel", fillTerm("publishNeeded", { units: unitsWord }), `learners open the course by ${journal.delivery}`);
+  }
+
+  // next: the command follows the journal. While it is right, the agent's title and why stay; the button
+  // label comes from the language pack when it has one, so overview, action lines and chat use one word.
+  // A step text that quotes the old label gets the new one.
   if (expected) {
     if (data.next && accepts(expected, data.next.href)) {
       if (data.next.href === expected.href) {
         set(data.next, "command", expected.command, "next.command", "readable command of the next action");
         set(data.next, "icon", expected.icon, "next.icon", "icon of the next action");
       }
+      const label = wordsOf(expected, journal, { unit: unitWord, units: unitsWord, n: nextUnit, id: expected.params.id ?? expected.params.name })?.label;
+      const before = data.next.label;
+      if (label && before && label !== before) {
+        set(data.next, "label", label, "next.label", "button word of the language pack");
+        // A new button word (same command, another state, e.g. check → re-check) brings its own why – when the
+        // old why is the pack's why of another action; a why of the agent's own stays (SK53).
+        const values = { unit: unitWord, units: unitsWord, n: nextUnit };
+        const why = wordsOf(expected, journal, values)?.why;
+        const keys = Object.keys(journal.pack?.actions ?? (journal.language === "en" ? englishActions : {}));
+        const packWhy = keys.some(key => key !== expected.key && wordsOf({ ...expected, key }, journal, values)?.why === data.next.why);
+        if (why && packWhy) set(data.next, "why", why, "next.why", "why of the new button word");
+        for (const step of data.process?.steps ?? []) for (const field of ["why", "result", "next"]) {
+          if (typeof step[field] === "string" && step[field].includes(before)) set(step, field, step[field].split(before).join(label), `process step "${step.title}".${field}`, "quotes the button word");
+        }
+      }
     } else {
+      // The step texts that still send the instructor to the old next action are the agent's to rewrite.
+      const before = data.next?.label;
+      if (before) for (const step of data.process?.steps ?? []) for (const field of ["why", "result", "next"]) {
+        if (typeof step[field] === "string" && step[field].includes(before)) missing.push({ where: "step", step: step.title, field, old: before, action: expected });
+      }
       const words = wordsOf(expected, journal, { unit: unitWord, units: unitsWord, n: nextUnit, id: expected.params.id ?? expected.params.name });
       const title = nextTitle(expected, data, unitWord) ?? words?.title ?? words?.label;
+      // A why the agent has just written for the new step (it differs from the one in the journal) stays (SP56).
+      const fresh = typeof data.next?.why === "string" && data.next.why.trim() && previous && data.next.why !== previous.next?.why;
       if (!words || !title) missing.push({ where: "next", action: expected, title });
-      else set(data, "next", { icon: expected.icon, title, why: words.why, label: words.label, href: expected.href, command: expected.command },
+      else set(data, "next", { icon: expected.icon, title, why: fresh ? data.next.why : words.why, label: words.label, href: expected.href, command: expected.command },
         "next", `next action by the journal: ${expected.command}`);
     }
   }
 
+  // The step `next` advances is the one in progress – in the course and in its unit: a planned (or optional)
+  // one becomes current; another current course step contradicts `next` and is the agent's to rewrite.
+  if (expected) {
+    const steps = data.process?.steps ?? [];
+    const target = courseStepOf(expected, steps);
+    if (target && ["planned", "optional"].includes(target.state)) set(target, "state", "current", `process step "${target.title}".state`, "the step the next action advances");
+    if (target) for (const step of steps) {
+      if (step !== target && step.state === "current") missing.push({ where: "current", step: step.title, target: target.title, action: expected });
+    }
+    const n = expected.params.number ?? expected.params.file;
+    const unit = n == null ? null : (data.units ?? []).find(item => String(item.id) === String(n));
+    const unitStep = unit && unitStepOf(expected, unit.process?.steps ?? []);
+    if (unitStep && ["planned", "optional"].includes(unitStep.state)) set(unitStep, "state", "current", `units[${n}] step "${unitStep.title}".state`, "the step the next action advances");
+  }
+
+  const iconOf = item => item?.icon || (String(item?.href ?? "").startsWith("agent:") ? "▶️" : "");
   // "More options": the cards of the second way for the next unit, of the templates and of a brief while they
   // are not `next` (actions.mjs → exploreCards); a right card keeps its words, a managed card no longer
   // right goes. Never the icon of `next`: these cards use ➕.
   if (expected) {
     const { cards, managed } = exploreCards(journal, expected, data.next?.href);
     const explore = Array.isArray(data.explore) ? data.explore : [];
+    // A course step that may come first stands `alongside` the next button (the view shows it there).
     const result = explore.filter(item => !managed.test(String(item.href ?? "")) || cards.some(card => accepts(card, item.href)))
-      .map(item => cards.some(card => accepts(card, item.href)) && item.icon === data.next?.icon ? { ...item, icon: "➕" } : item);
+      // Any card – managed or the agent's – with the icon of `next` (an agent: link without one shows ▶️) gets ➕ (SK32).
+      .map(item => iconOf(item) && iconOf(item) === iconOf(data.next) ? { ...item, icon: "➕" } : item)
+      .map(item => {
+        const card = cards.find(card => accepts(card, item.href));
+        if (card?.alongside && !item.alongside) return { ...item, alongside: true };
+        if (card && !card.alongside && item.alongside) { const { alongside, ...rest } = item; return rest; }
+        return item;
+      });
     for (const card of cards.filter(card => !explore.some(item => accepts(card, item.href)))) {
       const words = wordsOf(card, journal, { unit: unitWord, units: unitsWord, n: card.params.number, id: card.params.id ?? card.params.name });
       if (!words) { missing.push({ where: "explore", action: card }); continue; }
-      result.push({ icon: card.icon, title: words.title ?? words.label, description: words.why, label: words.label, href: card.href, command: card.command });
+      result.push({ icon: card.icon, title: words.title ?? words.label, description: words.why, label: words.label, href: card.href, command: card.command, ...(card.alongside ? { alongside: true } : {}) });
     }
     if (result.length || data.explore) set(data, "explore", result, "explore", "cards of the second way, the templates and a brief");
   }
+
+  // The one-line note under ## Sessions ("planned in the agenda …", "{n} of {N} created …") also stands in
+  // the overview, above the units; none once every unit is created or without an agenda.
+  const note = sessionsNote(journal, (expected, values) => wordsOf(expected, journal, { unit: unitWord, units: unitsWord, ...values }));
+  const noteText = note?.words?.label?.replace(/^_|_$/g, "");
+  set(data, "unitsNote", noteText || undefined, "unitsNote", "one-line note under ## Sessions");
 
   // Unit words from the terminology and the ## Sessions suffix.
   const sessionsSuffix = journal.headings.find(heading => heading.key === "Sessions")?.suffix;
@@ -198,11 +336,14 @@ export function derive(journal, input, { date } = {}) {
     set(data, "unitLabel", label, "unitLabel", "terminology (sessions-called) and suffix of ## Sessions");
   }
 
-  // The footer dates the derived state: renewed only when something else changed.
-  if (changes.length && typeof data.footer === "string") {
-    const old = data.footer.match(/\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\/\d{1,2}\/\d{4}/)?.[0];
+  // The footer dates the derived state ("As of {date}" from the pack), renewed only when something else
+  // changed. An event in it ("planning sketch saved") would outlive the next step, so none is kept (SK31).
+  const datePattern = /\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\/\d{1,2}\/\d{4}/;
+  const old = typeof data.footer === "string" ? data.footer.match(datePattern)?.[0] ?? null : null;
+  if (changes.length) {
     const now = date ?? today(journal.language, old);
-    if (old && old !== now) set(data, "footer", data.footer.replace(old, now), "footer", "date of the derived state");
+    const text = String(journal.terms?.asOf ?? englishTerms.asOf).replace("{date}", now);
+    if (data.footer !== text) set(data, "footer", text, "footer", "date of the derived state");
   }
   return { data, changes, sessions, missing, unitWord, unitsWord };
 }
@@ -230,20 +371,31 @@ export function patchJournal(source, journal, derived) {
 }
 
 // What the agent still has to write because no language pack has the words of an action.
-export const missingText = item => item.where === "next"
+export const missingText = item => item.where === "current"
+  ? `- process step "${item.step}" is current, but the next action (${item.action.command}) advances "${item.target}" – rewrite "${item.step}" (state and words: done, or planned with when it comes) in the draft and run again`
+  : item.where === "step"
+  ? `- process step "${item.step}".${item.field} still names the old next action "${item.old}", but the next action is now ${item.action.command} – rewrite that step (its state and words) in the draft and run again`
+  : item.where === "next"
   ? `- next: the next action is ${item.action.href} (command "${item.action.command}", icon ${item.action.icon}${item.title ? `, title "${item.title}"` : ""}) – write its title, label and why in the course language into the draft's next and run again`
   : item.where === "explore" ? `- explore: add the card ${item.action.href} (command "${item.action.command}", icon ➕) with title, description and label in the course language to the draft and run again`
-  : item.where.startsWith("one-line note") ? `- ${item.where}: write it in the course language (${item.action.key === "note-planned" ? "the units are planned in the agenda and created one after another, starting with unit 1" : "{n} of {N} units created; the next one follows after the material of unit {k}"}) and run again`
+  : item.where.startsWith("one-line note") ? `- ${item.where}: write it in the course language (${item.action.key === "note-planned" ? "the units are planned in the agenda and created one after another, starting with unit 1" : "{n} of {N} units created; unit {m} follows once unit {k} is done"}) and run again`
   : `- ${item.where}: the action is [${item.action.icon} <label>](${item.action.href}) ${item.action.code} – write that link in the course language (keep the link and the command) and run again`;
 
 const shown = value => value === undefined ? "–" : typeof value === "string" ? `"${value.length > 70 ? `${value.slice(0, 69)}…` : value}"` : JSON.stringify(value).slice(0, 90);
-export const describe = change => `- ${change.path}: ${shown(change.from)} → ${shown(change.to)} (${change.why})`;
+// A new `next` is listed with its words uncut: the agent quotes its label in step texts and the chat link.
+const shownNext = next => ["title", "label", "command"].filter(key => next?.[key]).map(key => `${key} "${next[key]}"`).join(", ");
+export const describe = change => change.path === "next" && change.to && typeof change.to === "object"
+  ? `- next: ${shown(change.from?.href ?? change.from)} → ${shownNext(change.to)} (${change.why})`
+  : `- ${change.path}: ${shown(change.from)} → ${shown(change.to)} (${change.why})`;
 
 // Derive a draft object against the journal file; used by write-dashboard.mjs before it writes.
 export function deriveForJournal(journalFile, draft, options) {
   const source = readFileSync(journalFile, "utf8");
   const journal = readJournal(source, { projectDir: dirname(resolve(journalFile)), packs: loadPacks() });
-  const derived = derive(journal, draft, options);
+  const block = source.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1];
+  let previous = null;
+  try { previous = block ? JSON.parse(block) : null; } catch { previous = null; }
+  const derived = derive(journal, draft, { previous, ...options });
   // The lines of ## Sessions that differ from the derived state.
   const patched = patchJournal(source, journal, derived);
   return { ...derived, journal, changes: [...derived.changes, ...patched.changes], missing: [...derived.missing, ...patched.missing] };
@@ -273,7 +425,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const { _journalHash, ...base } = input;
   const { data, changes, missing } = deriveForJournal(journalFile, base);
   if (missing.length) {
-    console.log("Words still to write (no language pack has them):");
+    console.log("Words still to write (no language pack has them, or a step contradicts the next action):");
     missing.forEach(item => console.log(missingText(item)));
   }
   if (!changes.length && !missing.length) {

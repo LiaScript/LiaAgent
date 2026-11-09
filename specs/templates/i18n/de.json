@@ -22,8 +22,8 @@
    "# Neuer Kurs"
   ],
   [
-   "This is where your course plan grows. You bring your teaching idea; the assistant in the chat helps you turn it into learning objectives, activities and finished material. You check every proposal and decide what is kept. **Nothing is saved without your confirmation.**",
-   "Hier wächst Ihr Kursplan. Sie bringen Ihre Idee mit; der Assistent im Chat hilft Ihnen, daraus Lernziele, Aufgaben und fertiges Material zu entwickeln. Sie prüfen jeden Vorschlag und entscheiden, was bleibt. **Ohne Ihre Bestätigung wird nichts gespeichert.**"
+   "This is where your course plan grows. You bring your teaching idea; the assistant in the chat helps you turn it into learning objectives, activities and finished material. You check every proposal and decide what is kept. **Nothing in your plan or material changes without your confirmation; the assistant keeps the overview up to date itself.**",
+   "Hier wächst Ihr Kursplan. Sie bringen Ihre Idee mit; der Assistent im Chat hilft Ihnen, daraus Lernziele, Aufgaben und fertiges Material zu entwickeln. Sie prüfen jeden Vorschlag und entscheiden, was bleibt. **Ohne Ihre Bestätigung ändert sich nichts an Ihrer Planung und Ihrem Material. Die Übersicht hält der Assistent selbst aktuell.**"
   ],
   [
    "[Open the overview →](#dashboard)",
@@ -83,19 +83,19 @@
   ],
   [
    "## Templates",
-   "## Templates – Vorlagen"
+   "## Templates – Bausteine"
   ],
   [
    "[▶️ Suggest templates](agent:teaching/suggest-templates) `:suggest-templates` · [👁 Template catalog](agent:teaching/preview?file=specs/catalog/README.md) `:preview specs/catalog/README.md` · [▶️ Manage templates](agent:teaching/manage-templates) `:manage-templates`",
-   "[▶️ Vorlagen vorschlagen](agent:teaching/suggest-templates) `:suggest-templates` · [👁 Vorlagenkatalog](agent:teaching/preview?file=specs/catalog/README.md) `:preview specs/catalog/README.md` · [▶️ Vorlagen verwalten](agent:teaching/manage-templates) `:manage-templates`"
+   "[▶️ Bausteine vorschlagen](agent:teaching/suggest-templates) `:suggest-templates` · [👁 Bausteinkatalog](agent:teaching/preview?file=specs/catalog/README.md) `:preview specs/catalog/README.md` · [▶️ Bausteine verwalten](agent:teaching/manage-templates) `:manage-templates`"
   ],
   [
    "LiaScript templates used by this project are imported in the main metadata header at the top of `journal.md` and should also be imported in any standalone material file that uses their macros.",
-   "Die LiaScript-Vorlagen dieses Projekts werden im Kopf ganz oben in `journal.md` eingebunden und auch in jeder Materialdatei, die sie nutzt."
+   "Die Bausteine (LiaScript-Templates) dieses Projekts werden im Kopf ganz oben in `journal.md` eingebunden und auch in jeder Materialdatei, die sie nutzt."
   ],
   [
    "Checked templates are listed in the template catalog (`specs/catalog/README.md`); more community templates can be found at [topics/liascript-template](https://github.com/topics/liascript-template). When a useful template is selected, add its `import:` line to the project header, document it here, and use the same import in materials that need the template. A template that is still being developed is described here by a brief until it is adopted.",
-   "Geprüfte Vorlagen stehen im Vorlagenkatalog (`specs/catalog/README.md`); weitere Vorlagen der Gemeinschaft gibt es unter [topics/liascript-template](https://github.com/topics/liascript-template). Eine ausgewählte Vorlage wird mit ihrer `import:`-Zeile in den Projektkopf eingetragen, hier beschrieben und im Material genauso eingebunden. Eine Vorlage, die noch entwickelt wird, steht hier mit einem Steckbrief, bis sie übernommen ist."
+   "Geprüfte Bausteine stehen im Bausteinkatalog (`specs/catalog/README.md`); weitere Bausteine der Gemeinschaft gibt es unter [topics/liascript-template](https://github.com/topics/liascript-template). Ein ausgewählter Baustein wird mit ihrer `import:`-Zeile in den Projektkopf eingetragen, hier beschrieben und im Material genauso eingebunden. Ein Baustein, der noch entwickelt wird, steht hier mit einem Steckbrief, bis er übernommen ist."
   ],
   [
    "  Renders the project overview (next step, units, work process, open points) from one JSON data block.",
@@ -272,9 +272,9 @@
      "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen passen."
     },
     {
-     "title": "Vorlagen für Aktivitäten",
+     "title": "Bausteine für Aktivitäten",
      "state": "planned",
-     "why": "Fertige Bausteine wie Turtle-Python oder SQL – oder ein eigener, wenn nichts passt."
+     "why": "Fertige Bausteine wie eine Zeichenfläche oder eine Karte – oder ein eigener, wenn nichts passt."
     },
     {
      "title": "Ablaufplan",
@@ -284,7 +284,7 @@
     {
      "title": "Material erstellen",
      "state": "planned",
-     "why": "Erklärungen, Aufgaben und Selbsttests entstehen aus der Planung."
+     "why": "Erklärungen, Aufgaben und Selbstkontrollen entstehen aus der Planung."
     },
     {
      "title": "Prüfen und überarbeiten",
@@ -341,6 +341,12 @@
   ],
   "footer": "neues, leeres Projekt · {date}"
  },
+ "unitSteps": [
+  {"title": "Planen", "why": "Die Planungsskizze legt Inhalte, Aufgaben und Selbstkontrolle fest, bevor Material entsteht."},
+  {"title": "Material ausarbeiten", "why": "Texte, Aufgaben und Selbstkontrolle entstehen gemeinsam; jeder Teil wird vorher gezeigt."},
+  {"title": "Bilder einfügen", "why": "Die markierten Stellen bekommen ihre Bilder."},
+  {"title": "Prüfen und freigeben", "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt; danach geben Sie es frei."}
+ ],
  "terms": {
   "skeleton": "Planungsskizze",
   "skeletonOnly": "Planungsskizze ✅ · Material offen",
@@ -350,8 +356,12 @@
   "imagesMissing": "Material geschrieben · Bilder fehlen",
   "imagesPartial": "Material geschrieben · Bilder {n} von {m}",
   "imageStep": "Bilder einfügen",
+  "noBlocks": "keine",
+  "asOf": "Stand: {date}",
   "checkCorrection": "Prüfung: Korrektur nötig ({n})",
   "passedMissing": "bestanden – es fehlt noch: {what}",
+  "passedConcerns": "bestanden – {n} Punkt(e) zu entscheiden",
+  "recheckDone": "nachgeprüft",
   "validationReport": "Prüfbericht",
   "usableNow": "Jetzt mit den Lernenden nutzbar",
   "changedAfterCheck": "Nach der Prüfung geändert",
@@ -361,6 +371,13 @@
   "correctionAllFixed": "alle {n} Punkte korrigiert",
   "correctionOneFixed": "der Punkt ist korrigiert",
   "approvalOpen": "bestanden – wartet auf Ihre Freigabe",
+  "approvedMissing": "freigegeben – es fehlt noch: {what}",
+  "blocksPerUnit": "wird je {unit} geprüft – bisher keine nötig ({k} von {N})",
+  "blocksNone": "keine Bausteine nötig",
+  "checkCourseLater": "nach der letzten {unit} – freigegeben: {units}",
+  "publishNeeded": "nötig – wenn alle {units} geprüft sind",
+  "imagesWaiting": "wartet auf Ihr Foto – Bilder {n} von {m}",
+  "buildRequested": "Vorbereiten lassen beauftragt",
   "usableYes": "ja",
   "usableLimited": "ja, mit Einschränkungen: {what}",
   "usableNo": "noch nicht: {why}",
@@ -372,6 +389,7 @@
  },
  "outdatedTerms": [
   ["folgt noch", "passedMissing"],
+  ["mit Bedenken", "passedConcerns"],
   ["(?<!\\p{L})überarbeitet(?!\\p{L})", "recheckShort"],
   ["(?<!kurze )Nachprüfung offen", "recheckShort"],
   ["Korrektur nötig \\(\\d+\\)(?=.*seither)", "correctionOpen"], ["Skelett ✅", "skeleton"]
@@ -380,18 +398,21 @@
   "init-course": {"title": "Den Rahmen festlegen", "label": "Kurs starten", "why": "Thema, Zielgruppe und Format sind die Grundlage für Lernziele und Material."},
   "create-outline": {"title": "Gliederung und Lernziele", "label": "Gliederung erstellen", "why": "Klare Lernziele sagen, was die Lernenden am Ende können."},
   "create-didactics": {"title": "Didaktik", "label": "Didaktik planen", "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen und den Lernenden passen."},
-  "suggest-templates": {"title": "Vorlagen für Aktivitäten", "label": "Vorlagen vorschlagen", "why": "Fertige Bausteine für die Aktivitäten – oder die Entscheidung, dass keiner nötig ist."},
-  "develop-template": {"title": "Vorlagen für Aktivitäten", "label": "Baustein {id} entwickeln", "why": "Ein eigener Baustein für eine Aktivität, die kein fertiger abdeckt."},
-  "adopt-template": {"title": "Vorlagen für Aktivitäten", "label": "Baustein {id} ausprobieren und übernehmen", "why": "Der Baustein ist fertig: ausprobieren, dann in den Kurs übernehmen."},
+  "suggest-templates": {"title": "Bausteine für Aktivitäten", "label": "Bausteine vorschlagen", "why": "Fertige Bausteine für die Aktivitäten – oder die Entscheidung, dass keiner nötig ist."},
+  "develop-template": {"title": "Bausteine für Aktivitäten", "label": "Baustein {id} entwickeln", "why": "Ein eigener Baustein für eine Aktivität, die kein fertiger abdeckt."},
+  "adopt-template": {"title": "Bausteine für Aktivitäten", "label": "Baustein {id} ausprobieren und übernehmen", "why": "Der Baustein ist fertig: ausprobieren, dann in den Kurs übernehmen."},
   "create-agenda": {"title": "Ablaufplan", "label": "Ablaufplan erstellen", "why": "Reihenfolge und Zeit der Einheiten im Unterricht."},
-  "plan-unit": {"label": "{unit} {n} planen", "why": "Die Planungsskizze legt Inhalte, Aufgaben und Selbsttest fest, bevor Material entsteht."},
-  "work-out": {"label": "{unit} {n} ausarbeiten", "why": "Texte, Aufgaben und Selbsttest entstehen gemeinsam; jeder Teil wird vorher gezeigt."},
+  "plan-unit": {"label": "{unit} {n} planen", "why": "Die Planungsskizze legt Inhalte, Aufgaben und Selbstkontrolle fest, bevor Material entsteht."},
+  "work-out": {"label": "{unit} {n} ausarbeiten", "why": "Texte, Aufgaben und Selbstkontrolle entstehen gemeinsam; jeder Teil wird vorher gezeigt."},
   "insert-images": {"label": "Bilder für {unit} {n} einfügen", "why": "Die markierten Stellen bekommen ihre Bilder."},
   "check-unit": {"label": "{unit} {n} prüfen", "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt."},
   "recheck-unit": {"label": "{unit} {n} kurz nachprüfen", "why": "Nach der Prüfung wurde etwas geändert; die kurze Nachprüfung sieht die geänderten Seiten noch einmal an."},
   "revise-unit": {"label": "{unit} {n} überarbeiten", "why": "Die Prüfung hat Punkte gefunden, die korrigiert werden müssen."},
   "resolve-concerns": {"label": "{unit} {n} prüfen: Bedenken klären", "why": "Die Prüfung ist mit Bedenken bestanden, die eine Entscheidung brauchen."},
+  "concerns-waiting": {"label": "{unit} {n} prüfen: nach dem Ansehen entscheiden", "why": "Ein Punkt der Prüfung wartet darauf, dass Sie die Seite auf dem Gerät der Lernenden ansehen – danach entscheiden Sie ihn hier."},
   "approve-unit": {"label": "{unit} {n} ansehen und freigeben", "why": "Die Prüfung ist bestanden; das Material wartet auf die Freigabe."},
+  "build-running": {"label": "{unit} {n} wird vorbereitet", "why": "Der Assistent schreibt, bebildert und prüft das Material gerade allein – Sie müssen nichts tun. Danach sehen Sie es gemeinsam an."},
+  "approve-waiting": {"label": "{unit} {n} ansehen und freigeben", "why": "Die Prüfung ist bestanden; Ihr eigenes Foto kann auch nach der Freigabe kommen."},
   "view-unit": {"label": "So sehen es die Lernenden", "why": "Das geprüfte Material so ansehen, wie die Lernenden es sehen."},
   "check-course": {"title": "Prüfen und überarbeiten", "label": "Kurs prüfen", "why": "Die Kursprüfung kommt vor dem Veröffentlichen."},
   "publish": {"title": "Veröffentlichen", "label": "Kurs veröffentlichen", "why": "Der geprüfte Kurs bekommt einen Link zum Teilen."},
@@ -406,6 +427,7 @@
   "check-units": {"label": "{units} prüfen"},
   "build-unit": {"title": "{unit} {n} vorbereiten lassen", "label": "{unit} {n} vorbereiten lassen", "why": "Nach einer kurzen Planungsskizze schreibt und prüft der Assistent das Material allein; danach wird es gemeinsam angesehen."},
   "note-planned": {"label": "_Die {units} sind im Ablaufplan geplant und entstehen nacheinander, beginnend mit {unit} 1._"},
-  "note-progress": {"label": "_{n} von {N} {units} angelegt; weiter geht es nach dem Material von {unit} {k}._"}
+  "note-progress": {"label": "_{n} von {N} {units} angelegt; {unit} {m} folgt, wenn {unit} {k} fertig ist._"},
+  "note-ready": {"label": "_{n} von {N} {units} angelegt; {unit} {k} ist freigegeben – {unit} {m} kann jetzt beginnen._"}
  }
 }

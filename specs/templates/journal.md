@@ -7,7 +7,7 @@ import: ./specs/dashboard/README.md
 
 # New course
 
-This is where your course plan grows. You bring your teaching idea; the assistant in the chat helps you turn it into learning objectives, activities and finished material. You check every proposal and decide what is kept. **Nothing is saved without your confirmation.**
+This is where your course plan grows. You bring your teaching idea; the assistant in the chat helps you turn it into learning objectives, activities and finished material. You check every proposal and decide what is kept. **Nothing in your plan or material changes without your confirmation; the assistant keeps the overview up to date itself.**
 
 <!-- class="journal-start" -->
 [Open the overview →](#dashboard)
@@ -36,7 +36,7 @@ This is where your course plan grows. You bring your teaching idea; the assistan
       {"title": "Set the frame", "state": "current", "why": "Topic, target group, format and language shape everything that follows.", "next": "Click “Start course” and answer the questions."},
       {"title": "Outline and learning objectives", "state": "planned", "why": "Clear objectives say what learners can do at the end."},
       {"title": "Didactics", "state": "planned", "why": "Methods, task formats and support that fit the objectives."},
-      {"title": "Templates for activities", "state": "planned", "why": "Ready-made building blocks such as turtle Python or SQL – or your own if nothing fits."},
+      {"title": "Templates for activities", "state": "planned", "why": "Ready-made building blocks such as a drawing board or a map – or your own if nothing fits."},
       {"title": "Agenda", "state": "optional", "why": "Decided with the frame: order and duration of the units."},
       {"title": "Create material", "state": "planned", "why": "Explanations, tasks and self-checks grow out of the planning."},
       {"title": "Check and revise", "state": "planned", "why": "Clarity and fit to the objectives are checked before the material is used."},

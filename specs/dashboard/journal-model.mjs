@@ -17,6 +17,14 @@ export function loadPacks(dir = resolve(here, "..", "templates", "i18n")) {
 }
 
 // The English state words (templates/session-validation.yaml → outcome_words); a pack overrides them.
+// The material steps every unit gets from the start when no unit has steps yet (a language pack's `unitSteps`).
+export const englishUnitSteps = [
+  { title: "Plan", why: "The planning sketch sets contents, tasks and self-check before any material is written." },
+  { title: "Work out the material", why: "Texts, tasks and self-check are written together; you see each part first." },
+  { title: "Insert images", why: "The marked spots get their pictures." },
+  { title: "Check and approve", why: "The check shows whether the material fits the objectives and the time; then you approve it." }
+];
+
 export const englishTerms = {
   skeleton: "planning sketch",
   skeletonOnly: "planning sketch ✅ · material open",
@@ -27,7 +35,19 @@ export const englishTerms = {
   checked: "checked ✅",
   viewMaterial: "How learners see it",
   imageStep: "Insert images",
+  noBlocks: "none",
+  asOf: "As of {date}",
   passedMissing: "passed – still missing: {what}",
+  passedConcerns: "passed – {n} point(s) to decide",
+  blocksPerUnit: "checked per {unit} – none needed so far ({k} of {N})",
+  blocksNone: "no building blocks needed",
+  checkCourseLater: "after the last {unit} – approved: {units}",
+  publishNeeded: "needed – after all {units} are checked",
+  approvalOpen: "passed – waiting for your approval",
+  imagesWaiting: "waiting for your photo – images {n} of {m}",
+  approvedMissing: "approved – still missing: {what}",
+  buildRequested: "preparation requested",
+  recheckDone: "re-checked",
   recheckShort: "{n} point(s) changed since – short re-check open",
   correctionOpen: "correction needed: {open} of {n} points open",
   usableYes: "yes", usableLimited: "yes, with limits: {what}", usableNo: "not yet: {why}"
@@ -60,6 +80,8 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   // "sessions-called: Lesson", or in older journals "sessions-called: unit (Einheit)": the word in the course language.
   const called = context.match(/sessions-called:\s*([\p{L}\w-]+)(?:\s*\(([^)]+)\))?/u);
   const terminology = called ? (called[2] ?? called[1]).trim() : null;
+  // How learners open the material (Course Profile → Delivery): link or platform makes publishing required (SK69).
+  const delivery = context.match(/Delivery:\s*(link|platform|print|local)\b/i)?.[1].toLowerCase() ?? null;
 
   const agenda = agendaUnits(section("Agenda"));
   const sessions = section("Sessions");
@@ -80,7 +102,7 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   };
   const validationSummary = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
   return {
-    language, terms, pack, headings, terminology, hasAgenda: agenda.length > 0, units: list, projectDir,
+    language, terms, pack, headings, terminology, delivery, hasAgenda: agenda.length > 0, units: list, projectDir,
     filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
     agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
     templates: readTemplates(section("Templates")),
@@ -131,7 +153,7 @@ function agendaUnits(agenda) {
 }
 
 function emptyUnit(n) {
-  return { n, heading: null, tableTitle: null, material: false, done: false, notes: null, statusLine: null, report: null, images: { total: 0, placed: 0, open: 0 }, approved: false };
+  return { n, heading: null, tableTitle: null, material: false, done: false, notes: null, statusLine: null, report: null, images: { total: 0, placed: 0, open: 0, waiting: 0 }, approved: false, buildRequested: false };
 }
 
 function readUnits(sessions, terms) {
@@ -167,6 +189,12 @@ function readUnits(sessions, terms) {
     item.images = readImages(part);
     // The skeleton part (summary, decisions …) before the first #### block holds the approval record.
     item.approved = approvedWord.test(stripComments(part.split(/^#### /m)[0]));
+    // "Let it be prepared" was confirmed with the planning sketch (tasks/build-session.md): a dated decision
+    // with terms.buildRequested. While no check report exists, the run is still going (SK58).
+    item.buildRequested = [terms.buildRequested, englishTerms.buildRequested].some(word => word && stripComments(part.split(/^#### /m)[0]).toLowerCase().includes(String(word).toLowerCase()));
+    // The building-block line decided with the planning sketch (session-skeleton.yaml → building-blocks).
+    const blocks = part.match(/<!--\s*data-key="building-blocks"\s*-->\s*\n\s*\*\*[^*]+\*\*\s*(.*)/);
+    if (blocks) item.blocks = blocks[1].trim();
   }
   // The status word after the title: "{title} – {status}" (titles may contain dashes themselves).
   for (const item of units.values()) {
@@ -207,6 +235,13 @@ function readReport(part) {
     usableText: bold[1] ?? null,
     changedSince: changed ? Number(changed) : 0,
     deferred: text.includes("⏳"),
+    // Concerns that wait for the instructor (a visible "- ⏸ …" item, e.g. "decide after looking at it on the
+    // learners' device") against the open concerns of the technical part (❌ lines): all waiting → SK47.
+    concernsWaiting: (() => {
+      const waiting = visible.split("\n").filter(line => /^\s*[-*]\s+⏸/.test(line)).length;
+      const open = text.split("<details>").slice(1).join("").split("\n").filter(line => /^\s*[-*]\s+❌/.test(line)).length;
+      return waiting > 0 && waiting >= open;
+    })(),
     // The visible ⏳ items ("Still missing"), shortened to what is missing: "6 photos on the reading pages".
     missing: visible.split("\n").map(line => line.match(/^\s*[-*]\s+⏳\s*(.+)$/)?.[1]).filter(Boolean).map(shortItem).filter(Boolean)
   };
@@ -228,11 +263,15 @@ function shortItem(text) {
 }
 
 // Image entries (tasks/create-image.md): <section> blocks with `#### {slug}` and `__Status:__`.
+// `waiting`: open entries of the instructor's own photos (Source own, wanted) – they wait for a file from the
+// instructor, not for the image step, so they do not hold the check back (SK41).
 function readImages(part) {
-  const statuses = [...part.matchAll(/<section(?![^>]*validation-report)\b[^>]*>([\s\S]*?)<\/section>/g)]
-    .map(block => block[1].match(/^\s*[*-]\s+__Status:__[ \t]*(\S+)/m)?.[1].toLowerCase()).filter(Boolean);
-  const placed = statuses.filter(status => placedStatuses.includes(status)).length;
-  return { total: statuses.length, placed, open: statuses.length - placed };
+  const entries = [...part.matchAll(/<section(?![^>]*validation-report)\b[^>]*>([\s\S]*?)<\/section>/g)]
+    .map(block => ({ status: block[1].match(/^\s*[*-]\s+__Status:__[ \t]*(\S+)/m)?.[1].toLowerCase(), source: block[1].match(/^\s*[*-]\s+__Source:__[ \t]*(\S+)/m)?.[1].toLowerCase() }))
+    .filter(entry => entry.status);
+  const placed = entries.filter(entry => placedStatuses.includes(entry.status)).length;
+  const waiting = entries.filter(entry => entry.status === "wanted" && entry.source === "own").length;
+  return { total: entries.length, placed, open: entries.length - placed, waiting };
 }
 
 // "usable with learners now": its value → yes | limited | no, by the prefixes of the English and pack terms.
@@ -263,7 +302,13 @@ export function statusText(unit, terms) {
   if (report?.result && !report.outcome) return null;
   if (!report?.outcome) return !open ? terms.materialWritten : placed ? fill(terms.imagesPartial, { n: placed, m: total }) : terms.imagesMissing;
   if (unit.done && !report.changedSince && !open) return terms.checked;
-  const outcome = report.outcome.replace(datedOutcome, "").replace(/\s+/g, " ").trim();
+  let outcome = report.outcome.replace(datedOutcome, "").replace(/\s+/g, " ").trim();
+  // Approved by the instructor while something is still missing: "approved – still missing: 1 photo" (SK61).
+  const passedHead = String(terms.passedMissing).split("{what}")[0];
+  if (unit.approved && report.result === "PASS" && !report.changedSince && outcome.startsWith(passedHead)) {
+    // Without the image count: the missing photo is already named (SK70).
+    return fill(terms.approvedMissing, { what: outcome.slice(passedHead.length) });
+  }
   const prefix = report.result === "FAIL" ? String(terms.checkCorrection).match(/^[^:{(]+:/)?.[0] : null;
   const text = prefix && !outcome.toLowerCase().startsWith(prefix.toLowerCase()) ? `${prefix} ${outcome}` : outcome;
   const images = open ? (placed ? fill(tail(terms.imagesPartial), { n: placed, m: total }) : tail(terms.imagesMissing)) : null;
@@ -294,6 +339,7 @@ export function patchSessions(source, units) {
   if (!region) return { source, changes: [] };
   const { start, end } = region;
   const changes = [];
+  const listed = new Map();
   let comment = false, details = false, header = null;
   for (let index = start + 1; index < end; index++) {
     const line = lines[index];
@@ -304,6 +350,7 @@ export function patchSessions(source, units) {
     if (tableHeader) { header = tableHeader[1].split("|").map(cell => cell.trim()); continue; }
     const row = line.match(/^\|\s*(\d+)\s*\|(.*)\|\s*$/);
     const item = !details && line.match(/^(\d+)\.\s+(.+?)\s*$/);
+    if (item) listed.set(item[1], index);
     const unit = units.find(entry => entry.n === (row?.[1] ?? item?.[1]));
     if (!unit?.status) continue;
     let next = line;
@@ -317,6 +364,34 @@ export function patchSessions(source, units) {
       changes.push({ path: `## Sessions ${row ? `Notes cell ${row[1]}` : `status line ${item[1]}`}`, from: row ? line.split("|").at(-2)?.trim() : item[2], to: unit.status, why: "one wording per state" });
       lines[index] = next;
     }
+  }
+  // A begun unit without its status line (a new unit) gets one, in number order; the first one goes above
+  // the technical overview. Positions are looked up again after each insertion.
+  const positions = () => {
+    const found = new Map();
+    const region = sessionsOverview(lines);
+    let inComment = false, inDetails = false, detailsLine = -1;
+    for (let index = region.start + 1; index < region.end; index++) {
+      const line = lines[index];
+      if (inComment || /^\s*<!--/.test(line)) { inComment = !line.includes("-->"); continue; }
+      if (/<details>/.test(line)) { inDetails = true; if (detailsLine < 0) detailsLine = index; }
+      if (/<\/details>/.test(line)) { inDetails = false; continue; }
+      const item = !inDetails && line.match(/^(\d+)\.\s+/);
+      if (item) found.set(item[1], index);
+    }
+    return { found, detailsLine };
+  };
+  for (const unit of units.filter(entry => entry.status && entry.title && entry.begun && !listed.has(entry.n)).sort((a, b) => Number(a.n) - Number(b.n))) {
+    const { found, detailsLine } = positions();
+    const numbers = [...found.keys()].map(Number);
+    const below = numbers.filter(n => n < Number(unit.n)).sort((a, b) => b - a)[0];
+    const above = numbers.filter(n => n > Number(unit.n)).sort((a, b) => a - b)[0];
+    const text = `${unit.n}. ${unit.title} – ${unit.status}`;
+    if (below != null) lines.splice(found.get(String(below)) + 1, 0, text);
+    else if (above != null) lines.splice(found.get(String(above)), 0, text);
+    else if (detailsLine >= 0) lines.splice(detailsLine, 0, text, "");
+    else continue;
+    changes.push({ path: `## Sessions status line ${unit.n}`, from: undefined, to: unit.status, why: "a new unit's status line" });
   }
   return { source: lines.join("\n"), changes };
 }

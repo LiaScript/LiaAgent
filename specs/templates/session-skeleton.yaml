@@ -16,8 +16,8 @@ template:
         → `statusText`, with the words of the language pack's `terms`): before a check from the planning sketch
         ("planning sketch ✅ · material open", the fixed word for skeleton, `data/chat-wording.md` → Plain language),
         the material and the image entries; once a report exists, its outcome line (`templates/session-validation.yaml`
-        → `outcome_words`) — never "ready" or "finished" before a check. A task that creates a unit writes its line
-        with the sketch status; other tasks leave the status to the script;
+        → `outcome_words`) — never "ready" or "finished" before a check. Tasks leave the status lines and
+        Notes cells to the script, also for a new unit (`tasks/create-session-skeleton.md` step 8);
         (2) `<details><summary>{"Technical overview", translated}</summary>`, then `<!-- data-type="none" -->`
         and the table `| # | Title | Type | Method | Skeleton | Material | Done | Notes |` (the Method
         column only if `__Default Session Method:__` is not `none`), then `</details>`.
@@ -31,7 +31,7 @@ template:
       entry_order: >-
         Inside each `### {{number}}. {{title}}` subsection, always in this order: action line →
         `<details>` "Technical settings and more actions" (Type, Method, further commands) →
-        visible kind line → Summary → Content → Activities → Decisions (once the first exists) → References →
+        visible kind line → Summary → Content → Activities → Building blocks → Decisions (once the first exists) → References →
         the validation report (once a check ran; heading and `<section data-key="validation-report">`,
         `templates/session-validation.yaml`) → `#### Images` (once the first image entry exists) →
         `#### Persona Reviews` (once a review exists). So the unit's slide shows the unit and the report's
@@ -96,6 +96,12 @@ template:
 
         1. [Exercise, discussion, reflection, or learner action]
         2. [Exercise, discussion, reflection, or learner action]
+    - id: building-blocks
+      title: Building blocks (visible)
+      template: |
+        <!-- data-key="building-blocks" -->
+        **{{"Building blocks", translated}}:** {{"none", translated}} – {{short reason}} | {{what the unit needs, e.g. "a drawing board for the labelled sketch"}}
+      note: 'One line, decided with every planning sketch (`tasks/create-session-skeleton.md` step 5). It starts with the translated word for "none" (German „keine“) when no building block is needed; otherwise it names the interaction the unit needs. While the selection in `## Templates` is open, `write-dashboard.mjs` then offers the suggestion card alongside the next button ("Also possible: suggest building blocks", translated, German „Auch möglich: Bausteine vorschlagen“). Instructor-facing word: "building block" (German „Baustein“, never „Vorlage“).'
     - id: decisions
       title: Decisions
       template: |

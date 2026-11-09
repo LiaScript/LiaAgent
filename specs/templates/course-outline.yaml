@@ -17,7 +17,8 @@ template:
     - Escape a number at the start of a line that is not a list item (`3\. grade` → write `3\.`),
       otherwise Markdown turns it into a numbered list.
     - Objectives as a numbered list; under each objective, the observable step and the basic /
-      extension levels as an indented sub-list with labels in the course language (never one run-on
+      extension levels as an indented sub-list with everyday labels in the course language, never a
+      school stage word (`tasks/create-outline.md` step 5; never one run-on
       paragraph); the session → objective → self-check overview as a list or a table with at most
       3 columns.
   sections:

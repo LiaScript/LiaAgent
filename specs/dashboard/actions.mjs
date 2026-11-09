@@ -22,7 +22,10 @@ export const englishActions = {
   "recheck-unit": { label: "Re-check {unit} {n}", why: "Points were changed after the check; a short re-check looks at the changed pages." },
   "revise-unit": { label: "Revise {unit} {n}", why: "The check found points that need correcting." },
   "resolve-concerns": { label: "Check {unit} {n}: resolve concerns", why: "The check passed with concerns that need your decision." },
+  "concerns-waiting": { label: "Check {unit} {n}: decide once you have looked", why: "A point of the check waits for your look at the learners' device; then decide it here." },
   "approve-unit": { label: "Look at {unit} {n} and approve", why: "The check passed; the material waits for your approval." },
+  "build-running": { label: "{unit} {n} is being prepared", why: "The assistant is writing, illustrating and checking the material on its own – nothing to do for you. Afterwards you look at it together." },
+  "approve-waiting": { label: "Look at {unit} {n} and approve", why: "The check passed; your own photo can come after the approval." },
   "view-unit": { label: "How learners see it", why: "The checked material as the learners see it." },
   "check-course": { title: "Check and revise", label: "Check the course", why: "The course check comes before publishing." },
   publish: { title: "Publish", label: "Publish course", why: "The checked course gets a link to share." },
@@ -39,7 +42,8 @@ export const englishActions = {
   "build-unit": { title: "Let {unit} {n} be prepared", label: "Let {unit} {n} be prepared", why: "After a short planning sketch the assistant writes and checks the material alone; you look at it afterwards." },
   // The one-line note under ## Sessions (tasks/update-dashboard.md → Rules).
   "note-planned": { label: "_The {units} are planned in the agenda and are created one after another, starting with {unit} 1._" },
-  "note-progress": { label: "_{n} of {N} {units} created; the next one follows after the material of {unit} {k}._" }
+  "note-progress": { label: "_{n} of {N} {units} created; {unit} {m} follows once {unit} {k} is done._" },
+  "note-ready": { label: "_{n} of {N} {units} created; {unit} {k} is approved – {unit} {m} can start now._" }
 };
 
 // The global process steps of templates/journal.md, by position: the title of `next` for a course action.
@@ -60,13 +64,27 @@ export function action(key, agent, cmd, params = {}, icon) {
   };
 }
 
+// Approved by the instructor, passed, nothing changed since – and only own photos still to come (SK55): the
+// unit no longer holds the course back; its photo stays a card ("insert images") until it arrives.
+export function awaitsOwnMedia(unit) {
+  const waiting = unit.images?.waiting ?? 0;
+  return Boolean(unit.approved && unit.material && unit.report?.result === "PASS" && !unit.report.changedSince
+    && waiting > 0 && unit.images.open === waiting);
+}
+
 // The main action of a unit, or null where it needs a judgement the journal does not record (then the
 // agent's action stays). `also`: other actions that are right in the same state (the agent's choice).
 export function unitAction(unit) {
   const n = unit.n;
   const report = unit.report;
-  const imagesOpen = unit.images.open > 0;
+  // An own photo the instructor still has to supply does not hold the check back (SK41): it stays open
+  // ("images 9 of 10"), the check runs, and afterwards it is the step that is left.
+  const waiting = unit.images.waiting ?? 0;
+  const imagesOpen = unit.images.open - waiting > 0;
   if (!unit.heading && !unit.material) return action("plan-unit", "teaching", "create-session", { number: n });
+  // "Let it be prepared" is running (confirmed with the sketch, no report yet): the button says so and leads
+  // back to the same run, never to the joint way (SK58).
+  if (unit.buildRequested && !report?.result) return action("build-running", "teaching", "build-session", { number: n }, "⏳");
   if (!unit.material) return { ...action("work-out", "teaching", "coauthor-materials", { number: n }), also: [`agent:teaching/build-session?number=${n}`] };
   // Before a check, and after changes since one: the open images first, then the (re-)check.
   if (!report?.result || report.changedSince) {
@@ -75,8 +93,12 @@ export function unitAction(unit) {
   }
   // FAIL: a small correction (quick-fix with its description) is the agent's call, revising is the default.
   if (report.result === "FAIL") return { ...action("revise-unit", "teaching", "coauthor-materials", { number: n }, "✏️"), also: [`agent:teaching/quick-fix?number=${n}&`] };
-  if (report.result === "PASS with concerns") return action("resolve-concerns", "teaching", "validate-course", { number: n }, "🔍");
+  // Concerns that all wait for the instructor's look keep the same command, but the button says so (SK47).
+  if (report.result === "PASS with concerns") return action(report.concernsWaiting ? "concerns-waiting" : "resolve-concerns", "teaching", "validate-course", { number: n }, "🔍");
   if (imagesOpen) return action("insert-images", "artist", "create-image", { number: n });
+  // Only own photos left: approving does not wait for them (SK55, SP78); once approved, the photo is what is left.
+  if (waiting) return unit.approved ? action("insert-images", "artist", "create-image", { number: n })
+    : action("approve-waiting", "teaching", "preview", { file: n }, "👁");
   // ⏳ items other than images (e.g. generated pictures): which step produces them is the agent's call.
   if (report.deferred) return null;
   if (!unit.done || !unit.approved) return action("approve-unit", "teaching", "preview", { file: n }, "👁");
@@ -98,7 +120,7 @@ export function courseNext(journal, states, selected) {
   if (!journal.filled.Didactics) return action("create-didactics", "teaching", "create-didactics");
   // The unit being worked on: the recommended one (also before its planning sketch) while it is not done,
   // else the first begun unit that is not done.
-  const open = unit => states.get(unit.n) !== "done";
+  const open = unit => states.get(unit.n) !== "done" && !awaitsOwnMedia(unit);
   const working = journal.units.find(unit => unit.n === String(selected) && open(unit))
     ?? journal.units.find(unit => (unit.heading || unit.material) && open(unit));
   const { selection, adopted, briefs } = journal.templates;
@@ -138,26 +160,40 @@ export const accepts = (expected, href) => Boolean(href) && (covers(expected.hre
 export function wordsOf(expected, journal, values) {
   const words = journal.pack?.actions?.[expected.key] ?? (journal.language === "en" ? englishActions[expected.key] : null);
   if (!words) return null;
-  const fill = text => text == null ? text : String(text).replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
+  // {n} without a value: the unit of the action itself (an action line of ## Sessions, SK54).
+  const own = { n: expected.params?.number ?? expected.params?.file };
+  const fill = text => text == null ? text : String(text).replace(/\{(\w+)\}/g, (match, name) => values[name] ?? own[name] ?? match);
   return { title: fill(words.title), label: fill(words.label), why: fill(words.why) };
+}
+
+// The unit step a unit action advances, among that unit's steps (null for other actions).
+export function unitStepOf(expected, steps = []) {
+  return {
+    "plan-unit": steps[0],
+    "work-out": steps.find(item => /materi/i.test(item.title)) ?? steps[1],
+    "build-running": steps.find(item => /materi/i.test(item.title)) ?? steps[1],
+    "insert-images": steps.find(item => /\b(bilder|images?|fotos?|photos?)\b/i.test(item.title)),
+  }[expected.key] ?? (["check-unit", "recheck-unit", "revise-unit", "resolve-concerns", "concerns-waiting", "approve-unit", "approve-waiting"].includes(expected.key)
+    ? steps.find(item => /prüf|check|review|revis/i.test(item.title)) ?? steps.at(-1) : null);
+}
+
+// The course step an action advances: its own one, or for a unit action the material step.
+export function courseStepOf(expected, steps = []) {
+  if (expected.key in courseStep) return steps[courseStep[expected.key]] ?? null;
+  return expected.params.number != null || expected.params.file != null ? steps.find(item => /materi/i.test(item.title)) ?? steps[5] ?? null : null;
 }
 
 // The title of `next`: the step it advances, as the process panel shows it (Rules → "next names one step").
 export function nextTitle(expected, data, unitWord) {
   if (expected.key in courseStep) return data.process?.steps?.[courseStep[expected.key]]?.title ?? null;
   const n = expected.params.number ?? expected.params.file;
-  const steps = data.units?.find(unit => String(unit.id) === String(n))?.process?.steps ?? [];
-  const step = {
-    "plan-unit": steps[0],
-    "work-out": steps.find(item => /materi/i.test(item.title)) ?? steps[1],
-    "insert-images": steps.find(item => /\b(bilder|images?|fotos?|photos?)\b/i.test(item.title)),
-  }[expected.key] ?? (["check-unit", "recheck-unit", "revise-unit", "resolve-concerns"].includes(expected.key)
-    ? steps.find(item => /prüf|check|review|revis/i.test(item.title)) ?? steps.at(-1) : null);
+  const step = unitStepOf(expected, data.units?.find(unit => String(unit.id) === String(n))?.process?.steps ?? []);
   return step ? `${step.title} – ${unitWord} ${n}` : null;
 }
 
 // Each unit's action line (`<!-- class="journal-actions" -->` below `### {n}. {title}`): its main action and,
-// once the material exists, 👁 how the learners see it. A link that is already right keeps its words.
+// once the material exists, 👁 how the learners see it. A link that is already right keeps its command; its
+// button word comes from the language pack when the pack has one.
 // Returns the new text, one entry per changed line, and the actions that still need words (no pack).
 export function patchUnitActions(source, journal, wordsFor) {
   const lines = source.split("\n");
@@ -174,7 +210,7 @@ export function patchUnitActions(source, journal, wordsFor) {
     const links = [...old.matchAll(linkPattern)].map(match => ({ text: match[0].trim(), href: match[2] }));
     const expected = unitAction(unit);
     const preview = `agent:teaching/preview?file=${unit.n}`;
-    let main = expected && links[0] && accepts(expected, links[0].href) ? links[0].text : null;
+    let main = expected && links[0] && accepts(expected, links[0].href) ? relabel(links[0].text, expected.icon, wordsFor(expected, { n: unit.n })) : null;
     if (!expected) main = links[0]?.text ?? null;
     else if (!main) {
       const words = wordsFor(expected, { n: unit.n });
@@ -216,9 +252,11 @@ function sectionLines(journal, nextUnplanned, approvedOne) {
 const bareIcon = text => String(text).replace(/\uFE0F/g, "").replace(/^↻/, "✏").trim();
 const sameIcon = (label, icon) => bareIcon(label).startsWith(bareIcon(icon));
 const withIcon = (link, icon) => link.label.startsWith(icon) ? link.text : link.text.replace(/^\[[^\s\]]+/, `[${icon}`);
+// A right link keeps its command but takes the button word of the language pack, when the pack has one.
+const relabel = (text, icon, words) => words?.label ? text.replace(/^\[[^\]]*\]/, `[${icon} ${words.label}]`) : text;
 
 // Rewrites the action lines of the core sections. A link that is already right – same command, same kind of
-// icon – keeps its words (only an older form of its icon is renewed); links the table does not allow go.
+// icon – keeps its command and takes the button word of the language pack (an older form of its icon is renewed); links the table does not allow go.
 export function patchSectionActions(source, journal, wordsFor) {
   const lines = source.split("\n");
   const changes = [];
@@ -238,7 +276,7 @@ export function patchSectionActions(source, journal, wordsFor) {
     let lacking = false;
     for (const expected of links) {
       const kept = present.find(link => accepts(expected, link.href) && sameIcon(link.label, expected.icon));
-      if (kept) { parts.push(withIcon(kept, expected.icon)); continue; }
+      if (kept) { parts.push(relabel(withIcon(kept, expected.icon), expected.icon, wordsFor(expected))); continue; }
       const words = wordsFor(expected);
       if (!words) { missing.push({ where: `action line of ## ${key}`, action: expected }); lacking = true; break; }
       parts.push(`[${expected.icon} ${words.label}](${expected.href}) ${expected.code}`);
@@ -255,12 +293,22 @@ export function patchSectionActions(source, journal, wordsFor) {
 
 // The one-line note under ## Sessions once the agenda plans the units (tasks/update-dashboard.md → Rules):
 // none created yet → planned in the agenda, starting with unit 1; some → "{n} of {N} created …"; all → none.
-export function patchSessionsNote(source, journal, wordsFor) {
-  if (!journal.hasAgenda) return { source, changes: [], missing: [] };
+// Which note is due and its words (null words: no pack has them); also shown in the overview (`unitsNote`).
+export function sessionsNote(journal, wordsFor) {
+  if (!journal.hasAgenda) return null;
   const created = journal.units.filter(unit => unit.heading);
   const total = journal.units.length;
-  const key = !created.length ? "note-planned" : created.length < total ? "note-progress" : null;
-  const words = key && wordsFor({ key }, { n: created.length, N: total, k: created.at(-1)?.n });
+  // The last created unit approved and only waiting for own photos: the next one may start now (SK55).
+  const ready = created.length && awaitsOwnMedia(created.at(-1));
+  const key = !created.length ? "note-planned" : created.length < total ? (ready ? "note-ready" : "note-progress") : null;
+  // k: the last created unit, m: the next one – it follows once k is done (courseNext).
+  const m = journal.units.find(unit => !unit.heading)?.n;
+  return { key, created, total, words: key && wordsFor({ key }, { n: created.length, N: total, k: created.at(-1)?.n, m }) };
+}
+
+export function patchSessionsNote(source, journal, wordsFor) {
+  if (!journal.hasAgenda) return { source, changes: [], missing: [] };
+  const { key, created, total, words } = sessionsNote(journal, wordsFor);
   if (key && !words) return { source, changes: [], missing: [{ where: "one-line note under ## Sessions", action: { key, icon: "", href: "", code: "" } }] };
   const lines = source.split("\n");
   const region = sessionsOverview(lines);
@@ -289,25 +337,37 @@ export function patchSessionsNote(source, journal, wordsFor) {
 
 // The cards under "More options" this module manages (Rules → first unit, Template step): the second way for
 // the next unit, the template suggestion and a brief's action while they are not `next`, and the agenda
-// while a brief is. Every other card stays the agent's.
-const managedCard = /^agent:(teaching\/(build-session\?number=|create-session\?number=|suggest-templates$|manage-templates\?name=)|development\/develop-template\?id=)/;
+// while templates are. Every other card stays the agent's.
+const managedCard = /^agent:(artist\/create-image\?number=|teaching\/(build-session\?number=|create-session\?number=|suggest-templates$|create-agenda$|manage-templates\?name=)|development\/develop-template\?id=)/;
 export function exploreCards(journal, expected, nextHref) {
   const cards = [];
   if (!expected) return { cards, managed: managedCard };
   const unit = expected.params.number;
   if (expected.key === "plan-unit" && journal.units.some(item => item.approved)) {
-    // Two ways for the next unit: the one that is not `next` becomes a card.
-    cards.push(String(nextHref ?? "").startsWith("agent:teaching/build-session")
+    // Two ways for the next unit: the one that is not `next` becomes a card right beside the button (SK59).
+    cards.push({ ...(String(nextHref ?? "").startsWith("agent:teaching/build-session")
       ? action("plan-unit", "teaching", "create-session", { number: unit }, "➕")
-      : action("build-unit", "teaching", "build-session", { number: unit }, "➕"));
+      : action("build-unit", "teaching", "build-session", { number: unit }, "➕")), alongside: true });
+  }
+  // An approved unit that only waits for own photos: inserting them stays possible as a card (SK55).
+  for (const item of journal.units.filter(awaitsOwnMedia)) {
+    const card = action("insert-images", "artist", "create-image", { number: item.n }, "➕");
+    if (!accepts(card, expected.href)) cards.push(card);
   }
   const { selection, adopted, briefs } = journal.templates;
   const brief = briefs.find(item => !adopted.includes(item.id));
   const briefAction = brief && (brief.state === "ready to test"
     ? action("adopt-template", "teaching", "manage-templates", { name: brief.id }, "➕")
     : action("develop-template", "development", "develop-template", { id: brief.id }, "➕"));
-  if (journal.filled.Didactics && selection === "open" && !brief && expected.key !== "suggest-templates") cards.push(action("suggest-templates", "teaching", "suggest-templates", {}, "➕"));
+  // The template suggestion stays a card; it stands alongside the next button while the unit of `next` needs a
+  // building block (its line from the planning sketch does not start with the word for "none").
+  const nextUnit = journal.units.find(item => item.n === String(unit ?? ""));
+  const none = String(journal.terms?.noBlocks ?? "none").toLowerCase();
+  const needsBlock = Boolean(nextUnit?.blocks) && !nextUnit.blocks.toLowerCase().replace(/^[^\p{L}]+/u, "").startsWith(none);
+  if (journal.filled.Didactics && selection === "open" && !brief && expected.key !== "suggest-templates") cards.push({ ...action("suggest-templates", "teaching", "suggest-templates", {}, "➕"), ...(needsBlock ? { alongside: true } : {}) });
   if (briefAction && !accepts(briefAction, expected.href)) cards.push(briefAction);
-  if (briefAction && accepts(briefAction, expected.href) && journal.agendaRequired === "yes" && !journal.hasAgenda) cards.push(action("create-agenda", "teaching", "create-agenda", {}, "➕"));
+  // The agenda may come first while templates (their suggestion or a brief) are next: a card to bring it forward.
+  const templatesNext = expected.key === "suggest-templates" || (briefAction && accepts(briefAction, expected.href));
+  if (templatesNext && journal.agendaRequired === "yes" && !journal.hasAgenda) cards.push({ ...action("create-agenda", "teaching", "create-agenda", {}, "➕"), alongside: true });
   return { cards, managed: managedCard };
 }

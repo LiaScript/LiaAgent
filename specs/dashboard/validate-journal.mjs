@@ -10,13 +10,17 @@ import { unencodedUrls, describeUrl, analyseMaterial } from "./check-material.mj
 
 const here = dirname(fileURLToPath(import.meta.url));
 const candidates = ["journal.md", resolve(here, "..", "journal.md"), resolve(here, "..", "..", "journal.md")];
-const file = process.argv[2] ?? candidates.find(path => existsSync(path)) ?? "journal.md";
+// --source <file>: check that text as if it stood in <journal.md> (write-dashboard checks before it writes).
+const argv = process.argv.slice(2);
+const sourceAt = argv.indexOf("--source");
+const sourceFile = sourceAt >= 0 ? argv[sourceAt + 1] : null;
+const file = argv.filter((arg, index) => !arg.startsWith("--") && (sourceAt < 0 || index !== sourceAt + 1))[0] ?? candidates.find(path => existsSync(path)) ?? "journal.md";
 if (!existsSync(file)) {
   console.error(`No journal found (${file}) – run from the course project root or name the file: node specs/dashboard/validate-journal.mjs <journal.md>`);
   console.log("Exit code: 2");
   process.exit(2);
 }
-const source = readFileSync(file, "utf8");
+const source = readFileSync(sourceFile ?? file, "utf8");
 const language = (source.match(/^language:\s*(\w+)/m)?.[1] ?? "en").slice(0, 2).toLowerCase();
 
 const short = (text, length = 60) => text.length > length ? `${text.slice(0, length - 1)}…` : text;
@@ -34,6 +38,7 @@ const packs = (() => {
 const englishTerms = {
   skeleton: "planning sketch",
   passedMissing: "passed – still missing: {what}",
+  approvedMissing: "approved – still missing: {what}",
   recheckShort: "{n} point(s) changed since – short re-check open",
   correctionOpen: "correction needed: {open} of {n} points open",
   usableYes: "yes", usableLimited: "yes, with limits: {what}", usableNo: "not yet: {why}"
@@ -215,6 +220,17 @@ if (hints.length) {
   console.log("Hints:");
   hints.forEach(hint => console.log(`- [${hint.key}] ${hint.text}`));
 }
+// Preparations the course frame asks for (SK72): every sentence of ## Course Context that asks the instructor to
+// clarify or prepare something before use is listed; without an open point that links the course frame, warn.
+const prepPattern = /\b(vorher klären|vor dem einsatz|vor der ersten (einheit|stunde)|bereithalten|besorgen|vorbereiten|ausprobieren|clarify (it )?(before|first)|before (use|the first)|have ready|to prepare|try (it )?out first)\b/i;
+const contextText = section("Course Context").replace(/<!--[\s\S]*?-->/g, "").replace(/^\|.*$/gm, "");
+const prepSentences = contextText.split(/(?<=[.!?])\s+|\n/).map(text => text.replace(/^[\s*-]+/, "").trim()).filter(text => prepPattern.test(text));
+if (prepSentences.length) {
+  console.log("Preparations named in the course frame (each needs an open point or an internal note why not):");
+  prepSentences.forEach(text => console.log(`- "${text.length > 90 ? `${text.slice(0, 89)}…` : text}"`));
+  const linked = model.decisions.filter(item => ["prepare", "decide"].includes(item.kind) && /^#course-context|^#kursrahmen/i.test(String(item.href ?? "")) || (item.kind === "internal" && /course-context|kursrahmen/i.test(String(item.href ?? ""))));
+  if (!linked.length) warnings.push(`the course frame names ${prepSentences.length} preparation(s) ("${prepSentences[0].slice(0, 60)}…"), but no open point links ## Course Context – add a prepare item with a link to the course frame for each (tasks/update-dashboard.md step 6)`);
+}
 const keyList = model.decisions.map(item => item.key).filter(Boolean);
 keyList.filter((key, index) => keyList.indexOf(key) !== index).forEach(key =>
   problems.push(`key "${key}" is duplicated – give every item its own key, e.g. "${key}-topic"`));
@@ -338,6 +354,8 @@ for (const href of hrefs) if (/\{[a-z_-]+\??\}/i.test(href)) problems.push(`link
 })(JSON.parse(source.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}"));
 for (const line of source.split("\n").filter(line => /class="journal-actions"/.test(line) || /^\[.*\]\(agent:/.test(line))) {
   for (const code of line.matchAll(/`(:[^`]*)`/g)) if (/\{[a-z_-]+\??\}/i.test(code[1])) problems.push(`action line shows a raw placeholder: ${code[1]}`);
+  // A button word with an unfilled placeholder ("Let {unit} {n} be prepared", SK54).
+  for (const link of line.matchAll(/\[([^\]]*)\]\(agent:/g)) if (/\{[a-z_-]+\}/i.test(link[1])) problems.push(`action line shows a raw placeholder in a button word: ${link[1]}`);
 }
 // Count the units table only: the table after `<!-- data-type="none" -->` (templates/course-agenda.yaml),
 // never the technical table in <details> or a time budget table; placeholder rows ({{…}}) do not count.
@@ -366,7 +384,9 @@ if (agendaRows && model.total !== agendaRows) problems.push(`the agenda has ${ag
 // Every unit gets the same material steps from the start (templates/project-dashboard.yaml → units.process).
 const withSteps = model.units.filter(unit => unit.process.steps.length);
 const withoutSteps = model.units.filter(unit => !unit.process.steps.length);
-if (withSteps.length && withoutSteps.length) problems.push(`unit${withoutSteps.length === 1 ? "" : "s"} ${withoutSteps.map(unit => unit.id).join(", ")} without process.steps while unit ${withSteps[0].id} has them – every unit gets the same material steps from the start; not-started units have all steps planned`);
+// While no unit has steps it is a warning (older journals); write-dashboard.mjs sets them from the language pack.
+const stepsWarnings = [];
+if (withoutSteps.length) (withSteps.length ? problems : stepsWarnings).push(`unit${withoutSteps.length === 1 ? "" : "s"} ${withoutSteps.map(unit => unit.id).join(", ")} without process.steps${withSteps.length ? ` while unit ${withSteps[0].id} has them` : ""} – every unit gets the same material steps from the start; not-started units have all steps planned (write-dashboard.mjs sets them)`);
 // The empty-state note under ## Sessions ("… created after the didactics …") is outdated once the agenda plans units.
 // Its wording comes from templates/journal.md or a language pack (unit word may be replaced): match its tail loosely.
 const packTails = packs.flatMap(pack => pack.unitLines ?? [])
@@ -376,7 +396,7 @@ const staleNote = notes.find(line => /after the didactics|nach der Didaktik/i.te
   || packTails.some(tail => line.replace(/[_\s]+/g, " ").toLowerCase().includes(tail)));
 if (agendaRows && staleNote) problems.push(`## Sessions still shows the empty-state note "${staleNote.trim().slice(0, 80)}" although ## Agenda plans ${agendaRows} units – the note says instead that the units are planned in the agenda and are created one after another, starting with the first`);
 // Warnings: likely contradictions the instructor reads, printed without changing the exit code.
-const warnings = [];
+const warnings = [...stepsWarnings];
 // A unit with its subsection has begun; "planned" without its own statusLabel reads as not started.
 model.units.filter(unit => unit.href && unit.state === "planned" && !String(unit.statusLabel ?? "").trim()).forEach(unit =>
   warnings.push(`unit ${unit.id} has its subsection (href) but state "planned" and no statusLabel – set the state that matches its work (e.g. current) or a statusLabel`));
@@ -504,7 +524,17 @@ for (const [key, entries] of fileMode ? groups : []) {
     const page = loose(entry.fields.page.replace(/^\[[^\]]*\]\((.*)\)$/, "$1"));
     if (!loose(text).includes(page)) warnings.push(`image entry "${entry.slug}" (unit ${entry.unit}) is an inserted free photo, but ${where} has no credit line for it (its file page ${short(entry.fields.page, 80)}) – add it to the image credits chapter (tasks/create-image.md → Free photos step 6)`);
   }
-  const open = entries.filter(item => ["wanted", "candidate", "selected", "prompt-ready"].includes(item.status)).length;
+  const openEntries = entries.filter(item => ["wanted", "candidate", "selected", "prompt-ready"].includes(item.status));
+  const open = openEntries.length;
+  // With slug notes (<!--- image: {slug} … --->) compare by slug: one photo may stand at several places (SK34).
+  const slugs = new Set([...text.matchAll(/<!---\s*image:\s*([\w-]+)/g)].map(match => match[1]));
+  if (slugs.size) {
+    const missing = openEntries.filter(item => !slugs.has(item.slug)).map(item => item.slug);
+    const unknown = [...slugs].filter(slug => !entries.some(item => item.slug === slug));
+    if (missing.length) warnings.push(`${where}: open image entr${missing.length === 1 ? "y" : "ies"} ${missing.map(slug => `"${slug}"`).join(", ")} without a placeholder (<!--- image: {slug} … --->) in the material`);
+    if (unknown.length) warnings.push(`${where}: placeholder${unknown.length === 1 ? "" : "s"} ${unknown.map(slug => `"${slug}"`).join(", ")} without an image entry in ## Sessions`);
+    continue;
+  }
   const placeholders = analyseMaterial(text).markers.length;
   if (open !== placeholders) warnings.push(`${where}: ${open} open image entr${open === 1 ? "y" : "ies"} (wanted, candidate, selected, prompt-ready) but ${placeholders} image placeholder${placeholders === 1 ? "" : "s"} – every open entry has one placeholder, an inserted image none`);
 }
@@ -553,7 +583,9 @@ for (const report of reports) {
   const outcome = visible.split("\n").find(line => /^\*\*[^*\n]+:\*\*/.test(line.trim())) ?? "";
   const changed = outcome.match(/\)\s+[–-]\s+((\d+)\s[^–\n]*?)\s+[–-]\s+\S/);
   const said = changed ? Number(changed[2]) : 0;
-  const lines = visible.split("\n").filter(line => datedLine.test(line)).length;
+  // A change made and re-checked inside the check run itself ("… · re-checked: …", terms.recheckDone) is no change since (SK48).
+  const rechecked = new RegExp(`·\\s*${String(terms.recheckDone ?? "re-checked").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+  const lines = visible.split("\n").filter(line => datedLine.test(line) && !rechecked.test(line)).length;
   if ((said || lines) && said !== lines) warnings.push(`unit ${report.unit || "?"}: the report's outcome line says ${changed ? `"${changed[1]}"` : "no change since the check"}, but its block "Changed after the check" has ${lines} dated line${lines === 1 ? "" : "s"} – one dated line per change, the same number in the outcome line`);
   const notes = notesCells.get(report.unit);
   if (changed && notes != null && !notes.toLowerCase().includes(changed[1].toLowerCase())) warnings.push(`unit ${report.unit}: the report says "${changed[1]}", but the Notes cell does not ("${short(notes, 70)}") – write the state with the same words: "{outcome} – ${changed[1]} – ${String(terms.recheckShort).split(/\s+–\s+/).slice(1).join(" – ")}"`);
@@ -580,10 +612,14 @@ for (const report of reports) {
   if (!word || !unit || doneRows.has(report.unit)) continue;
   const recheckTail = String(terms.recheckShort).split(/\s+–\s+/).slice(1).join(" – ");
   const expected = `${word}${changed ? ` – ${changed[1]}${recheckTail ? ` – ${recheckTail}` : ""}` : ""}`;
+  // An approved unit says so instead of "passed" (SK61): "approved – still missing: 1 photo".
+  const passedHead = String(terms.passedMissing).split("{what}")[0];
+  const approvedWord = unit.approved && word.startsWith(passedHead) ? `${String(terms.approvedMissing).split("{what}")[0]}${word.slice(passedHead.length)}` : word;
   for (const [where, text] of [["status line", statusLines.has(report.unit) ? statusOf(unit) : null], ["statusLabel", unit.statusLabel]]) {
     if (text == null || !String(text).trim()) continue;
     const lower = String(text).toLowerCase();
-    if (!lower.includes(word.toLowerCase()) || (changed && !lower.includes(changed[1].toLowerCase()))) warnings.push(`unit ${report.unit}: ${where} "${short(String(text), 70)}" does not carry the report's outcome "${expected}" – one wording per state: write "${expected}" (plus other open state such as the image count) in status line, statusLabel and Notes cell`);
+    const carries = lower.includes(word.toLowerCase()) || lower.includes(approvedWord.toLowerCase());
+    if (!carries || (changed && !lower.includes(changed[1].toLowerCase()))) warnings.push(`unit ${report.unit}: ${where} "${short(String(text), 70)}" does not carry the report's outcome "${expected}" – one wording per state: write "${expected}" (plus other open state such as the image count) in status line, statusLabel and Notes cell`);
   }
 }
 // Outdated wording outside the report (R11-D1): status line, statusLabel and Notes cell – without the words
