@@ -429,6 +429,14 @@ test("validate-journal accepts only commands of an agent's commands: map in agen
   assert.match(line.output, /agent:helper\/help: no agent "helper"/);
 });
 
+test("validate-journal warns about a wrong form the language pack lists (wrongForms), in the journal and the overview", () => {
+  const wrong = validate({ title: "Kurs", next, subtitle: "Noch 1 Bedenken offen" }, "## Sessions\n\nEine Bedenke bleibt offen.\n\n");
+  assert.match(wrong.output, /wrong form "Eine Bedenke" – write "ein Punkt"/);
+  assert.match(wrong.output, /wrong form "1 Bedenken" – write "ein Punkt"/);
+  const right = validate({ title: "Kurs", next, subtitle: "Zwei Bedenken offen" }, "## Sessions\n\nEin Punkt bleibt offen.\n\n");
+  assert.doesNotMatch(right.output, /wrong form/);
+});
+
 test("validate-journal reports an open point whose link has no label", () => {
   const result = validate({ title: "Kurs", next, decisions: [{ key: "a", title: "Frage?", how: "B", href: "#outline" }] });
   assert.equal(result.status, 2);
@@ -792,7 +800,7 @@ test("check-material measures question to last option against the visible area, 
   assert.equal(fit.height, 692);
   assert.equal(fit.available, 632);
   assert.deepEqual(fit.imageMax, { open: 95, top: 170 }, "the summed image heights alone (570 px < 768 px) would claim it fits");
-  assert.equal(describeFit(fit, { width: 1024, height: 768 }), "1024×768 landscape: does not fit (at open 1 of 3 options visible; question at the top: 2 of 3 options visible, needs 692 px, has 632 px) – images at most 95 px to fit at open, 170 px with the question at the top (now up to 192 px)");
+  assert.equal(describeFit(fit, { width: 1024, height: 768 }), "1024×768 landscape: does not fit (at open 1 of 3 options visible; question at the top: 2 of 3 options visible, needs 692 px, has 632 px) – images at most 95 px to fit at open, 170 px with the question at the top (now up to 192 px; in words: about half as high as now)");
   // With images of 95 px the quiz fits at open; in a portrait window it fits as it is.
   const small = options.map((option, index) => ({ top: 343 + index * 107, bottom: 343 + index * 107 + 115, images: [95] }));
   assert.equal(describeFit(fitOnScreen({ view, question: 301, options: small }), { width: 1024, height: 768 }), "1024×768 landscape: fits");
@@ -1027,9 +1035,9 @@ test("check-material counts an image directly above the question into the fit an
   assert.equal(describeFit(fitOnScreen({ view, question: 840, options }), { width: 1024, height: 768 }), "1024×768 landscape: fits");
   const withImage = fitOnScreen({ view, question: 840, options, stimulus: { top: 120, height: 700 } });
   assert.equal(withImage.stimulus, true);
-  assert.equal(describeFit(withImage, { width: 1024, height: 768 }), "1024×768 landscape: image and question do not fit (at open 0 of 3 options visible; image at the top: 0 of 3 options visible, needs 900 px, has 632 px) – images at most 390 px to fit at open, 432 px with the image at the top (now up to 700 px)");
+  assert.equal(describeFit(withImage, { width: 1024, height: 768 }), "1024×768 landscape: image and question do not fit (at open 0 of 3 options visible; image at the top: 0 of 3 options visible, needs 900 px, has 632 px) – images at most 390 px to fit at open, 432 px with the image at the top (now up to 700 px; in words: about half as high as now)");
   const smaller = fitOnScreen({ view, question: 540, options: [{ top: 580, bottom: 620 }, { top: 630, bottom: 670 }, { top: 680, bottom: 720 }], stimulus: { top: 120, height: 400 } });
-  assert.equal(describeFit(smaller, { width: 1024, height: 768 }), "1024×768 landscape: image and question fit only once scrolled (at open 2 of 3 options visible; image at the top: fits) – images at most 390 px to fit at open (now up to 400 px)");
+  assert.equal(describeFit(smaller, { width: 1024, height: 768 }), "1024×768 landscape: image and question fit only once scrolled (at open 2 of 3 options visible; image at the top: fits) – images at most 390 px to fit at open (now up to 400 px; in words: slightly smaller than now)");
   const source = "# A\n\n![big](https://example.org/a.jpg?width=800)\n\n![ok](https://example.org/b.jpg?width=500)\n\n![thumb](https://example.org/thumb/c.jpg/1024px-c.jpg)\n\nWho is it?\n\n- [(X)] ![o](https://example.org/o.jpg?width=800)<!-- style=\"max-height: 30vh\" -->\n- [( )] ![p](https://example.org/p.jpg?width=330)<!-- style=\"max-height: 30vh\" -->\n";
   const warnings = analyseMaterial(source).warnings.filter(warning => /page photo/.test(warning));
   assert.deepEqual(warnings.map(warning => warning.match(/\(([^)]*)\)/)[1]), ["a.jpg?width=800", "1024px-c.jpg"], "options and photos up to 500 px are not page-photo findings");

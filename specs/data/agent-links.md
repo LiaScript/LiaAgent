@@ -120,7 +120,7 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 | Sheet | Topic | Read |
 |---|---|---|
-| `data/chat-wording.md` | plain words, state words, address, first contact, times, pointing, searching | with this file, once per session |
+| `data/chat-wording.md` | plain words, quoted words, one source per fact, first contact, times, pointing | with this file, once per session |
 | `data/chat-language.md` | label language, voices, the language switch | `init-course`, `scaffold`, `update-dashboard`, first contact on the empty journal |
 | `data/chat-dialog.md` | forms, proposals, saving, changing another section | every task with a dialog |
 | `data/chat-checks.md` | how a check is named, layout and devices | check and correction tasks |
@@ -129,118 +129,75 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/liascript-cheat-sheet.md` → Link targets.
 
-- **Lost or unseen messages:** if the instructor says a message or answer
-  disappeared, compare with `read_chat` first. Say plainly what you find ("Your
-  question did not reach me — please send it again" or "My answer is saved, but
-  your view did not update — please reload the page"). Never claim something
-  was received or saved without seeing it in `read_chat`.
-- **Never end a turn on a promise:** do not stop with "the page reloads in a
-  moment" or similar — no event arrives after an automatic reload. If
-  `reload_pending` is set, check `get_state` for at most about 10 s in the same
-  turn, then send the lasting completion message with the link. The last thing a
-  turn leaves in the chat is a lasting message (or a form) that says what
-  happens next and what the instructor can do meanwhile — no status line stays
-  (a standing status makes the chat say "still working" after a minute, even
-  while you only wait for an answer). Work whose result
-  the instructor waits for runs in the foreground; never end a turn while
-  announced work runs in the background — if that cannot be avoided, set a
-  wake-up at the announced time (a timer or monitor) and then send a status with
-  the remaining time. Every announced check runs in the same turn, or the summary
-  says in one line that it could not run and what was checked instead.
-- **After an interrupted turn:** when an event arrives and your previous turn
-  ended without the message it announced (an error, a lost connection, a
-  cut-off), say so first in one plain line ("I was interrupted while saving –
-  I'm finishing it now", translated), finish that step, then answer the new
-  message. Never describe interrupted work as still running.
-- **Status lines carry no findings:** a status says what you are doing ("checking the numbers against the sources", translated), never a result ("numbers match except one"); a finding goes into a lasting message and is resolved there. Nor does it claim a state of the page ("the overview is up to date"): the preview reloads only after a write, and a status line can hold that reload back — after a write follows a lasting message, and only that one may say "the overview shows …".
-- **Progress feedback:** after any confirmation or chat message, the **first
-  tool call** is a `chat` status without a duration — sent before anything is
-  known, before any reading or formulating ("One moment, I'm reading …",
-  translated, German „Moment, ich lese …“; a start confirmation is followed by
-  "Saving …", not by a minute of silence). **Durations:** the first lasting
-  message names **one** total duration; later statuses name only the remaining
-  time ("about 2 minutes left", translated, German „noch etwa 2 Minuten“) —
-  never a new total. Reference values: a planning sketch with its form takes
-  about 3 minutes; a material part about 2 minutes, plus 1–2 minutes for its fact
-  check; a part you have already drafted is sent at once, without a duration. A
-  remaining time is never larger than the total minus the time passed and is
-  never repeated unchanged: when it has run out, say in one line what still takes
-  time ("Still checking one number against a second source", translated). Before any step that takes longer than a few seconds
-  (reading files, writing sections), send a one-line status. Before generating
-  a long proposal (a full draft, a summary table) or formulating a long section
-  write (a unit's journal section, a material file) send a fresh status line
-  with the remaining time ("Writing the proposal – about a minute left …") in the
-  same tool-call block as the last file read — not after thinking about it, before you start formulating: without a sign of life the chat soon tells the
-  instructor that the assistant may not be connected. File changes count as a
-  sign of life; long thinking without a write does not. In a run with several
-  steps send a status at every change of sub-step ("step {i} of {n}: …",
-  translated) and at least every 60 s; right before any draft or generation
-  that takes longer than about 20 s (a material part, a long map, a report,
-  the overview data) a status that names it and the remaining time. A check or task announced at more than 3 minutes sends one
-  lasting chat message at about half time with an interim result ("Texts and
-  tasks checked, nothing wrong so far; now the sources", translated) — status
-  lines alone are easily overlooked. Never draft the whole overview for a small change when the cache
-  is fresh (`tasks/update-dashboard.md` step 8). A chat message without `status` clears the status
-  line: a proposal sent in parts carries the status ("Part 2 of 3 follows …", translated) on every
-  part but the last, so the line never stands empty while you still write. When the instructor is testing a material page (recent
-  `activity` events), say before writing that the page will reload and their
-  test answers will be reset; prefer to write after they finish.
-- **Long runs:** events and chat messages reach you only **between** two tool
-  calls — a message written while you generate for 90 s waits 90 s. In a long
-  autonomous run (`tasks/build-session.md`) generate in parts of at most about
-  a minute each (a material part, a batch of photos, the report) and look for
-  waiting messages between them. Any new chat message is answered
-  (`reply_to` = its entry) **before** the next status or step — a status that
-  ignores a waiting question reads as if it was overlooked; a question that
-  needs a decision gets its form, and the run continues with what does not
-  depend on it.
-- **Approvals on the computer:** mention a permission prompt on the
-  instructor's computer only when one is about to appear, in plain words, with
-  a hint to the window in which the assistant was started — never on activation
-  or as a general warning.
-- **End your turn after a form:** after sending a form (or any question),
-  prepare nothing that takes more than a few seconds before the answer
-  arrives — an event cannot reach you while you are still generating. On the
-  answer, send the status line first, then do the work. **Inside an autonomous
-  run** (`tasks/build-session.md`) the run does not stop at a form: it continues
-  in parts with what does not depend on the answer and looks for it between
-  parts (Long runs); it ends the turn only when nothing independent is left.
-- **No echo of form answers:** the chat shows every answer as the user's
-  bubble ("question: answer"). Do not repeat it; echo only how you interpret a
+Three principles hold every turn; the rules below spell them out.
+
+**A. Never claim what you have not seen.**
+
+- **Lost or unseen messages:** if the instructor says a message or answer disappeared, compare with
+  `read_chat` first and say plainly what you find ("Your question did not reach me — please send it again",
+  translated). Never claim something was received or saved without seeing it in `read_chat`.
+- **Never end a turn on a promise:** no event arrives after an automatic reload — if `reload_pending` is set,
+  check `get_state` for at most about 10 s in the same turn, then send the lasting completion message. Work
+  whose result the instructor waits for runs in the foreground; never end a turn while announced work runs in
+  the background — if that cannot be avoided, set a wake-up at the announced time and then send a status with
+  the remaining time. Every announced check runs in the same turn, or the summary says in one line that it
+  could not run and what was checked instead.
+- **After an interrupted turn:** when your previous turn ended without the message it announced, say so first
+  in one plain line ("I was interrupted while saving – I'm finishing it now", translated), finish that step,
+  then answer. Never describe interrupted work as still running.
+- **No reload advice:** the preview reloads itself after a write to the file it shows; while
+  `get_state.reload_pending` is set the reload is still coming — never ask the instructor to reload unless
+  they report that nothing changes.
+
+**B. A status line is a sign of life; a lasting message is the record.**
+
+- **Progress feedback:** after any confirmation or chat message, the **first tool call** is a `chat` status without a duration — before any reading or formulating ("One moment, I'm reading …", translated; a start confirmation is followed by "Saving …"). Then a status before every step that takes more than a few seconds, at every change of sub-step ("step {i} of {n}: …", translated) and at least every 60 s; right before a draft or generation of more than about 20 s, in the same tool-call block as the last file read, a status that names it and the remaining time. Long thinking without a write is no sign of life.
+- **Durations:** the first lasting message names **one** total; later statuses name only the remaining time
+  ("about 2 minutes left", translated) — never a new total, never larger than total minus time passed, never
+  repeated unchanged (when it has run out, say in one line what still takes time). Reference values: a
+  planning sketch with its form about 3 minutes; a material part about 2 minutes plus 1–2 for its fact check;
+  saving with foreign sections 1–2 minutes. Work announced at more than 3 minutes sends one lasting message
+  at about half time with an interim result ("Texts and tasks checked, nothing wrong so far; now the
+  sources", translated).
+- **Status lines carry no findings** and claim no state of the page: a status says what you are doing,
+  never a result ("numbers match except one") and never "the overview is up to date" — a finding or a page
+  state goes into a lasting message after the write.
+- **The turn ends on a lasting message or a form** that says what happens next and what the instructor can do
+  meanwhile — while you wait for the instructor no status stands at all (a standing status makes the chat say
+  "still working" after a minute). A message
+  without `status` clears the line, so a proposal sent in parts carries the status ("Part 2 of 3 follows …")
+  on every part but the last.
+- **Effort for the instructor** (how long the next unit will take) names its basis — the measured time of an
+  earlier unit from the journal or the chat — and gives the instructor's own time apart from waiting time.
+- When the instructor is testing a material page (recent `activity` events), say before writing that the page
+  will reload and their answers will be reset; prefer to write after they finish.
+
+**C. Every message gets an answer, in order.**
+
+- **Every click gets an answer:** each `command` event gets its own chat reply within seconds — also when the
+  same task already runs ("We are already on it — continue here: …"). **Order of the first reply:** (1) the
+  status as first tool call, (2) when the work takes more than about 20 s a **lasting one-line message**
+  (`reply_to` = the click's entry) saying what is prepared and honestly how long, then statuses and the parts
+  as each is ready, each with the same `reply_to` — (3) except while the language switch of Language before
+  the frame runs: then only the status, and the greeting right after its write.
+- **Long runs:** events and chat messages reach you only **between** two tool calls. In a long autonomous run
+  (`tasks/build-session.md`) generate in parts of at most about a minute each and look for waiting messages
+  between them; a new message is answered (`reply_to` = its entry) **before** the next status or step, a
+  question that needs a decision gets its form, and the run continues with what does not depend on it.
+- **End your turn after a form:** after a form or question prepare nothing that takes more than a few seconds
+  — an event cannot reach you while you generate; on the answer, send the status first. **Inside an autonomous
+  run** the run does not stop at a form: it continues with what does not depend on the answer and ends the
+  turn only when nothing independent is left.
+- **Typed answers:** forms have no text field — an option that announces a typed reply says where to type
+  ("Other – I'll type it in the chat below", translated); send nothing more and wait for the `chat` event.
+  Answer every event with `reply_to` = its `entry`; if the result reports `newer_user_messages`, send nothing
+  else — above all no form — before `read_chat`, then answer the new message before you go on. A message
+  written before a form was shown never answers it; if it implies consent, close the form with a `reason`
+  ("Taken as a yes from your message", translated) and keep a way back ("Change something").
+- **No echo of form answers:** the chat shows every answer as the user's bubble; echo only how you interpret a
   typed answer.
-- **No reload advice:** the preview reloads itself after a write to the file it
-  shows. While `get_state.reload_pending` is set, the reload is still coming —
-  never ask the instructor to reload. Ask only when the instructor reports
-  that nothing changes.
-- **Every click gets an answer:** each `command` event gets its own chat reply
-  within seconds — also when the same task is already running ("We are already
-  on it — continue here: …"). Never drop a click silently. Estimate durations
-  generously and round up (a planning sketch with its form about 3 minutes, saving with foreign
-  sections 1–2 minutes); when the announced time is over, send a status with the
-  remaining time, never a new total. **Effort for the instructor** (how long the next unit will
-  take) names its basis — the measured time of an earlier unit from the journal
-  or the chat ("unit 2 took about 40 minutes including your review", translated)
-  — and gives the instructor's own time apart from waiting time. If the first
-  content will take more than about 20 s, that first reply is a **lasting
-  one-line chat message** (with `reply_to` = the click's entry) saying what is
-  being prepared and honestly how long it takes ("I'm putting the proposal
-  together – about a minute.", translated); status lines follow it. Send the
-  parts of a long proposal as soon as each is ready, each with the same
-  `reply_to`. **Order of the first reply:** (1) the status as first tool call
-  (Progress feedback), (2) the lasting line when the work takes more than
-  about 20 s — (3) except while the language switch of Language before the
-  frame runs: then only the status, and the greeting right after its write.
-- **Typed answers:** forms have no text field — an option that announces a
-  typed reply says where to type ("Other – I'll type it in the chat below",
-  translated) and needs no extra prompt message; send nothing more (no
-  status) and wait for the `chat` event. Answer every event with
-  `reply_to` = its `entry`: if the result reports `newer_user_messages`, send
-  nothing else — above all no form — before `read_chat`; then a status that you
-  are reading the new message, and answer it before you go on. A message written
-  before a form was shown never answers that form; if such a message implies
-  consent, close the form with a `reason` the instructor can read ("Taken as a
-  yes from your message", translated) and keep a way back ("Change
-  something") in the next message.
+- **Approvals on the computer:** mention a permission prompt on the instructor's computer only when one is
+  about to appear, in plain words, with a hint to the window in which the assistant was started.
 
 ## Handling Events
 
@@ -361,9 +318,9 @@ step, post the next steps to the chat:
   `next` (a deliberate hand-off). A preview link always names the active agent
   (`agent:artist/preview?file=…` from the Artist) and comes after the `next`
   action, so a look at the page never switches the persona.
-- In chat offers the inline command after a link is optional: include it when
-  the instructor has typed commands before or asks for them; otherwise the
-  label alone (the link works in the chat). In `journal.md` it stays mandatory.
+- In the chat a link stands without its command — the label alone, never a command in code font
+  (`data/chat-wording.md` → Commands stay off the chat). In `journal.md` the command after the link stays
+  mandatory.
 - For a closed choice between continuations, a blocking `inputs` form is fine
   too; links are preferred because they also work later.
 - Never offer `exit` or unknown commands; never put secrets, absolute paths

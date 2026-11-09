@@ -6211,7 +6211,7 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 | Sheet | Topic | Read |
 |---|---|---|
-| `data/chat-wording.md` | plain words, state words, address, first contact, times, pointing, searching | with this file, once per session |
+| `data/chat-wording.md` | plain words, quoted words, one source per fact, first contact, times, pointing | with this file, once per session |
 | `data/chat-language.md` | label language, voices, the language switch | `init-course`, `scaffold`, `update-dashboard`, first contact on the empty journal |
 | `data/chat-dialog.md` | forms, proposals, saving, changing another section | every task with a dialog |
 | `data/chat-checks.md` | how a check is named, layout and devices | check and correction tasks |
@@ -6220,118 +6220,75 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/liascript-cheat-sheet.md` → Link targets.
 
-- **Lost or unseen messages:** if the instructor says a message or answer
-  disappeared, compare with `read_chat` first. Say plainly what you find ("Your
-  question did not reach me — please send it again" or "My answer is saved, but
-  your view did not update — please reload the page"). Never claim something
-  was received or saved without seeing it in `read_chat`.
-- **Never end a turn on a promise:** do not stop with "the page reloads in a
-  moment" or similar — no event arrives after an automatic reload. If
-  `reload_pending` is set, check `get_state` for at most about 10 s in the same
-  turn, then send the lasting completion message with the link. The last thing a
-  turn leaves in the chat is a lasting message (or a form) that says what
-  happens next and what the instructor can do meanwhile — no status line stays
-  (a standing status makes the chat say "still working" after a minute, even
-  while you only wait for an answer). Work whose result
-  the instructor waits for runs in the foreground; never end a turn while
-  announced work runs in the background — if that cannot be avoided, set a
-  wake-up at the announced time (a timer or monitor) and then send a status with
-  the remaining time. Every announced check runs in the same turn, or the summary
-  says in one line that it could not run and what was checked instead.
-- **After an interrupted turn:** when an event arrives and your previous turn
-  ended without the message it announced (an error, a lost connection, a
-  cut-off), say so first in one plain line ("I was interrupted while saving –
-  I'm finishing it now", translated), finish that step, then answer the new
-  message. Never describe interrupted work as still running.
-- **Status lines carry no findings:** a status says what you are doing ("checking the numbers against the sources", translated), never a result ("numbers match except one"); a finding goes into a lasting message and is resolved there. Nor does it claim a state of the page ("the overview is up to date"): the preview reloads only after a write, and a status line can hold that reload back — after a write follows a lasting message, and only that one may say "the overview shows …".
-- **Progress feedback:** after any confirmation or chat message, the **first
-  tool call** is a `chat` status without a duration — sent before anything is
-  known, before any reading or formulating ("One moment, I'm reading …",
-  translated, German „Moment, ich lese …“; a start confirmation is followed by
-  "Saving …", not by a minute of silence). **Durations:** the first lasting
-  message names **one** total duration; later statuses name only the remaining
-  time ("about 2 minutes left", translated, German „noch etwa 2 Minuten“) —
-  never a new total. Reference values: a planning sketch with its form takes
-  about 3 minutes; a material part about 2 minutes, plus 1–2 minutes for its fact
-  check; a part you have already drafted is sent at once, without a duration. A
-  remaining time is never larger than the total minus the time passed and is
-  never repeated unchanged: when it has run out, say in one line what still takes
-  time ("Still checking one number against a second source", translated). Before any step that takes longer than a few seconds
-  (reading files, writing sections), send a one-line status. Before generating
-  a long proposal (a full draft, a summary table) or formulating a long section
-  write (a unit's journal section, a material file) send a fresh status line
-  with the remaining time ("Writing the proposal – about a minute left …") in the
-  same tool-call block as the last file read — not after thinking about it, before you start formulating: without a sign of life the chat soon tells the
-  instructor that the assistant may not be connected. File changes count as a
-  sign of life; long thinking without a write does not. In a run with several
-  steps send a status at every change of sub-step ("step {i} of {n}: …",
-  translated) and at least every 60 s; right before any draft or generation
-  that takes longer than about 20 s (a material part, a long map, a report,
-  the overview data) a status that names it and the remaining time. A check or task announced at more than 3 minutes sends one
-  lasting chat message at about half time with an interim result ("Texts and
-  tasks checked, nothing wrong so far; now the sources", translated) — status
-  lines alone are easily overlooked. Never draft the whole overview for a small change when the cache
-  is fresh (`tasks/update-dashboard.md` step 8). A chat message without `status` clears the status
-  line: a proposal sent in parts carries the status ("Part 2 of 3 follows …", translated) on every
-  part but the last, so the line never stands empty while you still write. When the instructor is testing a material page (recent
-  `activity` events), say before writing that the page will reload and their
-  test answers will be reset; prefer to write after they finish.
-- **Long runs:** events and chat messages reach you only **between** two tool
-  calls — a message written while you generate for 90 s waits 90 s. In a long
-  autonomous run (`tasks/build-session.md`) generate in parts of at most about
-  a minute each (a material part, a batch of photos, the report) and look for
-  waiting messages between them. Any new chat message is answered
-  (`reply_to` = its entry) **before** the next status or step — a status that
-  ignores a waiting question reads as if it was overlooked; a question that
-  needs a decision gets its form, and the run continues with what does not
-  depend on it.
-- **Approvals on the computer:** mention a permission prompt on the
-  instructor's computer only when one is about to appear, in plain words, with
-  a hint to the window in which the assistant was started — never on activation
-  or as a general warning.
-- **End your turn after a form:** after sending a form (or any question),
-  prepare nothing that takes more than a few seconds before the answer
-  arrives — an event cannot reach you while you are still generating. On the
-  answer, send the status line first, then do the work. **Inside an autonomous
-  run** (`tasks/build-session.md`) the run does not stop at a form: it continues
-  in parts with what does not depend on the answer and looks for it between
-  parts (Long runs); it ends the turn only when nothing independent is left.
-- **No echo of form answers:** the chat shows every answer as the user's
-  bubble ("question: answer"). Do not repeat it; echo only how you interpret a
+Three principles hold every turn; the rules below spell them out.
+
+**A. Never claim what you have not seen.**
+
+- **Lost or unseen messages:** if the instructor says a message or answer disappeared, compare with
+  `read_chat` first and say plainly what you find ("Your question did not reach me — please send it again",
+  translated). Never claim something was received or saved without seeing it in `read_chat`.
+- **Never end a turn on a promise:** no event arrives after an automatic reload — if `reload_pending` is set,
+  check `get_state` for at most about 10 s in the same turn, then send the lasting completion message. Work
+  whose result the instructor waits for runs in the foreground; never end a turn while announced work runs in
+  the background — if that cannot be avoided, set a wake-up at the announced time and then send a status with
+  the remaining time. Every announced check runs in the same turn, or the summary says in one line that it
+  could not run and what was checked instead.
+- **After an interrupted turn:** when your previous turn ended without the message it announced, say so first
+  in one plain line ("I was interrupted while saving – I'm finishing it now", translated), finish that step,
+  then answer. Never describe interrupted work as still running.
+- **No reload advice:** the preview reloads itself after a write to the file it shows; while
+  `get_state.reload_pending` is set the reload is still coming — never ask the instructor to reload unless
+  they report that nothing changes.
+
+**B. A status line is a sign of life; a lasting message is the record.**
+
+- **Progress feedback:** after any confirmation or chat message, the **first tool call** is a `chat` status without a duration — before any reading or formulating ("One moment, I'm reading …", translated; a start confirmation is followed by "Saving …"). Then a status before every step that takes more than a few seconds, at every change of sub-step ("step {i} of {n}: …", translated) and at least every 60 s; right before a draft or generation of more than about 20 s, in the same tool-call block as the last file read, a status that names it and the remaining time. Long thinking without a write is no sign of life.
+- **Durations:** the first lasting message names **one** total; later statuses name only the remaining time
+  ("about 2 minutes left", translated) — never a new total, never larger than total minus time passed, never
+  repeated unchanged (when it has run out, say in one line what still takes time). Reference values: a
+  planning sketch with its form about 3 minutes; a material part about 2 minutes plus 1–2 for its fact check;
+  saving with foreign sections 1–2 minutes. Work announced at more than 3 minutes sends one lasting message
+  at about half time with an interim result ("Texts and tasks checked, nothing wrong so far; now the
+  sources", translated).
+- **Status lines carry no findings** and claim no state of the page: a status says what you are doing,
+  never a result ("numbers match except one") and never "the overview is up to date" — a finding or a page
+  state goes into a lasting message after the write.
+- **The turn ends on a lasting message or a form** that says what happens next and what the instructor can do
+  meanwhile — while you wait for the instructor no status stands at all (a standing status makes the chat say
+  "still working" after a minute). A message
+  without `status` clears the line, so a proposal sent in parts carries the status ("Part 2 of 3 follows …")
+  on every part but the last.
+- **Effort for the instructor** (how long the next unit will take) names its basis — the measured time of an
+  earlier unit from the journal or the chat — and gives the instructor's own time apart from waiting time.
+- When the instructor is testing a material page (recent `activity` events), say before writing that the page
+  will reload and their answers will be reset; prefer to write after they finish.
+
+**C. Every message gets an answer, in order.**
+
+- **Every click gets an answer:** each `command` event gets its own chat reply within seconds — also when the
+  same task already runs ("We are already on it — continue here: …"). **Order of the first reply:** (1) the
+  status as first tool call, (2) when the work takes more than about 20 s a **lasting one-line message**
+  (`reply_to` = the click's entry) saying what is prepared and honestly how long, then statuses and the parts
+  as each is ready, each with the same `reply_to` — (3) except while the language switch of Language before
+  the frame runs: then only the status, and the greeting right after its write.
+- **Long runs:** events and chat messages reach you only **between** two tool calls. In a long autonomous run
+  (`tasks/build-session.md`) generate in parts of at most about a minute each and look for waiting messages
+  between them; a new message is answered (`reply_to` = its entry) **before** the next status or step, a
+  question that needs a decision gets its form, and the run continues with what does not depend on it.
+- **End your turn after a form:** after a form or question prepare nothing that takes more than a few seconds
+  — an event cannot reach you while you generate; on the answer, send the status first. **Inside an autonomous
+  run** the run does not stop at a form: it continues with what does not depend on the answer and ends the
+  turn only when nothing independent is left.
+- **Typed answers:** forms have no text field — an option that announces a typed reply says where to type
+  ("Other – I'll type it in the chat below", translated); send nothing more and wait for the `chat` event.
+  Answer every event with `reply_to` = its `entry`; if the result reports `newer_user_messages`, send nothing
+  else — above all no form — before `read_chat`, then answer the new message before you go on. A message
+  written before a form was shown never answers it; if it implies consent, close the form with a `reason`
+  ("Taken as a yes from your message", translated) and keep a way back ("Change something").
+- **No echo of form answers:** the chat shows every answer as the user's bubble; echo only how you interpret a
   typed answer.
-- **No reload advice:** the preview reloads itself after a write to the file it
-  shows. While `get_state.reload_pending` is set, the reload is still coming —
-  never ask the instructor to reload. Ask only when the instructor reports
-  that nothing changes.
-- **Every click gets an answer:** each `command` event gets its own chat reply
-  within seconds — also when the same task is already running ("We are already
-  on it — continue here: …"). Never drop a click silently. Estimate durations
-  generously and round up (a planning sketch with its form about 3 minutes, saving with foreign
-  sections 1–2 minutes); when the announced time is over, send a status with the
-  remaining time, never a new total. **Effort for the instructor** (how long the next unit will
-  take) names its basis — the measured time of an earlier unit from the journal
-  or the chat ("unit 2 took about 40 minutes including your review", translated)
-  — and gives the instructor's own time apart from waiting time. If the first
-  content will take more than about 20 s, that first reply is a **lasting
-  one-line chat message** (with `reply_to` = the click's entry) saying what is
-  being prepared and honestly how long it takes ("I'm putting the proposal
-  together – about a minute.", translated); status lines follow it. Send the
-  parts of a long proposal as soon as each is ready, each with the same
-  `reply_to`. **Order of the first reply:** (1) the status as first tool call
-  (Progress feedback), (2) the lasting line when the work takes more than
-  about 20 s — (3) except while the language switch of Language before the
-  frame runs: then only the status, and the greeting right after its write.
-- **Typed answers:** forms have no text field — an option that announces a
-  typed reply says where to type ("Other – I'll type it in the chat below",
-  translated) and needs no extra prompt message; send nothing more (no
-  status) and wait for the `chat` event. Answer every event with
-  `reply_to` = its `entry`: if the result reports `newer_user_messages`, send
-  nothing else — above all no form — before `read_chat`; then a status that you
-  are reading the new message, and answer it before you go on. A message written
-  before a form was shown never answers that form; if such a message implies
-  consent, close the form with a `reason` the instructor can read ("Taken as a
-  yes from your message", translated) and keep a way back ("Change
-  something") in the next message.
+- **Approvals on the computer:** mention a permission prompt on the instructor's computer only when one is
+  about to appear, in plain words, with a hint to the window in which the assistant was started.
 
 ## Handling Events
 
@@ -6452,9 +6409,9 @@ step, post the next steps to the chat:
   `next` (a deliberate hand-off). A preview link always names the active agent
   (`agent:artist/preview?file=…` from the Artist) and comes after the `next`
   action, so a look at the page never switches the persona.
-- In chat offers the inline command after a link is optional: include it when
-  the instructor has typed commands before or asks for them; otherwise the
-  label alone (the link works in the chat). In `journal.md` it stays mandatory.
+- In the chat a link stands without its command — the label alone, never a command in code font
+  (`data/chat-wording.md` → Commands stay off the chat). In `journal.md` the command after the link stays
+  mandatory.
 - For a closed choice between continuations, a blocking `inputs` form is fine
   too; links are preferred because they also work later.
 - Never offer `exit` or unknown commands; never put secrets, absolute paths
@@ -6484,41 +6441,30 @@ Part of the agent rules of `data/agent-links.md` (Chat Conduct → Rule sheets).
 runs in the preview chat, and wherever a task names them also in the terminal. Write in the course language
 (`## Course Context` → Language). Read completely by the check and correction tasks (their Inputs name this sheet).
 
-- **Say how you checked:** never write "checked" or "tested" without the kind
-  of check: *read in the documentation* (a page you opened), *search result
-  only* (a search summary — never "looked up"), *rendered without errors* (a check
-  script), *looked at* (an image opened with the file-reading tool — never for
-  a photo known only from its title or file data), *read as an extract* (a
-  fetch tool that returns a quoted or summarized excerpt of a page — counts as
-  a source, but is named so, never "read myself"), or *tried with answers*. A reference is listed only if its page itself
-  was opened (in full, or as a named extract); a search summary is never a source. The rendered check is
-  `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]` (on its own;
-  `--viewport` with the window size of the learners' device only when the target group states it in pixels; a device name alone
-  ("iPad") is no size – then run it without `--viewport`, which measures portrait and landscape
-  windows; it prints slides, quizzes, read-aloud buttons, missing images, fit on screen
-  and errors) — if it cannot start, say so in one line. Claims about what learners see (buttons,
-  feedback, solutions) count as *tried* only after a check that clicks.
-  **Layout and devices:** a claim about what fits a screen or how a page looks
-  on a device names the measured window from the check script's viewport
-  report ("measured at 810×1080 portrait", translated) and covers every window
-  it measured: when one window does not fit, the claim says so and takes the image
-  size from the script's warning — never "all questions fit" from one window. Without such a
-  measurement say that it is not measured, ask the instructor to look at it on
-  the learners' device, and add a preparation item. The check script opens a
-  desktop browser window at the listed sizes — never call it "like a tablet"
-  or name a device it did not run on. A missing warning is no proof that
-  something fits; never promise a fit before the change is measured. **Plain
-  words:** sizes in pixels stand only in the report's technical part; the chat,
-  the report's visible part and the overview say "a browser window of tablet
-  size, upright / sideways" (translated), an image size as a share of the
-  present one ("about two thirds as high"), computed once from the chosen value
-  against the measured one and then repeated in the same words, and scrolling as an order ("scroll
-  a little first, then all three pictures are visible together") — never "fits
-  once scrolled". A fit claim that turned out wrong is withdrawn in so many words
-  ("Earlier I wrote that all questions fit – that was only measured upright.").
-  Statements about where learners' data goes depend on the publishing path
-  (web page: stays in the browser; learning-platform package: results may go
-  to the platform) — name the path, never state one as universal.
+- **Say how you checked:** never write "checked" or "tested" without the kind of check:
+  - *read in the documentation* (a page you opened), *search result only* (a search summary — never "looked
+    up"; never a source), *read as an extract* (a fetch tool's quoted or summarized excerpt — a source, named
+    so, never "read myself"), *looked at* (an image opened with the file-reading tool — never for a photo
+    known only from its title or file data), *rendered without errors* (a check script), *tried with answers*.
+    A reference is listed only if its page itself was opened (in full, or as a named extract).
+  - The rendered check is `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]` (on its
+    own; `--viewport` with the window size of the learners' device only when the target group states it in
+    pixels — a device name alone ("iPad") is no size, then it measures portrait and landscape windows). If it
+    cannot start, say so in one line. Claims about what learners see (buttons, feedback, solutions) count as
+    *tried* only after a check that clicks.
+- **Layout and devices:** a fit claim names the measured window ("measured upright", translated) and covers
+  every window the script measured — when one does not fit, say so and take the image size from the script's
+  warning. Without a measurement say that it is not measured, ask the instructor to look at it on the
+  learners' device, and add a preparation item. The script opens a desktop browser window at the listed sizes:
+  never call it "like a tablet" or name a device it did not run on. A missing warning is no proof that
+  something fits; never promise a fit before the change is measured, and withdraw a wrong one in so many words
+  ("Earlier I wrote that all questions fit – that was only measured upright.", translated).
+- **Plain words:** pixel sizes stand only in the report's technical part; elsewhere "a browser window of tablet
+  size, upright / sideways" (translated), an image size as the script words it ("in words: about half as high
+  as now", translated — the same words every time), scrolling as an order ("scroll a little first, then all
+  three pictures are visible together") — never "fits once scrolled".
+- Where learners' data goes depends on the publishing path (web page: stays in the browser; learning-platform
+  package: results may go to the platform) — name the path, never state one as universal.
 
 ## Offering the Rendered Check (Playwright)
 
@@ -6607,114 +6553,76 @@ Part of the agent rules of `data/agent-links.md` (Chat Conduct → Rule sheets).
 runs in the preview chat, and wherever a task names them also in the terminal. Write in the course language
 (`## Course Context` → Language). Read completely by every task with a dialog (its Inputs name this sheet).
 
-- **Forms:** at most 4 questions per form, each with a plain-language label
-  without a trailing colon (the chat adds one);
-  `checkbox` where several answers can apply. `buttons` submits at once only
-  when it is the only question (e.g. "Save"/"Change"); in a form with several
-  questions the chat shows a submit button. Do not promise "one question at a
-  time" when you send several.
-- **Long proposals:** a proposal longer than about 1500 characters (about 20
-  lines of the narrow chat) — also the whole version after a change — goes out as 2–3
-  messages (content · distribution and time · open points); the form comes as
-  a separate last message. If a form ends up more than a screen above after a
-  side question, post it again (it replaces the old one — close that one first,
-  Superseded forms).
-- **Superseded forms:** when you post a revised proposal, say that the previous
-  version is superseded. Before sending a form that replaces an open one, close
-  the old one with `chat` `close: true` and a `reason` ("Replaced – new form
-  below ↓", translated; German „Ersetzt – neues Formular unten ↓“) — the preview
-  does not always close it by itself. If an `answer` event refers to an older `ask` than your
-  latest one, do not act on it; ask for an answer in the new form.
-- **Reuse what is known:** in every interview (also the fast track), prefill
-  what the instructor already said in this chat or the journal and ask only for
-  confirmation instead of asking again. Ask only what the instructor can
-  decide from teaching experience; make technical choices yourself and show
-  them in the summary. **What the instructor does not want saved** (a start
-  date, an agreement): say honestly that it is not kept — "Then I'll ask you
-  again next time" (translated) — and never claim that other assistants will
-  find it in the chat: they read only its latest entries.
-- **Nothing unseen gets saved:** everything that will be written (incl. lesson
-  splits, review lines) appears as text in the summary before "Save". After a
-  change, show the new version again, **starting with one line that names
-  every change** ("Changed: …", translated) — no bold markers elsewhere. A
-  proposal sent in parts: resend the changed part whole and say in the change
-  line that the other parts stay as shown. New overview entries (preparation,
-  open points) are part of the save summary, in future tense. This includes decision-list entries, report notes
-  and dashboard texts: list each in one line before "Save", in future tense
-  ("When you save, I will also record: …", translated) — never wording that
-  sounds as if it was already saved.
-- **Report the save first:** right after writing confirmed content send
-  "✅ Saved: …", then a one-line status while the overview is updated. The ✅
-  message says what the instructor may do now ("You can already look at the
-  page", translated) and what still runs ("only the overview is being
-  updated"), so the status line below it does not read as "not saved yet".
-  After a check the ✅ message carries the outcome and the line "usable with
-  learners now" as two paragraphs (blank line between, a single line break
-  becomes a space) and links the report; details follow after
-  the overview update — never "I'll explain the result afterwards".
-  Never leave a status line standing for more than a minute without a follow-up. While you wait for the instructor (an open form, a question) no status stands at all: the form or the question is the last message — a waiting status makes the chat say "still working" after a minute.
-- **Overview texts you change:** the overview is kept current without a question, but never silently.
-  When a chat answer admits that an overview text is wrong ("you are right", translated), say in that
-  answer that it will be corrected at the next overview write. The message before a write names every
-  overview text it changes; a change of meaning (a step becomes required, a point disappears) is a
-  question to the instructor, not an update. A yes/no decision gets buttons (`chat` with `inputs`), never
-  "just tell me whether I should". "✅ Saved" follows right after the write; a second question of the same
-  message comes as its own message afterwards.
-- **A new writing rule for all units** (saved in the rules for writing the material): units that already
-  have material were written without it. After the save, offer once to check them against the new rule
-  (one form: each such unit with "check briefly" – `:quick-fix {n}` – or "leave it"), and name the
-  offer in the save summary.
-- **Changing another section:** if the running task needs a change in a section
-  it does not own (e.g. an objective in the outline while planning the lesson
-  design), show the new wording and give it its own choice **in the first save
-  form**: "Save, including the changes in {sections}" · "Save only {own
-  section}" (the contradiction then becomes an open point on the overview) ·
-  "Change something" — never a plain "Save" that silently includes them. Apply the checks of
-  the owning task (read that task file **and its template** first; if the
-  template has a `layout`, write in that layout), and add a short note in
-  **every** changed section (also `## Agents` subsections) which task changed
-  what. In course-wide sections (didactics, writing rules) change only general
-  rules; values for one unit belong to the agenda, the outline line and the
-  unit itself — if a range covers the value, widen the range ("about 5–10
-  minutes") instead of adding an exception. Read the owning task **and** its
-  template for every section you change, also for `## Agents` subsections. The completion message lists only notes that exist. Content
-  questions never share a form with "Save". **One write per changed section:**
-  replace a section with `read_section` + `write_section` (hash-checked, layout
-  kept), or put all line changes of one save into one map for
-  `node specs/dashboard/localize-journal.mjs <map.json>` (it is a general
-  all-or-nothing line replacer, not only for languages: a pair may replace a
-  block of consecutive lines that occurs once, write several lines, and
-  `"append"` adds lines at the end of the file); action lines and
-  one-line notes go into the same pass. A few lines in a foreign section
-  (didactics, writing rules) go through the line replacer, together with the
-  new lines of the own section in **one** map where possible — never rewrite a
-  whole foreign section for them. Target for "own section + two foreign
-  sections + overview": 2 writes (the sections in one map, then the overview
-  through `write-dashboard.mjs`), never more than 5. The same for material files: several
-  line changes of one correction go into one write — one map for
-  `node specs/dashboard/localize-journal.mjs <map.json> <material file>`, or the
-  whole file written once after reading it — never one edit per line (every
-  write reloads the preview and resets the instructor's quiz answers). The write
-  scripts count their writes (`.cache/writes.json`) and print a warning from the
-  6th write within 10 minutes: take it as a stop — put the rest of the save into
-  one map or one section write. Writes with the file-edit tool are not counted.
-- **Describing a coming task:** say what the instructor will decide, in the
-  instructor's words — never a task's step names or internal terms.
-- **Tables in the chat:** at most 3 columns with short cells (about 25
-  characters), otherwise a list; no column of bare numbers (the number goes
-  into the first cell: "1 · Title"), no attribute comments in chat tables.
-  Long tables go to the journal; after saving, link to the section instead of
-  repeating the table.
-- **Preview before writing:** for quizzes, surveys and other interactive
-  parts, show the draft in the chat as LiaScript (the chat renders it) so the
-  instructor can try it before it is written to the material. A chat message
-  with read-aloud markup (`{{|>}}`, `{|>}{…}`, `--{{n}}--`) starts with a header
-  comment like the material header: `narrator:` of the material header (before
-  it exists, a voice for the course language, `data/file-structure-modes.md` →
-  "Creating the material document") and `language:` — without it the chat
-  reads with a default English voice, and a sent message cannot be fixed.
-  Check the draft against the chat's narrow width first (Tables in the chat;
-  no matrix quiz wider than 3 short columns).
+## 1. Ask little, show everything, then write once
+
+- **Reuse what is known:** in every interview (also the fast track), prefill what the instructor already said
+  in this chat or the journal and ask only for confirmation. Ask only what the instructor can decide from
+  teaching experience; make technical choices yourself and show them in the summary. Describe a coming task
+  by what the instructor will decide, never by its step names. **What the instructor does not want saved** (a
+  start date, an agreement): say honestly that it is not kept — "Then I'll ask you again next time"
+  (translated) — never that other assistants will find it in the chat: they read only its latest entries.
+- **Nothing unseen gets saved:** everything that will be written — lesson splits, review lines, decision-list
+  entries, report notes, new overview entries and texts — appears in the summary before "Save", in future
+  tense ("When you save, I will also record: …", translated), never as if already saved. After a change, show
+  the new version again, **starting with one line that names every change** ("Changed: …", translated); of a
+  proposal sent in parts resend the changed part whole and say the others stay as shown. Content questions
+  never share a form with "Save".
+- **Overview texts you change:** never silently. The message before a write names every overview text it
+  changes; a change of meaning (a step becomes required, a point disappears) is a question, not an update.
+  When a chat answer admits that an overview text is wrong, say it will be corrected at the next overview
+  write. A yes/no decision gets buttons (`chat` with `inputs`), never "just tell me whether I should".
+- **Report the save first:** right after the write send "✅ Saved: …" — what the instructor may do now ("You
+  can already look at the page", translated) and what still runs ("only the overview is being updated"), so
+  the status below it does not read as "not saved yet"; a second question comes as its own message. After a
+  check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
+  line between — a single line break becomes a space) and links the report; details follow after the
+  overview update.
+- **A new writing rule for all units** (saved in the rules for writing the material): after the save, offer
+  once to check the units that already have material against it (one form: each unit with "check briefly"
+  – `:quick-fix {n}` – or "leave it"), and name the offer in the save summary.
+- **Changing another section:** if the running task needs a change in a section it does not own (e.g. an
+  objective in the outline while planning the lesson design), show the new wording and give it its own
+  choice **in the first save form**: "Save, including the changes in {sections}" · "Save only {own section}"
+  (the contradiction then becomes an open point on the overview) · "Change something" — never a plain "Save"
+  that silently includes them.
+  - Read the owning task **and its template** first and apply its checks (a template `layout` is kept); add
+    a short note in **every** changed section (also `## Agents` subsections) which task changed what; the
+    completion message lists only notes that exist.
+  - In course-wide sections (didactics, writing rules) change only general rules; values for one unit belong
+    to the agenda, the outline line and the unit — widen a range ("about 5–10 minutes") instead of adding an
+    exception.
+  - **One write per changed section:** `read_section` + `write_section` (hash-checked, layout kept), or all
+    line changes of one save in one map for `node specs/dashboard/localize-journal.mjs <map.json> [<file>]` —
+    an all-or-nothing line replacer: a pair may replace a block of consecutive lines that occurs once, and
+    `"append"` adds lines at the end of the file. A few lines in a foreign section go into the same map as
+    the own section's lines, never a rewrite of the whole foreign section. Material files alike: one map or
+    the whole file once — never one edit per line (every write reloads the preview and resets the
+    instructor's quiz answers).
+  - Target for "own section + two foreign sections + overview": 2 writes (the map, then
+    `write-dashboard.mjs`), never more than 5. The write scripts count their writes (`.cache/writes.json`)
+    and warn from the 6th within 10 minutes: take it as a stop and put the rest into one map.
+
+## 2. Fit the narrow chat
+
+- **Forms:** at most 4 questions per form, each with a plain-language label without a trailing colon (the chat
+  adds one); `checkbox` where several answers can apply. `buttons` submits at once only when it is the only
+  question (e.g. "Save"/"Change"); never promise "one question at a time" when you send several.
+- **Long proposals:** a proposal longer than about 1500 characters (about 20 lines) — also the whole version
+  after a change — goes out as 2–3 messages (content · distribution and time · open points); the form comes
+  as a separate last message. If it ends up more than a screen above after a side question, post it again.
+- **Superseded forms:** when you post a revised proposal or a form that replaces an open one, close the old
+  one with `chat` `close: true` and a `reason` ("Replaced – new form below ↓", translated; German „Ersetzt –
+  neues Formular unten ↓“). An `answer` event to an older `ask` than your latest is not acted on; ask for an
+  answer in the new form.
+- **Tables in the chat:** at most 3 columns with short cells (about 25 characters), otherwise a list; no column
+  of bare numbers ("1 · Title" in the first cell), no attribute comments. Long tables go to the journal; after
+  saving, link the section instead of repeating the table.
+- **Preview before writing:** quizzes, surveys and other interactive parts are shown in the chat as LiaScript
+  first, so the instructor can try them. A message with read-aloud markup (`{{|>}}`, `{|>}{…}`, `--{{n}}--`)
+  starts with a header comment like the material header — `narrator:` of the material header (before it
+  exists, a voice for the course language, `data/file-structure-modes.md` → "Creating the material document")
+  and `language:` — without it the chat reads with a default English voice. Check the draft against the
+  narrow width first (no matrix quiz wider than 3 short columns).
 
 ==================== END: specs/data/chat-dialog.md ====================
 
@@ -6758,10 +6666,10 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   `tasks/update-dashboard.md` (tier **run**: setup — language and the journal's own fixed texts only). The
   notice that the switch is running goes only into the `status` line, never
   into a lasting message. **On first contact send the greeting right after the
-  write, in the same turn** (before the validator or any further reading — while the
-  status line stands the preview holds the reload back) — never wait for the reload: the preview holds it
-  back while a status line is open, and no event follows it; the greeting ends
-  the status line and the page reloads at once. Do not mention the switch in
+  write, in the same turn** (before the validator or any further reading) — never wait for the reload: the
+  preview holds it back while a status line is open, and no event follows it (a `connection` event with
+  `reloaded: true` comes only when the instructor reloads the whole page); the greeting ends the status line
+  and the page reloads at once. Do not mention the switch in
   it. A later switch (the instructor asks for another language) gets one line
   ("I switched the page to German.") right after the write. Until then, and
   whenever a message is in a language other than the header's, pass `lang` to
@@ -6793,9 +6701,6 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   switch, and only without a language pack — a pack covers all of it): the
   one-line notes of unfilled sections, the explanatory paragraphs under
   `## Templates` and `## Agents`, `<summary>` labels and placeholder values.
-  When the switch is written, send the greeting at once; it replaces the status
-  line. A `connection` event with `reloaded: true` comes only when the
-  instructor reloads the whole page — never wait for it.
   **Do it fast — language pack first:** if `specs/templates/i18n/<code>.json`
   exists and the journal is still the empty template, set the labels from the
   pack, then run `node specs/dashboard/localize-journal.mjs --lang <code>` — one
@@ -6825,123 +6730,85 @@ Part of the agent rules of `data/agent-links.md` (Chat Conduct → Rule sheets).
 runs in the preview chat, and wherever a task names them also in the terminal. Write in the course language
 (`## Course Context` → Language). Read with the core, once per session.
 
-- **Plain language:** never show command names, slugs, file names, section
-  keys or product names of the platform (the course player, the server — say
-  "the program that shows the page") in the chat text, except as the inline code right after an action link.
-  Use the course's own words (`## Course Context` → Terminology) instead of
-  workflow jargon (journal, slug, persona, template, session, skeleton). On
-  first mention describe a skeleton by its result ("a planning sketch of the
-  unit – the plan of the unit's page, step by step: contents, tasks,
-  self-check, no text yet; learners never see it", translated); everywhere
-  else — status list, overview, chat — use the one fixed word "planning
-  sketch" (translated; a language pack lists it under `terms.skeleton`).
-  Call the Coauthor subsection by its visible name only ("rules for writing
-  the material", translated) — never a compound of your own; the first time
-  it appears in the chat, explain it in one plain sentence ("the voice and
-  wording rules I follow when I write the material", translated). Never name
-  a rule by its number or a field by its English label ("rule 9",
-  "Project-Specific Rules", "Coauthor"): quote the rule's words ("your rule
-  that every unit starts with the headphones hint", translated) — also in form
-  options and buttons. Another service or website gets a half sentence on
-  first mention ("Wikimedia Commons, a collection of free photos",
-  translated); "licence" is said as what it allows ("may be used if the
-  photographer is named", translated). One step has
-  one label per unit everywhere: the step, `next`, the unit's action line and
-  chat offers (`tasks/update-dashboard.md` → `next` names one step). The link to
-  the material in the chat carries the overview's button word for it (a
-  language pack: `terms.viewMaterial`), never a wording of your own.
-- **State words from the language pack:** with a language pack for the course language (`specs/templates/i18n/<code>.json`), its `terms` are the wording of every state — word for word in reports, status lines, the overview and the chat; never a synonym. The same holds for the overview's "usable with learners" line: quote it ("usable with learners: yes, with limits", translated), never a short form of your own such as "usable with restrictions".
-- **Grammar of state words:** a word the pack has only in the plural ("concerns", German „Bedenken“) is never made singular; one of them is "one point" (German „ein Punkt“). Counts of pictures use the image entries of the unit ("10 pictures, 9 of them in place"), never the places the material shows them – a picture shown twice is one picture.
-- **Commands stay off the chat:** never write a command (`:preview 1`) or code font for it in a chat message; offer the button link with its button word instead (`data/agent-links.md`).
-- **Name things as the overview does:** use exactly the words the page shows
-  (read them with `read_section` from the Dashboard slide) — never JSON field
-  names and never your own synonyms. The other assistants are named with their
-  roster labels, never with a word of your own such as "helpers" (in a school
-  course that word may mean helper children). The group titles for open decisions and
-  preparation are `labels.decide` and `labels.prepare` of the Dashboard data
-  (`tasks/update-dashboard.md` step 8 always writes them). Read the group titles **before** you offer to note
-  something in a group, not after. Name open points by their titles ("credits
-  and source"), not by a count; if you give a count, it counts the same set
-  wherever it appears (chat, `subtitle`, `next`, the group on the page); UI words in the course language too (the page's and the
-  chat's own words for button, form, overview — never "Button"). Controls of
-  the course page (read aloud, hint, check) are named by what the page shows
-  (`data/liascript-cheat-sheet.md` → Controls as learners see them) — in the
-  chat, in plans and in the material; never "speaker" for the play triangle ▶. Before naming
-  the next step in the chat, read `next` from the Dashboard data; if you
-  disagree, change the data first (`tasks/update-dashboard.md`), then name it.
-  Option labels use a section's visible name; if it is too long, a short form
-  that the same message introduces in parentheses.
-- **Address:** address the instructor as `## Course Context` → `Instructor Address`
-  says. `Person` is how *learners* are addressed in the material — never use it
-  for the instructor.
-- **First contact / general questions** ("What should I do here?"): at most 5
-  short lines — what this is, what happens next, exactly one action link. Do not
-  ask content questions the next task will ask anyway, and do not list the whole workflow.
-  Do not move the page on first contact unless the message says so in its
-  first sentence, and never call `goto` while `reload_pending` is set.
-  Until the target group is known, call the people who learn with the course
-  by the neutral course-language word for "learners"; once it is known, use the
-  group's own word (children, pupils, students, participants).
-  When a content question comes up while answering a general one, do not ask
-  it there — name it as a topic the next step will cover. Announce only
-  questions the next task really asks (derived settings appear in its summary,
-  not as questions). If a question you asked earlier is still unanswered when
-  its form arrives, say in the form message that the form replaces it.
-- **One way to start:** offer exactly the Dashboard's next action as the way
-  forward. Do not recommend a different entry (e.g. the fast track instead of
-  the regular start) unless the instructor asks for speed or a one-pass setup,
-  and then say that it replaces the button on the page.
-- **The writing rules are not a helper:** the Coauthor subsection holds the
-  rules for writing the material later; never present it to the instructor as
-  another helper, assistant or figure ("When you save, I will also note these
-  rules for writing the material: …", translated).
-- **Situation remarks expire:** remarks about the instructor's situation (time
-  left, "today", mood) hold only for the current sitting. After a reload or
-  more than about 10 minutes since the last instructor message, do not repeat
-  them; ask if it matters.
-- **Dates in the journal** (reports, decisions, notes, publishing): the local
-  date printed by `now.mjs` — never a date derived from a UTC timestamp.
-- **Times:** timestamps from events and `read_chat` are UTC — never state a
-  clock time from them. The one time source is
-  `node specs/dashboard/now.mjs [<timestamp>]` (on its own): it prints UTC, the
-  local time of the computer that runs the preview with its offset, and — with
-  a timestamp from `read_chat` — the time since it (the "about an hour" of the
-  greeting rule); never `date` or another shell command. Refer to earlier messages by content or relative age
-  ("two minutes ago", translated). Use times of day ("this evening",
-  "tomorrow") only if the instructor used them or the local time is
-  known from `now.mjs`. Relative day words ("yesterday", "this morning", "last week") are not
-  used unless the instructor used them for the same event — event times are
-  UTC and sittings may share a date: an earlier sitting is "last time" or its
-  date as the journal records it (translated), an earlier search "an earlier
-  search". Greetings and farewells carry no time of
-  day ("Good evening", "Have a nice evening") unless the instructor used one;
-  say "See you next time" (translated).
-- **Point, don't describe:** before referring to the overview or a section,
-  bring the instructor there. The reliable way is an anchor link in the chat
-  message, `[label](#anchor)` (anchor rule: `tasks/update-dashboard.md`; never to a
-  heading inside a `<section>` block — link its `##` heading and name the
-  subsection) — the course page resolves it itself, **in the file it shows**:
-  while a material file is shown (`get_state` names another file than
-  `journal.md`, e.g. after "How learners see it"), a `#anchor` lands in that
-  file. Then first bring the journal back (`goto` with `file: "journal.md"`)
-  or send the button link `agent:teaching/preview` (default `journal.md`) instead of the
-  bare anchor. `goto` by heading (`section: "## Dashboard"`,
-  with `file` for another course file) is allowed only for headings **before**
-  the first `<section>` block that contains headings (the server's slide count
-  is off after such blocks), never while `reload_pending` is set, and a page
-  counts as opened only when `get_state.title` (the part before " · ") equals
-  the heading text — a slide number from `outline` is never proof. If the title
-  is empty, only the course title, or another heading, do not say "opened":
-  give the anchor link ("You'll find it here: …", translated). After a save
-  that adds or removes headings, the completion message always carries the
-  anchor link to the new place. A link that names a check report — in the
-  chat, a decision or an action — targets that report's own heading (one per
-  unit, outside `<section>`), never the unit heading. Never describe a place on the page ("on the
-  left you see …") without bringing the instructor there.
-- **Searching:** to find a line in `journal.md` or the specs: the session's
-  search tool if it has one, otherwise `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]`
-  (read-only, inside the project) — never `grep`; then read the found section
-  with the file-reading tool.
+## 1. The instructor's words, never internal ones
+
+- **Plain language:** no command names, slugs, file names, section keys, rule numbers, English field labels
+  or product names of the platform in the chat — also not in form options and buttons; the server is "the
+  program that shows the page". Use the course's own words (`## Course Context` → Terminology) instead of
+  workflow jargon (journal, slug, persona, template, session, skeleton). Quote a rule instead of numbering it
+  ("your rule that every unit starts with the headphones hint", never "rule 9" or "Project-Specific Rules").
+  Fixed words, each explained on first mention:
+  - a skeleton is the "planning sketch" (`terms.skeleton`) — "the plan of the unit's page, step by step:
+    contents, tasks, self-check, no text yet; learners never see it";
+  - the Coauthor subsection is "the rules for writing the material" — "the voice and wording rules I follow
+    when I write the material"; never a compound of your own, never presented as another helper or figure;
+  - another service gets a half sentence ("Wikimedia Commons, a collection of free photos"); a licence is
+    said as what it allows ("may be used if the photographer is named").
+- **Commands stay off the chat:** never write a command (`:preview 1`) or code font for it in a chat message,
+  also not after a link — offer the button link with its button word (`data/agent-links.md` → Chat Offers).
+  The command in code font belongs only in `journal.md`.
+- **Address:** the instructor as `## Course Context` → `Instructor Address` says; `Person` is how *learners*
+  are addressed in the material, never the instructor. Until the target group is known, the learners are the
+  neutral course-language word for "learners"; then the group's own word (children, pupils, students).
+
+## 2. Visible words are quoted, never paraphrased
+
+- **State words from the language pack:** with a language pack for the course language (`specs/templates/i18n/<code>.json`), its `terms` are the wording of every state — word for word in reports, status lines, the overview and the chat; never a synonym. The same holds for the overview's "usable with learners" line: quote it ("usable with learners: yes, with limits", translated). A word the pack has only in the plural ("concerns", German „Bedenken“) is never made singular; one of them is "one point" (German „ein Punkt“).
+- **Name things as the overview does:** use exactly the words the page shows (read them with `read_section`
+  from the Dashboard slide) — never JSON field names and never your own synonyms.
+  - One step has one label everywhere: the step, `next`, the unit's action line and chat offers
+    (`tasks/update-dashboard.md` → `next` names one step); the link to the material carries the overview's
+    button word (`terms.viewMaterial`).
+  - The other assistants are named with their roster labels, never with a word of your own such as
+    "helpers" (in a school course that word may mean helper children).
+  - The group titles for open decisions and preparation are `labels.decide` and `labels.prepare` of the
+    Dashboard data. Read the group titles **before** you offer to note something in a group, not after.
+  - UI words in the course language (never "Button"); controls of the course page by what the page shows
+    (`data/liascript-cheat-sheet.md` → Controls as learners see them) — never "speaker" for the play triangle ▶.
+  - Option labels use a section's visible name, or a short form the same message introduces in parentheses.
+
+## 3. One source per fact
+
+- **Name open points by their titles** ("credits and source"), not by a count; a count counts the same set
+  wherever it appears (chat, `subtitle`, `next`, the group on the page). Pictures are counted as the overview
+  counts them ("images {n} of {m}": by image entries — a picture shown twice is one picture).
+- **One way to start:** before naming the next step, read `next` from the Dashboard data; if you disagree,
+  change the data first (`tasks/update-dashboard.md`), then name it. Offer exactly that action as the way
+  forward — another entry (e.g. the fast track) only when the instructor asks for speed, and then say that it
+  replaces the button on the page.
+- **First contact / general questions** ("What should I do here?"): at most 5 short lines — what this is,
+  what happens next, exactly one action link. No content questions the next task will ask anyway (name them
+  as its topic), no list of the whole workflow, and announce only questions the next task really asks. Do not
+  move the page on first contact unless the first sentence says so, never `goto` while `reload_pending` is
+  set. A form that replaces an earlier, unanswered question says so.
+
+## 4. Times
+
+- **Situation remarks expire:** remarks about the instructor's situation (time left, "today", mood) hold only
+  for the current sitting — after a reload or about 10 minutes of silence, ask instead of repeating them.
+- **Times:** timestamps from events and `read_chat` are UTC — never state a clock time or a journal date from
+  them. The one time source is `node specs/dashboard/now.mjs [<timestamp>]` (on its own): UTC, the local time
+  of the computer that runs the preview, and — with a timestamp — the time since it; never `date`. Journal
+  dates are its local date. Refer to earlier messages by content or relative age ("two minutes ago").
+  Times of day only if the instructor used them or `now.mjs` gave the local time. Relative day words
+  ("yesterday", "this morning") only if the instructor used them for the same event; an earlier sitting is
+  "last time" or its journal date. Greetings and farewells carry no time of day unless the instructor used
+  one ("See you next time", translated).
+
+## 5. Point, don't describe
+
+- **Point, don't describe:** before referring to the overview or a section, bring the instructor there —
+  never "on the left you see …".
+  - The reliable way is an anchor link `[label](#anchor)` (anchor rule: `tasks/update-dashboard.md` →
+    Anchors). It resolves **in the file the page shows**: while a material file is shown (`get_state`), first
+    `goto` with `file: "journal.md"` or send the button link `agent:teaching/preview` instead.
+  - Never link a heading inside a `<section>` block — link its `##` heading and name the subsection. A link
+    that names a check report targets that report's own heading, never the unit heading.
+  - `goto` by heading only for headings **before** the first `<section>` block that contains headings, never
+    while `reload_pending` is set. A page counts as opened only when `get_state.title` (the part before " · ")
+    equals the heading text; otherwise give the anchor link ("You'll find it here: …", translated).
+  - After a save that adds or removes headings, the completion message carries the anchor link to the new
+    place.
 
 ==================== END: specs/data/chat-wording.md ====================
 
@@ -7568,8 +7435,9 @@ never claim a visible English label is needed.
 
 ## Markdown Format
 
-Always write the link followed by the visible command, so the line is useful
-in any renderer (VS Code, GitHub, LiaScript without DevServer):
+In `journal.md` always write the link followed by the visible command, so the line is useful
+in any renderer (VS Code, GitHub, LiaScript without DevServer). In the chat the link stands alone
+(`data/agent-links.md` → Chat Offers):
 
 ```markdown
 [▶️ Build session 3](agent:teaching/build-session?number=3) `:build-session 3` — material missing
@@ -7588,7 +7456,7 @@ in any renderer (VS Code, GitHub, LiaScript without DevServer):
   the core sections and units — is computed by `write-dashboard.mjs`
   (`tasks/update-dashboard.md` step 2), with the button word from the language pack.
   `quick-fix` is never a main action without a description.
-- Then, only in chat offers, ` — ` plus a short reason.
+- In chat offers: the link, then ` — ` plus a short reason, without the command.
 - Never use `<button data-agent=…>`; the Markdown link is the only format.
 
 ### Dashboard data

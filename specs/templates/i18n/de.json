@@ -387,6 +387,9 @@
   "approve": "Freigeben",
   "changeSomething": "Noch etwas ändern"
  },
+ "wrongForms": [
+  ["(?<!\\p{L})(eine Bedenke|ein Bedenken|1 Bedenken?)(?!\\p{L})", "ein Punkt"]
+ ],
  "outdatedTerms": [
   ["folgt noch", "passedMissing"],
   ["mit Bedenken", "passedConcerns"],

@@ -414,6 +414,12 @@ const staleNote = notes.find(line => /after the didactics|nach der Didaktik/i.te
 if (agendaRows && staleNote) problems.push(`## Sessions still shows the empty-state note "${staleNote.trim().slice(0, 80)}" although ## Agenda plans ${agendaRows} units – the note says instead that the units are planned in the agenda and are created one after another, starting with the first`);
 // Warnings: likely contradictions the instructor reads, printed without changing the exit code.
 const warnings = [...stepsWarnings];
+// Wrong forms the course language's pack lists (`wrongForms`: [pattern, right form]), e.g. a plural-only word made
+// singular (German "eine Bedenke" → "ein Punkt"), in the visible journal and the overview texts.
+for (const [pattern, right] of coursePack?.wrongForms ?? []) {
+  const hits = new Set([...source.replace(/<!--[\s\S]*?-->/g, "").matchAll(new RegExp(pattern, "giu"))].map(hit => hit[0]));
+  for (const hit of hits) warnings.push(`wrong form "${hit}" – write "${right}" (language pack → wrongForms, data/chat-wording.md → State words from the language pack)`);
+}
 // A unit with its subsection has begun; "planned" without its own statusLabel reads as not started.
 model.units.filter(unit => unit.href && unit.state === "planned" && !String(unit.statusLabel ?? "").trim()).forEach(unit =>
   warnings.push(`unit ${unit.id} has its subsection (href) but state "planned" and no statusLabel – set the state that matches its work (e.g. current) or a statusLabel`));

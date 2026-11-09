@@ -35,10 +35,10 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   `tasks/update-dashboard.md` (tier **run**: setup — language and the journal's own fixed texts only). The
   notice that the switch is running goes only into the `status` line, never
   into a lasting message. **On first contact send the greeting right after the
-  write, in the same turn** (before the validator or any further reading — while the
-  status line stands the preview holds the reload back) — never wait for the reload: the preview holds it
-  back while a status line is open, and no event follows it; the greeting ends
-  the status line and the page reloads at once. Do not mention the switch in
+  write, in the same turn** (before the validator or any further reading) — never wait for the reload: the
+  preview holds it back while a status line is open, and no event follows it (a `connection` event with
+  `reloaded: true` comes only when the instructor reloads the whole page); the greeting ends the status line
+  and the page reloads at once. Do not mention the switch in
   it. A later switch (the instructor asks for another language) gets one line
   ("I switched the page to German.") right after the write. Until then, and
   whenever a message is in a language other than the header's, pass `lang` to
@@ -70,9 +70,6 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   switch, and only without a language pack — a pack covers all of it): the
   one-line notes of unfilled sections, the explanatory paragraphs under
   `## Templates` and `## Agents`, `<summary>` labels and placeholder values.
-  When the switch is written, send the greeting at once; it replaces the status
-  line. A `connection` event with `reloaded: true` comes only when the
-  instructor reloads the whole page — never wait for it.
   **Do it fast — language pack first:** if `specs/templates/i18n/<code>.json`
   exists and the journal is still the empty template, set the labels from the
   pack, then run `node specs/dashboard/localize-journal.mjs --lang <code>` — one

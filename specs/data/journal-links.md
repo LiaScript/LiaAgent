@@ -25,8 +25,9 @@ never claim a visible English label is needed.
 
 ## Markdown Format
 
-Always write the link followed by the visible command, so the line is useful
-in any renderer (VS Code, GitHub, LiaScript without DevServer):
+In `journal.md` always write the link followed by the visible command, so the line is useful
+in any renderer (VS Code, GitHub, LiaScript without DevServer). In the chat the link stands alone
+(`data/agent-links.md` → Chat Offers):
 
 ```markdown
 [▶️ Build session 3](agent:teaching/build-session?number=3) `:build-session 3` — material missing
@@ -45,7 +46,7 @@ in any renderer (VS Code, GitHub, LiaScript without DevServer):
   the core sections and units — is computed by `write-dashboard.mjs`
   (`tasks/update-dashboard.md` step 2), with the button word from the language pack.
   `quick-fix` is never a main action without a description.
-- Then, only in chat offers, ` — ` plus a short reason.
+- In chat offers: the link, then ` — ` plus a short reason, without the command.
 - Never use `<button data-agent=…>`; the Markdown link is the only format.
 
 ### Dashboard data

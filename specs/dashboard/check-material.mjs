@@ -414,9 +414,17 @@ export function describeFit(fit, size) {
   const lowTop = fit.imageMax.top != null && !helps(fit.imageMax.top);
   const hopeless = lowTop ? ` – even without images the text needs nearly the whole screen: no image size helps; split the slide`
     : lowOpen ? ` – at open the question starts too far down: no image size helps there; split the slide or accept scrolling` : "";
-  const images = (room.length && fit.images ? ` – images at most ${room.join(", ")} (now up to ${fit.images} px)` : "") + hopeless;
+  const first = [fit.imageMax.open, fit.imageMax.top].find(helps);
+  const images = (room.length && fit.images ? ` – images at most ${room.join(", ")} (now up to ${fit.images} px; in words: ${shareWords(first / fit.images)})` : "") + hopeless;
   if (fit.top.fits) return `${name}: ${scrolled} (${openPart}; ${top}: fits)${images}`;
   return `${name}: ${notFit} (${openPart ? `${openPart}; ` : ""}${top}: ${fit.top.visible} of ${fit.total} options visible, needs ${fit.height} px, has ${fit.available} px)${images}`;
+}
+// An image height as a share of the present one, in the words the chat uses (data/chat-checks.md → Plain words):
+// computed once here, so every message repeats the same words.
+export function shareWords(ratio) {
+  const steps = [[0.9, "slightly smaller than now"], [0.7, "about three quarters as high as now"], [0.6, "about two thirds as high as now"],
+    [0.45, "about half as high as now"], [0.3, "about a third as high as now"], [0.2, "about a quarter as high as now"]];
+  return steps.find(([min]) => ratio >= min)?.[1] ?? "less than a quarter as high as now";
 }
 // The smallest image height that still shows something; below it the advice is to split the slide.
 export const minImage = 60;

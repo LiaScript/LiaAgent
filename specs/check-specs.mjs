@@ -47,10 +47,10 @@ const required = {
   "tasks/create-learner-persona.md": ["##### 3. Learning Context", "Show the complete persona exactly as it will be saved"],
   "tasks/validate-syntax.md": ["checked only by the publishing gate", "Findings returned to a caller never contain line numbers", "is never ❌ for it"],
   "tasks/try-as-learner.md": ["a workaround for DevServer 1.2.19", "find_teacher", "a computer program plays this role", "Fallback", "Preview required", "Name each person exactly as the portrait card shows it", "**last line is the exit sentence**", "\"Back to planning\"", "one fixed sentence announcing the help", "**Name controls as the page shows them**", "**Only what the events show:**", "a hint stage counts as seen only if `hints` reached it", "**Current patterns first:**", "**course decision**", "planning conversation stays visible"],
-  "data/agent-links.md": ["**Effort for the instructor**","**Order of the first reply:**","named or composed by an event","with two exceptions, both setup","**Inside an autonomous run**","at about half time with an interim result","`agent` (`:configure-agent`) is one of","`slide` is a positive integer","never material or anything the instructor wrote","Language before the frame","Lost or unseen messages","Typed answers","Temporary companion","Learner view","reply_to","reload_pending","never end a turn while announced work runs in the background","`preview` belongs to every agent","**Never for `preview`:**","**Long runs:**","tool call** is a `chat` status without a duration","never a new total","\"step {i} of {n}: …\""],
+  "data/agent-links.md": ["no status stands at all", "**Effort for the instructor**","**Order of the first reply:**","named or composed by an event","with two exceptions, both setup","**Inside an autonomous run**","at about half time with an interim result","`agent` (`:configure-agent`) is one of","`slide` is a positive integer","never material or anything the instructor wrote","Language before the frame","Lost or unseen messages","Typed answers","Temporary companion","Learner view","reply_to","reload_pending","never end a turn while announced work runs in the background","`preview` belongs to every agent","**Never for `preview`:**","**Long runs:**","tool call** is a `chat` status without a duration","never a new total","\"step {i} of {n}: …\""],
   "data/chat-wording.md": ["never with a word of your own such as \"helpers\"","**State words from the language pack:**","Relative day words","Name open points by their titles","never the unit heading","One way to start","**Times:**","Greetings and farewells carry no time","Read the group titles **before**","`node specs/dashboard/now.mjs [<timestamp>]`","never \"speaker\" for the play triangle ▶"],
   "data/chat-language.md": ["browser_lang"],
-  "data/chat-dialog.md": ["The write scripts count their writes (`.cache/writes.json`)", "**What the instructor does not want saved**","no status stands at all","`\"append\"` adds lines at the end of the file","Reuse what is known","Tables in the chat","Changing another section","header comment like the material header","what the instructor may do now"],
+  "data/chat-dialog.md": ["The write scripts count their writes (`.cache/writes.json`)", "**What the instructor does not want saved**","`\"append\"` adds lines at the end of the file","Reuse what is known","Tables in the chat","Changing another section","header comment like the material header","what the instructor may do now"],
   "data/chat-checks.md": ["`--viewport` with the window size of the learners' device","**Layout and devices:**","A missing warning is no proof","Say how you checked","*search result only*","*looked at*","*read as an extract*"],
   "data/chat-companion.md": ["**Workaround for DevServer 1.2.19 (N63):**","replaces the server's general \"stay silent\"","| wrong, `trial` 2 (before `help`) |","| `solved` after at least one wrong check |","On the self-check","with a \"Back to planning\" button"],
   "data/journal-links.md": ["preview?file=specs/catalog/README.md", "is computed by `write-dashboard.mjs`", "that choice is yours", "**Learners' view:**","never \"To unit {n}\""],
@@ -110,9 +110,18 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
 // growing back; raise one only with a reason (a new rule no script can carry).
 const budgets = {
-  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 4200, "data/chat-wording.md": 1611, "data/chat-dialog.md": 1469,
-  "data/chat-checks.md": 722, "tasks/build-session.md": 3269, "tasks/validate-course.md": 4077, "tasks/quick-fix.md": 1613,
+  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 3760, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
+  "data/chat-checks.md": 637, "tasks/build-session.md": 3269, "tasks/validate-course.md": 4077, "tasks/quick-fix.md": 1613,
 };
+test("commands never stand in the chat, only in journal.md after their link", () => {
+  assert.match(read("data/chat-wording.md"), /\*\*Commands stay off the chat:\*\*[^\n]*\n[^\n]*also not after a link/);
+  assert.match(read("data/agent-links.md"), /In the chat a link stands without its command/);
+  assert.match(read("data/journal-links.md"), /In chat offers: the link, then ` — ` plus a short reason, without the command/);
+  for (const sheet of ["data/agent-links.md", "data/chat-wording.md", "data/chat-dialog.md", "data/journal-links.md"]) {
+    assert.doesNotMatch(read(sheet), /inline command after a link is optional|except as the inline code right after an action link/, `${sheet} allows a command in the chat again`);
+  }
+});
+
 test("rule sheets and the main tasks stay within their word budget", () => {
   const over = Object.entries(budgets).map(([file, max]) => [file, read(file).split(/\s+/).filter(Boolean).length, max]).filter(([, words, max]) => words > max);
   assert.deepEqual(over.map(([file, words, max]) => `${file}: ${words} words > ${max}`), []);
