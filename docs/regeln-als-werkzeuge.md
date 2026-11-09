@@ -263,11 +263,41 @@ Aufwand: **klein** = ein überschaubares Skript oder eine Werkzeugoption · **mi
 - `templates/session-skeleton.yaml`: Die Aufzählung der Statuswörter ist ein Verweis auf `statusText`. 8,0 → 7,4 KB.
 - `templates/project-dashboard.yaml`: Felder, die das Skript setzt, tragen „(computed)“.
 
+**Aufräumrunde nach Tandem-Test 4 (2026-11-09):** Was die Skripte berechnen oder prüfen, steht im Text nur noch als ein Satz, der an das Skript übergibt.
+
+- **Neue Sicherungen in `check-specs.mjs`:**
+  - Geschützte Sätze werden ohne Rücksicht auf Zeilenumbrüche verglichen.
+  - Jeder Verweis `` `data/<blatt>.md` → Name `` muss im Blatt eine Überschrift oder einen fetten Regelnamen finden.
+  - Wortbudgets für die Regelblätter und die großen Tasks verhindern, dass der Text wieder wächst.
+- **Widersprüche zum Code behoben:**
+  - Die Freigabe schließt den Prüf-Schritt ab, nicht den Material-Schritt.
+  - Statuszeilen schreibt nur das Skript.
+  - `derive` setzt den Planungsschritt, sobald die Skizze existiert.
+  - `derive` behält ein gebeugtes `unitLabel.many` wie „Modulen“.
+- **Neue Prüfungen in den Skripten:**
+  - `validate-journal` lehnt `agent:`-Links mit unbekanntem Befehl ab, falsche Wortformen meldet es über `wrongForms` im Sprachpaket (z. B. „eine Bedenke“).
+  - `check-material` nennt den Bildanteil in Worten („about half as high as now“).
+- **Gekürzt:**
+  - `update-dashboard.md`: 4.302 → 2.972 Wörter. Die Task wird einmal pro Befehl gelesen, nicht vor jedem Schreiben. Die Skript-Doku und die anderen Agent-YAMLs muss sie nicht mehr lesen.
+  - `:build-session` liest jede Unteraufgabe erst, wenn ihr Schritt beginnt.
+  - Die Chat-Regeln sind zu Grundsätzen verdichtet: `chat-wording.md` 1.611 → 1.165, `chat-dialog.md` 1.469 → 1.125, `chat-checks.md` 722 → 637, `agent-links.md` 4.200 → 3.760.
+  - Die Shell-Liste ist von 500 auf 332 Wörter gekürzt.
+- **Befehle stehen nie im Chat.** Im Chat steht nur der Knopf-Link; der Befehl in Codeschrift bleibt nur in `journal.md`.
+
+Lesemenge pro Befehl in Wörtern. Die Grundlast sind `CLAUDE.md`, die Teaching-YAML, `agent-links.md` und `chat-wording.md`; die übrigen Werte gelten ohne Grundlast. `:build-session` ist mit Skizze, freien Fotos, ohne Lernendenprofile und mit einer Korrektur gerechnet:
+
+| Befehl | vorher | nachher |
+|---|---|---|
+| Grundlast pro Sitzung | 13.064 | 11.856 |
+| `update-dashboard` | 16.710 | 4.957 |
+| `quick-fix` | 30.142 | 17.642 |
+| `validate-course {n}` | 38.066 | 25.438 |
+| `build-session` | 56.984 | 34.839 |
+
 **Offen:**
 - Veraltete Wörter in der Ergebniszeile des Prüfberichts selbst: `validate-journal` meldet sie jetzt einmal am Bericht, nicht mehr je Kopie (Test 3: 9 → 3 Warnungen).
 - Aktionszeilen von Gestaltung, Vorlagen, Assistenten, Prüfung, Veröffentlichung und Notizen.
 - Kursprozess, Stichpunkte für offene Punkte.
-- `update-dashboard.md` kürzen. Dafür müssen die festgehaltenen Sätze in `check-specs.mjs` mitgeändert werden.
 - `validate-journal.mjs` auf `journal-model.mjs` umstellen, damit es nur noch einen Leser gibt.
 
 ## Empfohlene Reihenfolge
