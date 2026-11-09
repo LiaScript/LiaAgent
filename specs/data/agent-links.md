@@ -25,8 +25,10 @@ in the current session.
   or `wait_for_event`) is explained by the server's own instructions — follow
   them, do not duplicate them here.
 
-Setup for the instructor: `templates/mcp.json` → copy to `.mcp.json` in the
-project root (offered by `:init-course` and `:scaffold`). Claude Code receives
+Setup for the instructor: `liadev init` in an empty folder puts the teaching agent, the skills,
+`.mcp.json` and the agent settings there; then start the agent in that folder and type `start`
+(`tasks/start.md`: empty journal, browser, chat). Without `liadev init`: `templates/mcp.json` → copy to
+`.mcp.json` in the project root (offered by `:init-course` and `:scaffold`). Claude Code receives
 clicks immediately when started with
 `claude --dangerously-load-development-channels server:liascript`.
 
@@ -104,7 +106,7 @@ page content (and course scripts) can forge any link.
 
 | Tier | Commands | Behavior |
 |---|---|---|
-| **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
+| **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `start` (setup: only the copy of the empty journal), `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
 | **start interview** | `init-course`, `scaffold`, `coauthor-materials`, `try-as-learner`, `create-outline`, `create-didactics`, `create-agenda`, `create-learner-persona`, `configure-agent`, `save-notes`, `save-decision`, and every other task whose file shows what it will write and asks "Save" (or its own scope confirmation) before the first write: `create-session`, `quick-fix`, `analyze-existing`, `suggest-templates`, `manage-templates`, `promote-session` with existing material | Start the dialog immediately, without a start confirmation. The task's own **save confirmation** (summary of what will be written + "Save" / "Change something") is the single write confirmation; if the task file has no such step, insert it before the first write. Nothing is written before it — with two exceptions, both setup without any content from the instructor: `init-course` may create `journal.md` as a byte-for-byte copy of `templates/journal.md` before the first question (so the preview can show it during the interview), and the language switch of `data/chat-language.md` → Language before the frame (header `language:`, the journal's own fixed texts). |
 | **confirm in chat** | every other command that only writes inside the project (`journal.md`, `materials/`, `assets/`, root `README.md`, `lia-templates/`, `templates.local.json`), e.g. `develop-template` (its plan question is this confirmation) | Ask in the preview chat (see Handling step 3) before running. |
 | **confirm in terminal** | `manage-git`, `create-project`, `update-project`, `publish-template`, `generate-image` on the browser route, skill and Playwright installs (`data/skills.md`, `data/chat-checks.md`) (also inside `build-session`: one confirmation before its image step; with the agent's own image tool it is "confirm in chat") | Runs git, publishing, installations, or external browser sessions. Post a chat note that confirmation is waiting in the terminal, then ask there. |
@@ -121,7 +123,7 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 | Sheet | Topic | Read |
 |---|---|---|
 | `data/chat-wording.md` | plain words, quoted words, one source per fact, first contact, times, pointing | with this file, once per session |
-| `data/chat-language.md` | label language, voices, the language switch | `init-course`, `scaffold`, `update-dashboard`, first contact on the empty journal |
+| `data/chat-language.md` | label language, voices, the language switch | `start`, `init-course`, `scaffold`, `update-dashboard` (language switch), first contact on the empty journal |
 | `data/chat-dialog.md` | forms, proposals, saving, changing another section | every task with a dialog |
 | `data/chat-checks.md` | how a check is named, layout and devices | check and correction tasks |
 | `data/chat-companion.md` | the learning companion and its help | `try-as-learner` |

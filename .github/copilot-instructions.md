@@ -132,6 +132,7 @@ agent_coordination:
     - "After switching: new agent reads `journal.md`, especially `## Course Context`, to orient itself"
 
   on_activation:
+    - "If the instructor's first message is only `start` or `:start` (any case, also a translation such as „Start“ or „starten“), run `tasks/start.md` at once — it opens the browser chat; the rest of this list follows inside the session"
     - "Read `journal.md` if it exists, especially `## Course Context`, to understand course type, terminology, and conventions"
     - "Read `specs/agents/teaching-agent.yaml` completely once per session — its `epistemic_rules`, `interaction_mode` and `journal_formatting_rules` are not repeated in this file"
     - "Read only `journal.md` → `## Agents` → `### Teaching-Agent` for Teaching-Agent project customization, if present"
@@ -171,7 +172,7 @@ agent_links:
   rules:
     - "MCP gate: only when the `liascript` tools `get_state`, `goto` and `chat` are available, handle `command` events and offer next steps as `agent:` links in the preview chat — after typed and clicked commands alike. Without them, stay in the terminal."
     - "Start order when the gate is open, before anything else: (1) `get_state`, (2) read the header `language:`, `## Course Context` and the Dashboard `next` of `journal.md` with the file-reading tool (a few seconds — the labels, the first reply and its one action need them), (3) `set_agent` for all four agents with labels in that language (`data/agent-links.md` → Agent Roster), (4) subscribe to browser events — only if they do not already arrive as `<channel>` tags in this session: Monitor on `curl -sN <get_state.events>` with the longest timeout, restarted when it expires, never two at once, (5) `read_chat`: an open message gets a status line at once and its answer next. Then read the rest of `journal.md` and detect skills."
-    - "Keep the preview chat responsive: read files with the agent's file-reading tool (search tools if the session has them), never with shell commands (`grep`, `cat`, `head`, `ls`, `sed`, `python` …). Use the shell only for the project's scripts, each as a single command without `;`, `&&` or pipes — each task says when: `node specs/dashboard/validate-journal.mjs`, `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]`, `node specs/dashboard/write-dashboard.mjs <draft.json>`, `node specs/dashboard/derive-dashboard.mjs [--check]`, `node specs/dashboard/now.mjs [<timestamp>]` (the only time source — never `date`), `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]` (instead of `grep`), `node specs/dashboard/localize-journal.mjs --lang <code>` or `<map.json> [<file>]` (all-or-nothing line replacer), `node specs/dashboard/migrate-journal.mjs [--check]`, `node specs/dashboard/fetch-thumb.mjs <file page|file name>` (never `curl` or another download), `node specs/catalog/search.mjs [query]`, `node --test lia-templates/{id}/check.mjs`. Also allowed: `cp specs/templates/journal.md journal.md` (the empty journal in `init-course` / `scaffold`) and `curl -sN <get_state.events>` (the event subscription of the start order, inside the Monitor). Any other shell use only inside a task confirmed in the terminal: git via `:manage-git`; Chrome start and file move on the browser route of `:generate-image`; after the instructor's consent (`data/skills.md` → Installing a Missing Skill, `data/chat-checks.md` → Offering the Rendered Check) `npx -y skills add …`, `npm init -y`, `npm i -D playwright`, `npx playwright install chromium`; and the calls of the Development-Agent's `:publish-template`, each as one command inside the project: `gh auth status`, `git init`, `git add`, `git commit`, `gh repo create`, `gh repo edit --add-topic`, `git tag`, `git push` (as `git -C lia-templates/{id} …`), for its pull request `gh repo fork`, `gh repo clone … .cache/catalog-pr`, `git -C .cache/catalog-pr …`, `gh pr create` and `rm -r .cache/catalog-pr`. Change `journal.md` and material files only with the file-edit tool, the line replacer or — with the gate open — `read_section` + `write_section`; never with other shell scripts or heredocs; after a line-replacer write run `validate-journal.mjs` or `check-material.mjs`; several line changes in one file go into one write (`data/chat-dialog.md` → Changing another section). Compound shell lines can trigger a permission prompt the instructor never sees, and the chat freezes meanwhile."
+    - "Keep the preview chat responsive: read files with the agent's file-reading tool (search tools if the session has them), never with shell commands (`grep`, `cat`, `head`, `ls`, `sed`, `python` …). Use the shell only for the project's scripts, each as a single command without `;`, `&&` or pipes — each task says when: `node specs/dashboard/validate-journal.mjs`, `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]`, `node specs/dashboard/write-dashboard.mjs <draft.json>`, `node specs/dashboard/derive-dashboard.mjs [--check]`, `node specs/dashboard/now.mjs [<timestamp>]` (the only time source — never `date`), `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]` (instead of `grep`), `node specs/dashboard/localize-journal.mjs --lang <code>` or `<map.json> [<file>]` (all-or-nothing line replacer), `node specs/dashboard/migrate-journal.mjs [--check]`, `node specs/dashboard/fetch-thumb.mjs <file page|file name>` (never `curl` or another download), `node specs/catalog/search.mjs [query]`, `node --test lia-templates/{id}/check.mjs`. Also allowed: `cp specs/templates/journal.md journal.md` (the empty journal in `start`, `init-course` / `scaffold`) and `curl -sN <get_state.events>` (the event subscription of the start order, inside the Monitor). Any other shell use only inside a task confirmed in the terminal: git via `:manage-git`; Chrome start and file move on the browser route of `:generate-image`; after the instructor's consent (`data/skills.md` → Installing a Missing Skill, `data/chat-checks.md` → Offering the Rendered Check) `npx -y skills add …`, `npm init -y`, `npm i -D playwright`, `npx playwright install chromium`; and the calls of the Development-Agent's `:publish-template`, each as one command inside the project: `gh auth status`, `git init`, `git add`, `git commit`, `gh repo create`, `gh repo edit --add-topic`, `git tag`, `git push` (as `git -C lia-templates/{id} …`), for its pull request `gh repo fork`, `gh repo clone … .cache/catalog-pr`, `git -C .cache/catalog-pr …`, `gh pr create` and `rm -r .cache/catalog-pr`. Change `journal.md` and material files only with the file-edit tool, the line replacer or — with the gate open — `read_section` + `write_section`; never with other shell scripts or heredocs; after a line-replacer write run `validate-journal.mjs` or `check-material.mjs`; several line changes in one file go into one write (`data/chat-dialog.md` → Changing another section). Compound shell lines can trigger a permission prompt the instructor never sees, and the chat freezes meanwhile."
     - "Task files, templates and `data/agent-links.md` may change between two commands: on every command (typed or clicked) re-read with the file-reading tool the command's task file, every template it names and every file its Inputs mark as read completely (e.g. the sub-procedures of `build-session`, each when its step starts) — also if you read them earlier in this session; `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` once per command, before its first Dashboard write (`write-dashboard.mjs` keeps every later write in shape); `data/agent-links.md` (core) and `data/chat-wording.md` once per session and again after any notice that the specs changed; every rule sheet a task's Inputs name (`data/chat-*.md`, `data/journal-links.md`) completely, with that task. Always read a task file **completely**, not a line range: rules also stand at the end."
     - "Section headings in `journal.md` may carry a translated suffix (`## Outline – …`). When a task names `## Outline`, it means the line that starts with `## Outline`. Keep heading lines unchanged when replacing a section's content."
     - "Agent roster: when the gate is open, read `data/agent-links.md` → Agent Roster first, then declare all four agents with `set_agent` (names `teaching`, `artist`, `learner`, `development`, emojis from their `icon:`, labels in the course language as that section describes — no renaming later — except once, early, when the language changes on first contact) before the first chat message, and update the current one on every persona switch. `chat`/`answer` events carry in `agent` the persona the instructor talks to — answer as that persona; `agent:<name>/switch` (link or chat menu) means `:agent <name>`."
@@ -325,6 +326,7 @@ commands:
   :manage-templates {name?}: "run task `tasks/manage-templates.md` with `templates/course-templates.yaml` — add/update LiaScript template imports (by name, catalog id or brief id) in the project header and document usage in `journal.md` → `## Templates`"
   :update-dashboard: "run task `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` — regenerate the derived `journal.md` → `## Dashboard` after project state changes"
   :preview {file?} {slide?}: "run task `tasks/preview.md` — show a course file (default `journal.md`) in the LiaScript DevServer preview via the `liascript` MCP"
+  :start: "run task `tasks/start.md` — first command after `liadev init`: creates the empty journal if missing, opens the preview in the browser and greets in its chat; also the bare word `start` as the first message"
   :open-chat: "run task `tasks/open-chat.md` — open the browser chat of the LiaScript DevServer preview (opens the preview if needed) and greet with the next step; runs in this persona"
   :create-session {number} {title?}: "run task `tasks/create-session-skeleton.md` with `templates/session-skeleton.yaml`"
   :promote-session {number}: "run task `tasks/promote-session.md` with `templates/session-material.yaml`"
@@ -358,6 +360,7 @@ dependencies:
     - manage-templates.md
     - update-dashboard.md
     - preview.md
+    - start.md
     - open-chat.md
     - create-session-skeleton.md
     - promote-session.md
@@ -3625,6 +3628,65 @@ After each section is saved, print a brief progress line:
 ==================== END: specs/tasks/scaffold-course.md ====================
 
 
+==================== START: specs/tasks/start.md ====================
+
+# Task: start
+
+## Purpose
+
+The first command in a fresh project folder. After `liadev init` (which puts the teaching agent, the
+LiaScript skills, `.mcp.json` and the agent settings into the folder) the instructor starts an AI agent in
+that folder and types `start`. This task creates the empty journal if there is none, opens the preview in
+the instructor's own browser and greets them in its chat — from then on the instructor works in the browser.
+
+## Command
+
+`:start` — also the bare word `start` (any case, also a translation such as „Start“ or „starten“) when it is
+the instructor's first message in the session.
+
+## Inputs
+
+- `journal.md`, if it exists: header `language:`, `## Course Context`, the Dashboard `next` (read with the
+  file-reading tool).
+- `tasks/open-chat.md` — steps 2–5 run as part of this task.
+- `data/agent-links.md` (core: MCP Gate, Agent Roster) and `data/chat-wording.md`, read once per session.
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-language.md`
+
+## Steps
+
+1. **MCP gate closed** (the `liascript` tools `get_state`, `goto` and `chat` are not available): say in the
+   terminal, in the language of the instructor's message (English for a bare `start`), in three short lines:
+   - the browser chat needs the LiaScript DevServer as a tool of this agent;
+   - if `.mcp.json` is missing: run `liadev init` in this folder first;
+   - otherwise restart the agent in this folder and allow the server `liascript` when asked (Claude Code:
+     at start or with `/mcp`; other agents: register `liadev --mcp --live -i journal.md` as MCP server in
+     their own configuration, as `.mcp.json` shows).
+   Do not start a server yourself. Stop.
+2. **Journal:** if `journal.md` does not exist, create it as the byte-for-byte copy of the empty journal:
+   `cp specs/templates/journal.md journal.md` (on its own). This is the only write before the instructor's
+   first answer. An existing journal stays as it is.
+3. **Open the chat:** run `tasks/open-chat.md` steps 2–5 — `get_state`; without a connected browser `goto`
+   with `file: journal.md`, which opens the instructor's default browser; connect this session (roster,
+   event subscription, `read_chat`); greet. Wait for the browser with `get_state` for at most about 10 s; if
+   it is still not connected, give `get_state.url` in the terminal as the link to open, and stop.
+4. **Language first:** on the empty journal, before the greeting, the switch of `data/chat-language.md` →
+   Language before the frame runs with `get_state.browser_lang` (language pack first, one write) and the
+   roster labels follow the course language. The greeting is the first contact
+   (`data/chat-wording.md` → First contact): one sentence what this is, exactly one link — the Dashboard's
+   `next`, on the empty journal "start the course" (`init-course`).
+5. **Terminal:** one line that the chat is open in the browser, with `get_state.url`, and that the work goes
+   on there.
+
+## Rules
+
+- Setup only: writes nothing but the copy of the empty journal and the language switch of step 4.
+- Never opens a browser-automation window instead of the instructor's browser; never a second preview tab
+  when a browser is connected.
+- Runs once per session; a second `start` behaves like `:open-chat`.
+
+==================== END: specs/tasks/start.md ====================
+
+
 ==================== START: specs/tasks/suggest-templates.md ====================
 
 # Task: suggest-templates
@@ -6116,8 +6178,10 @@ in the current session.
   or `wait_for_event`) is explained by the server's own instructions — follow
   them, do not duplicate them here.
 
-Setup for the instructor: `templates/mcp.json` → copy to `.mcp.json` in the
-project root (offered by `:init-course` and `:scaffold`). Claude Code receives
+Setup for the instructor: `liadev init` in an empty folder puts the teaching agent, the skills,
+`.mcp.json` and the agent settings there; then start the agent in that folder and type `start`
+(`tasks/start.md`: empty journal, browser, chat). Without `liadev init`: `templates/mcp.json` → copy to
+`.mcp.json` in the project root (offered by `:init-course` and `:scaffold`). Claude Code receives
 clicks immediately when started with
 `claude --dangerously-load-development-channels server:liascript`.
 
@@ -6195,7 +6259,7 @@ page content (and course scripts) can forge any link.
 
 | Tier | Commands | Behavior |
 |---|---|---|
-| **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
+| **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `start` (setup: only the copy of the empty journal), `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
 | **start interview** | `init-course`, `scaffold`, `coauthor-materials`, `try-as-learner`, `create-outline`, `create-didactics`, `create-agenda`, `create-learner-persona`, `configure-agent`, `save-notes`, `save-decision`, and every other task whose file shows what it will write and asks "Save" (or its own scope confirmation) before the first write: `create-session`, `quick-fix`, `analyze-existing`, `suggest-templates`, `manage-templates`, `promote-session` with existing material | Start the dialog immediately, without a start confirmation. The task's own **save confirmation** (summary of what will be written + "Save" / "Change something") is the single write confirmation; if the task file has no such step, insert it before the first write. Nothing is written before it — with two exceptions, both setup without any content from the instructor: `init-course` may create `journal.md` as a byte-for-byte copy of `templates/journal.md` before the first question (so the preview can show it during the interview), and the language switch of `data/chat-language.md` → Language before the frame (header `language:`, the journal's own fixed texts). |
 | **confirm in chat** | every other command that only writes inside the project (`journal.md`, `materials/`, `assets/`, root `README.md`, `lia-templates/`, `templates.local.json`), e.g. `develop-template` (its plan question is this confirmation) | Ask in the preview chat (see Handling step 3) before running. |
 | **confirm in terminal** | `manage-git`, `create-project`, `update-project`, `publish-template`, `generate-image` on the browser route, skill and Playwright installs (`data/skills.md`, `data/chat-checks.md`) (also inside `build-session`: one confirmation before its image step; with the agent's own image tool it is "confirm in chat") | Runs git, publishing, installations, or external browser sessions. Post a chat note that confirmation is waiting in the terminal, then ask there. |
@@ -6212,7 +6276,7 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 | Sheet | Topic | Read |
 |---|---|---|
 | `data/chat-wording.md` | plain words, quoted words, one source per fact, first contact, times, pointing | with this file, once per session |
-| `data/chat-language.md` | label language, voices, the language switch | `init-course`, `scaffold`, `update-dashboard`, first contact on the empty journal |
+| `data/chat-language.md` | label language, voices, the language switch | `start`, `init-course`, `scaffold`, `update-dashboard` (language switch), first contact on the empty journal |
 | `data/chat-dialog.md` | forms, proposals, saving, changing another section | every task with a dialog |
 | `data/chat-checks.md` | how a check is named, layout and devices | check and correction tasks |
 | `data/chat-companion.md` | the learning companion and its help | `try-as-learner` |
@@ -10085,6 +10149,7 @@ workflow:
       - :manage-templates {name?}
       - :update-dashboard
       - :preview {file?} {slide?}
+      - :start
       - :open-chat
       - :create-session {number} {title?}
       - :promote-session {number}

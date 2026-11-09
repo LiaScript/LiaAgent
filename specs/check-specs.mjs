@@ -108,9 +108,9 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 });
 
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
-// growing back; raise one only with a reason (a new rule no script can carry).
+// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup).
 const budgets = {
-  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 3760, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
+  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 3808, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
   "data/chat-checks.md": 637, "tasks/build-session.md": 3269, "tasks/validate-course.md": 4077, "tasks/quick-fix.md": 1613,
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
@@ -120,6 +120,16 @@ test("commands never stand in the chat, only in journal.md after their link", ()
   for (const sheet of ["data/agent-links.md", "data/chat-wording.md", "data/chat-dialog.md", "data/journal-links.md"]) {
     assert.doesNotMatch(read(sheet), /inline command after a link is optional|except as the inline code right after an action link/, `${sheet} allows a command in the chat again`);
   }
+});
+
+test("start: the first command after liadev init creates the empty journal, opens the browser and greets in the chat", () => {
+  const task = read("tasks/start.md");
+  for (const phrase of ["`cp specs/templates/journal.md journal.md`", "run `liadev init` in this folder first", "`tasks/open-chat.md` steps 2–5", "Language before the frame", "Do not start a server yourself"]) assert.ok(task.includes(phrase), `tasks/start.md lost: ${phrase}`);
+  const yaml = read("agents/teaching-agent.yaml");
+  assert.match(yaml, /^ {2}:start: "run task `tasks\/start\.md`/m);
+  assert.match(yaml, /on_activation:\n\s+- "If the instructor's first message is only `start`/, "start is the first activation rule");
+  assert.match(read("data/agent-links.md"), /\| \*\*run\*\* \|[^\n]*`start`/);
+  assert.match(read("data/agent-links.md"), /`liadev init` in an empty folder/);
 });
 
 test("rule sheets and the main tasks stay within their word budget", () => {

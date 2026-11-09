@@ -519,6 +519,7 @@ workflow:
       - :manage-templates {name?}
       - :update-dashboard
       - :preview {file?} {slide?}
+      - :start
       - :open-chat
       - :create-session {number} {title?}
       - :promote-session {number}

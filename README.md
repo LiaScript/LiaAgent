@@ -158,6 +158,22 @@ Publishing (`:create-project`, `:update-project`) is **blocked until** `:validat
 
 ## Installation
 
+### Quick start: a new course folder with the DevServer
+
+```bash
+npm install -g @liascript/devserver
+mkdir my-course && cd my-course
+liadev init        # teaching agent, LiaScript skills, .mcp.json and agent settings
+claude             # or another agent that reads AGENTS.md; clicks in the chat arrive at once with
+                   # claude --dangerously-load-development-channels server:liascript
+```
+
+Then type `start` as the first message. The agent creates the empty `journal.md`, opens the
+preview in your browser and greets you in its chat — from there you work in the browser
+(`specs/tasks/start.md`). `liadev update` later fetches the agent and the skills again.
+
+The steps below are for working on the teaching agent itself.
+
 ### 1. Get the project
 
 ```bash
@@ -272,7 +288,8 @@ found in the tandem tests against regressions (and scenario data leaking into th
 **Setup**
 
 1. Install the DevServer: `npm install -g @liascript/devserver`
-2. Copy [`specs/templates/mcp.json`](specs/templates/mcp.json) to `.mcp.json` in the project
+2. `liadev init` writes `.mcp.json` (and the agent settings) into the folder; without it, copy
+   [`specs/templates/mcp.json`](specs/templates/mcp.json) to `.mcp.json` in the project
    root (`:init-course` and `:scaffold` offer to do it). The agent then starts
    `liadev --mcp --live -i journal.md` by itself.
 3. Start your agent:
@@ -282,7 +299,8 @@ found in the tandem tests against regressions (and scenario data leaking into th
    - **Codex, Gemini CLI, …** — register the same server in their MCP configuration
      (Codex: raise `tool_timeout_sec`, a confirmation waits for your click). They receive
      clicks through the `wait_for_event` tool.
-4. `:preview` opens `journal.md` in the browser; `:preview materials/03-…/README.md` shows a
+4. `start` as the first message (or `:start`) creates the empty journal if needed, opens the browser
+   and greets you in the chat. `:preview` opens `journal.md` in the browser; `:preview materials/03-…/README.md` shows a
    session's material. `:open-chat` opens the browser chat (and the preview, if no browser is
    connected) and greets you there with the next step.
 
