@@ -83,7 +83,7 @@ The course context acts as the governance layer: it defines the course type, ter
    For a single lesson do not ask: it is `single-file` (one link); name it in one line of the summary. For every other course type, ask the file structure as a **teacher question** instead of stating a default (single choice, plain labels):
    1. "One link for all units — learners work through the chapters of one course" → `single-file`
    2. "One link per unit — each unit is opened on its own" → `multi-file`
-   Ask this only once the time frame (step 4) is known. Recommend 1 if it is up to about 6 short units (one link or QR code, progress in one place) and say why in one line; otherwise give no recommendation. Never label an option as "usual" or "default", and never offer an internal threshold (e.g. "up to 6") as an answer option.
+   Ask this only once the time frame (step 4) is known. Recommend 1 if it is up to about 6 short units (one link or QR code; each learner sees all units and their own progress on their device — there is no class overview for the teacher) and say why in one line; otherwise give no recommendation. Never label an option as "usual" or "default", and never offer an internal threshold (e.g. "up to 6") as an answer option.
 
    **Terminology:** set `sessions-called` to the word the instructor will see for one unit in the journal, in the course language and fitting the setting (e.g. school: the local word for "lesson" or "learning unit"). Use exactly these words in all instructor-facing text and in the Dashboard.
 
@@ -111,9 +111,10 @@ The course context acts as the governance layer: it defines the course type, ter
    - Below the table, say in one plain-language line **what the mapped keys change in the material** (who leads, how each unit ends, one link or several) — never name or translate a type, pacing or persona key, never use the label of an option the instructor did not choose, and never present the assistant as the persona (the persona is decided in `create-didactics`). That line belongs to the summary only and is not saved; the keys themselves go into the technical block.
    - A revised summary (after "Change something") starts with one line naming every change ("Changed: units 6 → 4; new: preparation"), before the table — no bold markers inside the table.
    - Content the instructor already gave for a later step (e.g. learning objectives, ideas for tasks) goes into `Additional Notes` as "For {step}: …" and is listed below the summary as "noted for later"; the later task reads it from there.
+   - A rule the instructor chose for the whole course (e.g. about privacy, recordings, devices) is a row of the summary table ("Agreed rules", translated) — visible on the page, never only in `Additional Notes`.
    Then save:
    - **Language pack first:** if the course language is not English, a language pack exists (`specs/templates/i18n/<code>.json`) and `journal.md` is still the untouched copy of step 2, run `node specs/dashboard/localize-journal.mjs --lang <code>` **before** any other write of this step — the pack replaces lines of the empty template only, so after the first content write it no longer applies (unless it already ran at the language switch, `data/chat-language.md` → Language before the frame).
-   - Then replace the content of `journal.md` → `## Course Context` following `templates/course-context.yaml` → `layout` (summary table first, technical `* __Label:__` bullets inside `<details>`, no sub-headings).
+   - Then replace the content of `journal.md` → `## Course Context` following `templates/course-context.yaml` → `layout` (summary table first, technical `* __Label:__` bullets inside `<details>`, no sub-headings). Leave the action line below the heading as it is — `write-dashboard.mjs` renews it in the same save.
 10. If LiaScript conventions mention template imports, run `tasks/manage-templates.md` with `templates/course-templates.yaml`:
     - Add `import: {url}` to the main metadata header if missing
     - Create or update `journal.md` → `## Templates`

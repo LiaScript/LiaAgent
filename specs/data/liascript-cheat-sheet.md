@@ -532,8 +532,19 @@ Which one is right?
 - Read answer options aloud with inline playback on the option (`{|>}{option text}`) instead of repeating them in the question text. Hint texts the same way where the target group needs read-aloud: `- [[?]] {|>}{Hint text}` — the play button appears when the hint is shown.
 - Every option has its own text (two equal options make the quiz unsolvable); an option that waits for an image carries a neutral word ("picture 1"), never the answer.
 - **No surface cues:** only understanding may find the answer. Options of one question are about equally long (the correct one never clearly the longest), built the same way (same subject, same grammatical form, the same first word where the others share one), and the correct one changes its position from question to question. Gap cards carry no article, case ending or capital letter that tells their gap — the article stays in the sentence. A sentence with gaps is not also written out as its own line on the page. `check-material.mjs` reports what it can measure ("Answer patterns").
-- No table or matrix quiz wider than 3 short columns; on narrow screens prefer several single-choice questions.
-- Feedback lines can be changed per quiz (since LiaScript 2.0): `data-text-solved`, `data-text-failed`, `data-text-resolved` — inline Markdown or a single emoji; an empty value hides the line. For the whole course, define them once as header macros (`@ok: ⭐ Super!`) and use `data-text-solved="@ok"`. Surveys have no such attributes.
+- **No matrix quiz in practice or self-check for young learners:** after a wrong check the matrix marks every row red, so the child cannot see which row is wrong. Use one single-choice question per row instead. Elsewhere: no table or matrix quiz wider than 3 short columns; on narrow screens prefer several single-choice questions.
+- **Feedback lines in the learners' words — required for young learners.** The player's default lines ("The correct answer has not been given yet") are not written for children. Define them once as header macros and set them on every quiz (since LiaScript 2.0: `data-text-solved`, `data-text-failed`, `data-text-resolved` — inline Markdown or a single emoji; an empty value hides the line):
+
+  ```lia
+  <!--
+  @ok: Right! ⭐
+  @notyet: Not quite yet. Tap the light bulb 💡.
+  -->
+  ```
+
+  (in the course language) and `<!-- data-text-solved="@ok" data-text-failed="@notyet" … -->` above the first option. A "light bulb" in such a line only where the quiz has a `[[?]]` hint. Surveys have no such attributes.
+- **Surveys answer with a fixed line:** after submitting, the player shows its own thank-you sentence (German: „Vielen Dank für dein Feedback!“) that cannot be changed. For young learners, an estimate or opinion question as a survey gets one sentence before it that says what happens ("When you have tapped, the page says thank you. Then go on."), or the text after it continues the thought ("Did you guess more than 100? Read on!").
+- Before writing the first quiz of a course, read the `liascript-syntax` skill's quiz part when it is installed (`data/skills.md`).
 
 **Controls as learners see them**
 

@@ -459,7 +459,7 @@ Der erste Arbeitsschritt von Abend 1 ist erledigt, fertig ist noch kein Abend. D
 
 ## Schon nutzbar, noch nicht fertig geprüft
 
-Abend 1 ist geprüft und mit den Lernenden nutzbar, es fehlt noch ein Foto und die kurze Nachprüfung einer Änderung. Die Karte beginnt mit dieser Antwort, danach folgen der Prüfchip mit den offenen Punkten und der Schrittzähler. Die Fortschrittszeile sagt „Fertig geprüft: noch keine · Schon nutzbar: …“ statt „Noch nichts fertig“. Unter der Karte führt „So sehen es die Lernenden“ zum Material, „Planung ansehen“ zur Planung.
+Abend 1 ist geprüft und mit den Lernenden nutzbar, es fehlt noch ein Foto und die kurze Nachprüfung einer Änderung. Die Karte beginnt mit dieser Antwort, danach folgen der Prüfchip mit den offenen Punkten und der Schrittzähler. Die Fortschrittszeile sagt „Freigegeben: noch keine · Schon nutzbar: …“ statt „Noch nichts fertig“. Unter der Karte führt „So sehen es die Lernenden“ zum Material, „Planung ansehen“ zur Planung.
 
 ```json @Dashboard.View
 {

@@ -17,7 +17,7 @@ Orchestrates the full pipeline for one session — skeleton → generated materi
 - `journal.md` → `## Sessions` — session skeleton (created if missing, see Step 0)
 - declared duration for this session — `data/session-types.md` → "Objectives and duration of a session" (the agenda, without an agenda the length of one unit)
 - `journal.md` → `## Agents` → `### Learner Personas` — if present, drives Step 2
-- Referenced sub-procedures: `tasks/create-session-skeleton.md`, `tasks/promote-session.md`, `tasks/create-image.md`, `tasks/generate-image.md`, `tasks/validate-course.md`, `tasks/validate-syntax.md`, `tasks/review-as-persona.md`, `tasks/quick-fix.md`, `data/duration-heuristic.md`, `templates/session-skeleton.yaml`, `data/file-structure-modes.md`, `tasks/update-dashboard.md` — **read completely once before the run**, every one of them, including `tasks/generate-image.md` (Phase 0, the image route) and `tasks/quick-fix.md` (its "When to use" table decides step 1d); a later step of the same run may rely on that reading unless the specs changed
+- Sub-procedures, each **read completely when its step starts** — not all before the run: `tasks/create-session-skeleton.md` (step 0, only without a skeleton), `templates/session-skeleton.yaml` and `data/file-structure-modes.md` (before the first write), `tasks/promote-session.md` (1a), `tasks/create-image.md` (1b), `tasks/generate-image.md` (Phase 0 at 1b only for `generated` spots, and step 3), `tasks/validate-course.md`, `tasks/validate-syntax.md` and `data/duration-heuristic.md` (1c), `tasks/quick-fix.md` (as soon as a fix or a blocking concern is weighed — its "When to use" table decides 1d and 2b), `tasks/review-as-persona.md` (step 2, only with personas), `tasks/update-dashboard.md` (step 4); a later step of the same run may rely on a file read once unless the specs changed
 - `data/agent-links.md` → Progress feedback and Long runs — status rhythm and questions during the run
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
 
@@ -26,14 +26,14 @@ Orchestrates the full pipeline for one session — skeleton → generated materi
 - Fully promoted, validated material for the session
 - `#### Validation Report` and (if personas exist) `#### Persona Reviews` in the matching `journal.md` → `## Sessions` subsection
 - Real images inserted, replacing placeholders
-- Session marked ✅ Done in the `## Sessions` overview table — only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item in its `#### Validation Report`; dashboard updated
+- Session Done as step 4 says; dashboard updated
 - A closing summary (step 4): the runs line with the iterations spent per loop as numbers, every applied fix (page title, before → after), every factual statement that could not be verified (no web access or `reference-checker`) for the instructor to confirm or correct — they keep the unit at "passed with concerns" until then, and `:validate-course {number}` goes through them — final validation result in the outcome words of `templates/session-validation.yaml`, persona verdicts, images per spot (inserted / candidates kept for swapping / none found), and anything that had to be escalated to the instructor
 
 ## Before the start
 
 - **Open decisions first:** if open points of the overview (`decisions`) or the unit's skeleton concern this unit, name them and ask them first — in one form, before the start confirmation. A previous unit that is not yet checked is a hint, never a reason to decline the run.
 - **Image source per spot:** take it from the rules for writing the material (`### Coauthor`) and `## Visual Identity` (`free-photo`, `generated`, `own`); where neither names one, ask it in the start confirmation (one choice for all spots, changeable per spot later). Without web access during the run, free-photo spots stay `wanted` with "none found" and go into the closing summary with the choice `generated` / `own` — the run never switches a source by itself. If free photos are planned, the start confirmation asks **once** who chooses them (translated): "I choose, you can swap later" (the agent picks the best photo it looked at and keeps the others as candidates) · "I collect up to 3 candidates per spot, you choose afterwards" (nothing inserted; the image step stays open for the choice).
-- **The start confirmation** names every kind of project write, the image source and who chooses, and an honest duration; it covers what the instructor confirmed, nothing more — a content question that comes up during the run is asked, never decided alone (step 1d).
+- **The start confirmation** names every kind of project write, the image source and who chooses, and an honest duration — about 15 minutes after the sketch for a unit of about ten pages with free photos (measured in test runs; the photo search is included). Never announce an upper bound ("2 minutes per spot × 13 spots") as the estimate. During the run the remaining time is for the whole run and only ever gets smaller; when a part takes longer, say so once instead of raising the total; it covers what the instructor confirmed, nothing more — a content question that comes up during the run is asked, never decided alone (step 1d).
 
 ## Confirmations
 
@@ -50,7 +50,8 @@ Orchestrates the full pipeline for one session — skeleton → generated materi
 If `journal.md` → `## Sessions` has no `### {number}. {title}` subsection yet, run `tasks/create-session-skeleton.md` first (one-shot — it asks the instructor for a title the normal way). Otherwise continue.
 
 - **Check the sketch before the start:** before its save form, check the planning sketch against the `Required` lists of the session's Type and Method (`tasks/create-session-skeleton.md` step 7); name every gap in the sketch and offer the fix in the same form. What the sketch says about task types is a content decision of the instructor — the run produces it, never another task type.
-- **Overview patch in the same save:** right after the skeleton is saved, patch the overview cache (`.cache/dashboard.json`, `tasks/update-dashboard.md` step 8 → Fresh cache): `units[{n}].href` to the new subsection, its `statusLabel` (the new status line) and its first process step, then run `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` (a few seconds). The journal then passes `validate-journal.mjs` during the whole run; the full overview follows in step 4.
+- **Sketch and start in one form** (when the run was asked for before the sketch, e.g. with "Let unit {n} be prepared"): the sketch's save form also carries the start confirmation — "Save and start preparing" (translated) next to "Change something" — so there is one form and one write, not two. That write adds the dated decision `- **{date}:** {terms.buildRequested}` (language pack, e.g. "preparation requested") to the unit's decisions; the overview then shows the run as such (computed). A click on that button during the run is a question, not a second run: answer with the current part and the remaining time.
+- **Overview patch in the same save:** right after the skeleton is saved, run `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` on the fresh cache (`tasks/update-dashboard.md` step 8, a few seconds): it derives the unit's `href`, status and planning step. The journal then passes `validate-journal.mjs` during the whole run; the full overview follows in step 4.
 
 ### 1. Content loop (mechanical gate)
 
@@ -92,14 +93,15 @@ Only for `generated` images: for each `{image-slug}` created in Step 1b, run `ta
 
 ### 4. Finalize
 
-Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (if not already, together with its status line) — only if its `#### Validation Report` says `Result: PASS` and lists no open ⏳ item; with "PASS with concerns" Done stays ❌ and the closing summary names the deferred step. Run `tasks/update-dashboard.md`. Report the closing summary described in Output above:
+Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (if not already) — only if its `#### Validation Report` says `Result: PASS` and lists no open ⏳ item; with "PASS with concerns" Done stays ❌ and the closing summary names the deferred step. Run `tasks/update-dashboard.md`. Report the closing summary described in Output above:
 
-- **Runs line** (fixed, translated): "Runs: content check {n} of at most 5 · persona review {n} of at most 3 (or: skipped – no learner profiles) · images {in} of {spots} (inserted and generated)".
-- **Outcome** in the words of `templates/session-validation.yaml` → `outcome_words` (e.g. "passed – still missing: 1 photo", translated) — the same words as the report, the status line and the overview. A word the instructor has not seen before is explained where it first appears (the short re-check: "I look over the changed pages once more, about {m} minutes", translated).
+- **Measured duration:** the closing write adds the dated decision "prepared in {m} minutes (your time: {k} minutes for the sketch)" (translated) to the unit's decisions, so later estimates rest on it.
+- **Runs line** (fixed, translated): "Runs: content check {n} of at most 5 · persona review {n} of at most 3 (or: skipped – no learner profiles) · images {in} of {spots} (inserted and generated)" — in the report's technical part and in the terminal, never in the chat or the report's visible part (it is bookkeeping, not a result for the instructor).
+- **Outcome** in the words of `templates/session-validation.yaml` → `outcome_words` (e.g. "passed – still missing: 1 photo", translated) — the report's words. A word the instructor has not seen before is explained where it first appears (the short re-check: "I look over the changed pages once more, about {m} minutes", translated).
 - **Duration hint** by its content, never by a name such as "the formula" (`data/duration-heuristic.md` → Naming the estimate).
 - **Usable first:** the line "usable with learners now" of the report comes before the outcome details, as on the overview card (`tasks/update-dashboard.md` → One ranking of the three measures).
 - **One offer** to try the unit as a learner (`try-as-learner?number={number}` when the MCP gate is open, otherwise `:create-learner-persona` when no personas exist), plus the overview's `next`.
-- **Approval stays with the instructor:** the generated material is a draft (material step `draft`) until the instructor has looked at it — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" makes the material step `done`.
+- **Approval stays with the instructor:** the check step waits for the instructor (computed) — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" completes the check step (computed).
 
 ## Writes per run
 

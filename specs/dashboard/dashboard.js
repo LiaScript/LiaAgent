@@ -12,6 +12,9 @@
       "state.review": "Zur Durchsicht", "state.revision": "Korrektur nötig", "state.done": "Abgeschlossen", "state.optional": "Bei Bedarf",
       // Derived, not a state of the data: a unit still "planned" with at least one required step done.
       "state.started": "Angefangen",
+      // Derived as well: the current step without a result yet is the one that comes next, nobody works on it.
+      "state.later": "Später", "state.next": "Als Nächstes",
+      unitNext: step => `Als Nächstes: ${step}`,
       // Derived as well: a check step ("review") behind an earlier required step that is still open.
       "state.waiting": step => `Wartet auf: ${step}`,
       view: "Ansehen", eyebrow: "Kursplan", next: "Als Nächstes:", why: "Warum?",
@@ -22,17 +25,19 @@
       // Before any material exists: one sentence instead of a bar at zero; gender-neutral for any unit word.
       progressStart: (unit = "Einheit", first = "1") => `Noch nichts fertig – das Material beginnt mit ${unit} ${first}.`,
       // Work has begun, nothing is finished: the running unit and its required steps instead of a bar at zero.
-      progressStarted: (unit = "Einheit", first = "1", done = 0, total = 0) => `Noch nichts fertig – ${unit} ${first} ist in Arbeit (${done} von ${total} ${total === 1 ? "Schritt" : "Schritten"}).`,
+      progressStarted: (unit = "Einheit", first = "1", done = 0, total = 0, step = "") => `Noch nichts fertig – ${unit} ${first} ist in Arbeit${step ? `, als Nächstes: ${step}` : ""}.`,
       unitWords: { one: "Einheit", many: "Einheiten" },
       // Verb follows the finished units ("1 von 6 Einheiten ist"); u.many is the dative plural after "von".
       progressText: (done, total, u = TEXT.de.unitWords) => `${done} von ${total} ${total === 1 ? u.one : u.many} ${done === 1 || total === 1 ? "ist" : "sind"} abgeschlossen`,
       units: "Einheiten", unitsHint: "Einheit auswählen, um den Arbeitsstand zu sehen.",
       unitsEmpty: (units = "Einheiten") => `Noch keine ${units} angelegt.`, unitsEmptyNext: "Die Einheiten entstehen nach Rahmen, Lernzielen und Didaktik.",
-      course: "Gesamter Kurs", courseSummary: "Überblick über die Kursplanung",
+      course: "Gesamter Kurs", courseSummary: "Überblick über den ganzen Kurs",
+      // Course entry (SK68): no step counter while a step runs for weeks; what is done, and what runs now.
+      coursePlanningDone: "Planung fertig", courseNow: step => `Jetzt: ${step}`,
       showProcess: "Prozess ansehen", steps: (done, total) => `${done} von ${total} ${total === 1 ? "Schritt" : "Schritten"}`,
       courseSteps: (done, total) => `${done} von ${total} ${total === 1 ? "Planungsschritt" : "Planungsschritten"}`,
-      // Partial value while the material is produced: required unit steps done / all required unit steps.
-      courseStepsMaterial: (done, total) => `Material: ${done} von ${total} ${total === 1 ? "Schritt" : "Schritten"}`,
+      // Partial value while the material is produced: units with material / all units (a fixed total).
+      courseStepsMaterial: (done, total, u = TEXT.de.unitWords) => `Material für ${done} von ${total} ${total === 1 ? u.one : u.many}`,
       processEyebrow: "Schritt für Schritt", processTitle: "Arbeitsstand", result: "Liegt vor:", nextStep: "Nächster Schritt:",
       processEmpty: "Hier sind noch keine Arbeitsschritte eingetragen.",
       courseProcessEmpty: "Für den Kurs sind noch keine Arbeitsschritte eingetragen.", plan: "Planung ansehen",
@@ -40,55 +45,57 @@
       "usable.yes": "Mit den Lernenden nutzbar: ja", "usable.limited": "Mit den Lernenden nutzbar: ja, mit Einschränkungen",
       "usable.no": "Mit den Lernenden nutzbar: noch nicht", usableMissing: what => `es fehlt noch: ${what}`,
       // Progress line while no unit is fully checked, but one is already usable.
-      checkedNone: "Fertig geprüft: noch keine", usableUnits: units => `Schon nutzbar: ${units}`, usableLimitedShort: "mit Einschränkungen",
+      checkedNone: "Freigegeben: noch keine", usableUnits: units => `Schon nutzbar: ${units}`, approvedUnits: units => `Freigegeben: ${units}`, usableLimitedShort: "mit Einschränkungen",
       // Button of a unit with material (units[].view): the material as the learners see it.
       viewMaterial: "So sehen es die Lernenden",
       decide: "Noch zu entscheiden", prepare: "Vor dem Einsatz vorbereiten", how: "So geht's:", more: "Mehr dazu",
       // Tag of an open point found by a unit's check (decisions[].source).
       fromCheck: "aus der Prüfung", fromCheckOn: date => `aus der Prüfung vom ${date}`,
       internal: n => `${n} technische ${n === 1 ? "Notiz" : "Notizen"} des Assistenten`,
-      preview: "Vorläufige Planung", explore: "Weitere Möglichkeiten", sections: "Planungsbereiche",
+      preview: "Vorläufige Planung", explore: "Weitere Möglichkeiten", alongside: "Auch möglich:", sections: "Planungsbereiche",
       error: "Die Übersicht konnte nicht angezeigt werden."
     },
     en: {
       "state.planned": "Not started", "state.current": "In progress", "state.draft": "Draft ready",
       "state.review": "In review", "state.revision": "Correction needed", "state.done": "Done", "state.optional": "Optional",
       "state.started": "Started", "state.waiting": step => `Waiting for: ${step}`,
+      "state.next": "Up next", "state.later": "Later", unitNext: step => `Up next: ${step}`,
       view: "Open", eyebrow: "Course plan", next: "Next:", why: "Why?",
       progress: (unitsTitle = "units") => `${unitsTitle.charAt(0).toUpperCase()}${unitsTitle.slice(1)} finished`,
       progressEmpty: (units = "units") => `Progress appears as soon as ${units.toLowerCase()} exist.`,
       progressPlan: (units = "units") => `The ${units.toLowerCase()} are only provisionally planned. Progress appears once the plan is settled.`,
       progressStart: (unit = "unit", first = "1") => `Nothing finished yet – the material starts with ${unit} ${first}.`,
-      progressStarted: (unit = "unit", first = "1", done = 0, total = 0) => `Nothing finished yet – ${unit} ${first} is in progress (${done} of ${total} ${total === 1 ? "step" : "steps"}).`,
+      progressStarted: (unit = "unit", first = "1", done = 0, total = 0, step = "") => `Nothing finished yet – ${unit} ${first} is in progress${step ? `, up next: ${step}` : ""}.`,
       unitWords: { one: "unit", many: "units" },
       progressText: (done, total, u = TEXT.en.unitWords) => `${done} of ${total} ${total === 1 ? u.one : u.many} ${done === 1 || total === 1 ? "is" : "are"} done`,
       units: "Units", unitsHint: "Select one to see its progress.",
       unitsEmpty: (units = "units") => `No ${units.toLowerCase()} yet.`, unitsEmptyNext: "Units are created after the frame, the objectives and the didactics.",
-      course: "Whole course", courseSummary: "Overview of the course planning",
+      course: "Whole course", courseSummary: "Overview of the whole course",
+      coursePlanningDone: "Planning done", courseNow: step => `Now: ${step}`,
       showProcess: "Show process", steps: (done, total) => `${done} of ${total} ${total === 1 ? "step" : "steps"}`,
       courseSteps: (done, total) => `${done} of ${total} planning ${total === 1 ? "step" : "steps"}`,
-      courseStepsMaterial: (done, total) => `Material: ${done} of ${total} ${total === 1 ? "step" : "steps"}`,
+      courseStepsMaterial: (done, total, u = TEXT.en.unitWords) => `Material for ${done} of ${total} ${total === 1 ? u.one : u.many}`,
       processEyebrow: "Step by step", processTitle: "Current state", result: "Ready:", nextStep: "Next step:",
       processEmpty: "No work steps recorded here yet.",
       courseProcessEmpty: "No work steps recorded for the course yet.", plan: "See planning",
       "usable.yes": "Usable with learners: yes", "usable.limited": "Usable with learners: yes, with limits",
       "usable.no": "Usable with learners: not yet", usableMissing: what => `still missing: ${what}`,
-      checkedNone: "Fully checked: none yet", usableUnits: units => `Usable now: ${units}`, usableLimitedShort: "with limits",
+      checkedNone: "Approved: none yet", usableUnits: units => `Usable now: ${units}`, approvedUnits: units => `Approved: ${units}`, usableLimitedShort: "with limits",
       viewMaterial: "How learners see it",
       decide: "To decide", prepare: "Prepare before use", how: "How:", more: "More about this",
       fromCheck: "from the check", fromCheckOn: date => `from the check on ${date}`,
       internal: n => `${n} technical ${n === 1 ? "note" : "notes"} of the assistant`,
-      preview: "Provisional plan", explore: "More options", sections: "Planning sections",
+      preview: "Provisional plan", explore: "More options", alongside: "Also possible:", sections: "Planning sections",
       error: "The overview could not be displayed."
     }
   };
   // Placeholders a label may use, in the order of the arguments of t(). Counted labels
   // may also be {one, many}, chosen by the first number.
   const ARGS = { progressText: ["done", "total"], steps: ["done", "total"], courseSteps: ["done", "total"], courseStepsMaterial: ["done", "total"],
-    internal: ["n"], progressStart: ["unit", "first"], progressStarted: ["unit", "first", "done", "total"],
-    fromCheckOn: ["date"], "state.waiting": ["step"], usableMissing: ["what"], usableUnits: ["units"] };
+    internal: ["n"], progressStart: ["unit", "first"], progressStarted: ["unit", "first", "done", "total", "step"], unitNext: ["step"],
+    fromCheckOn: ["date"], courseNow: ["step"], "state.waiting": ["step"], usableMissing: ["what"], usableUnits: ["units"], approvedUnits: ["units"] };
   const COUNTED = ["progressText", "steps", "courseSteps", "courseStepsMaterial", "internal"];
-  const PLACEHOLDERS = { ...ARGS, progressText: ["done", "total", "unit"] };
+  const PLACEHOLDERS = { ...ARGS, progressText: ["done", "total", "unit"], courseStepsMaterial: ["done", "total", "unit"] };
   let lang = "en";
   let labels = {};
   function useLanguage(input) {
@@ -102,7 +109,7 @@
     const by = ["steps", "courseSteps", "courseStepsMaterial"].includes(key) ? total : count;
     const template = typeof label === "string" ? label : label[by === 1 ? "one" : "many"];
     const values = Object.fromEntries(ARGS[key].map((name, index) => [name, args[index]]));
-    if (key === "progressText") {
+    if (key === "progressText" || key === "courseStepsMaterial") {
       const words = unitLabel?.one && unitLabel?.many ? unitLabel : TEXT[lang].unitWords ?? TEXT.en.unitWords;
       values.unit = total === 1 ? words.one : words.many;
     }
@@ -271,7 +278,7 @@
     if (!Array.isArray(input.units ?? [])) throw new Error("units must be a list.");
     // Text fields of the wrong type would pass here and break the page while rendering.
     const text = (value, name) => { if (value != null && typeof value !== "string") throw new Error(`${name} must be text, not ${Array.isArray(value) ? "a list" : typeof value}.`); };
-    ["title", "eyebrow", "unitsTitle", "progressTitle", "decisionsTitle", "prepareTitle", "exploreTitle", "courseLabel", "emptyUnits", "footer"].forEach(name => text(input[name], name));
+    ["title", "eyebrow", "unitsTitle", "unitsNote", "progressTitle", "decisionsTitle", "prepareTitle", "exploreTitle", "courseLabel", "emptyUnits", "footer"].forEach(name => text(input[name], name));
     if (input.unitLabel != null && (typeof input.unitLabel !== "object" || ["one", "many"].some(form => typeof input.unitLabel[form] !== "string"))) {
       throw new Error('unitLabel must be {"one": text, "many": text}.');
     }
@@ -330,14 +337,23 @@
       ${input.context ? `<p class="dashboard-context">${escape(input.context)}</p>` : ""}
       ${input.subtitle ? `<p class="dashboard-intro">${escape(input.subtitle)}</p>` : ""}
       ${input.notice ? `<p class="dashboard-notice">${escape(input.notice)}</p>` : ""}
-      ${next ? `<div class="dashboard-next"><p><strong>${escape(t("next"))}</strong> ${escape(next.title || next.label)}</p>${next.why ? `<p class="dashboard-why"><strong>${escape(t("why"))}</strong> ${escape(next.why)}</p>` : ""}${actionLink(next, viewId, true)}</div>` : ""}
+      ${next ? `<div class="dashboard-next"><p><strong>${escape(t("next"))}</strong> ${escape(next.title || next.label)}</p>${next.why ? `<p class="dashboard-why"><strong>${escape(t("why"))}</strong> ${escape(next.why)}</p>` : ""}${actionLink(next, viewId, true)}${alongside(input.explore, viewId)}</div>` : ""}
     </header>`;
   }
 
+  // Cards marked `alongside` (another course step that may come first, computed by write-dashboard.mjs) stand
+  // right below the next button instead of in the folded "More options".
+  function alongside(items, viewId) {
+    const list = (items ?? []).filter(item => item?.alongside).map(actionData);
+    return list.length ? `<p class="dashboard-alongside"><span>${escape(t("alongside"))}</span> ${list.map(item => actionLink(item, viewId)).join(" ")}</p>` : "";
+  }
+
   // The units that learners can already use, though not fully checked: "unit 2 (with limits), unit 3".
+  // Approved units (units[].approved) name their limits: "unit 1 (with limits: 1 photo)" (SK52).
   function usableList(items, unitLabel) {
     const word = unitLabel?.one || (TEXT[lang].unitWords ?? TEXT.en.unitWords).one;
-    return items.map(item => `${word} ${item.id}${item.usable.state === "limited" ? ` (${t("usableLimitedShort")})` : ""}`).join(", ");
+    const limits = item => item.approved && item.usable.missing?.length ? `: ${item.usable.missing.join("; ")}` : "";
+    return items.map(item => `${word} ${item.id}${item.usable.state === "limited" ? ` (${t("usableLimitedShort")}${limits(item)})` : ""}`).join(", ");
   }
 
   // start: while no unit is finished, one sentence replaces a bar at zero. An id (or {first}): nothing
@@ -348,13 +364,16 @@
     if (!Number.isInteger(total) || !Number.isInteger(completed) || completed < 0 || total < completed) {
       throw new Error("Progress needs valid values: done / total.");
     }
-    const usableText = total && usable.length ? t("usableUnits", usableList(usable, unitLabel)) : "";
+    // Approved units first ("Approved: unit 1 (with limits: 1 photo)"), then the ones only usable.
+    const approved = usable.filter(item => item.approved);
+    const others = usable.filter(item => !item.approved);
+    const usableText = !total ? "" : [approved.length ? t("approvedUnits", usableList(approved, unitLabel)) : "", others.length ? t("usableUnits", usableList(others, unitLabel)) : ""].filter(Boolean).join(" · ");
     if (total && start != null) {
       const word = unitLabel?.one || (TEXT[lang].unitWords ?? TEXT.en.unitWords).one;
       const running = typeof start === "object" ? start : { first: start };
-      const text = usableText ? `${t("checkedNone")} · ${usableText}`
+      const text = usableText ? (approved.length ? usableText : `${t("checkedNone")} · ${usableText}`)
         : running.total
-        ? t("progressStarted", word, String(running.first), running.done, running.total)
+        ? t("progressStarted", word, String(running.first), running.done, running.total, running.step ?? "")
         : t("progressStart", word, String(running.first));
       return `<section class="dashboard-progress"><div><h3>${escape(label)}</h3><p>${escape(text)}</p></div></section>`;
     }
@@ -387,6 +406,9 @@
   // ("review") behind an earlier required step that is still open, else the state text.
   function stepStatusLabel(step, steps) {
     if (step.statusLabel) return step.statusLabel;
+    if (step.state === "current" && !step.result) return t("state.next");
+    // A required step after the current one is not "not started" work of the instructor: it comes later (SK71).
+    if (step.state === "planned" && steps.slice(0, steps.indexOf(step)).some(item => item.state === "current")) return t("state.later");
     if (step.state !== "review") return undefined;
     const open = steps.slice(0, steps.indexOf(step)).find(item => !["done", "optional"].includes(item.state));
     return open ? t("state.waiting", open.title) : undefined;
@@ -394,6 +416,8 @@
 
   // "Usable with learners: yes, with limits – still missing: 1 photo, short re-check".
   function usableText(value) {
+    // Limits follow their word ("yes, with limits: 1 photo; question 4 needs scrolling"); what is missing gets its own.
+    if (value.state === "limited" && value.missing.length) return `${t("usable.limited")}: ${value.missing.join("; ")}`;
     return `${t(`usable.${value.state}`)}${value.missing.length ? ` – ${t("usableMissing", value.missing.join(", "))}` : ""}`;
   }
 
@@ -413,7 +437,14 @@
     const stepsDone = doneCount(steps);
     const label = unitStatusLabel(input);
     const usable = usableData(input.usable);
-    const stepText = steps.length ? `<span class="dashboard-unit-steps">${escape(t("steps", stepsDone, steps.length))}</span>` : "";
+    // The step that comes next instead of a count: the total grows when an optional step becomes required.
+    const upNext = steps.find(step => step.state === "current");
+    // A unit not begun shows no count: "0 of 3" says nothing and differs from begun units with more steps (SK44).
+    const stepText = upNext ? `<span class="dashboard-unit-steps">${escape(t("unitNext", upNext.title))}</span>`
+      // An approved unit shows no count either: "3 of 4 steps" beside "approved – still missing: 1 photo" reads as
+      // unfinished work of the assistant (SK70); what is missing stands in its label.
+      : input.approved ? ""
+      : steps.some(step => step.state !== "planned") ? `<span class="dashboard-unit-steps">${escape(t("steps", stepsDone, steps.length))}</span>` : "";
     const content = `<span class="dashboard-unit-number" aria-hidden="true">${escape(input.id)}</span><span class="dashboard-unit-content"><strong>${escape(input.title)}</strong>${usableLine(usable)}${status(input.state, label)}${stepText}${input.summary ? `<span class="dashboard-unit-summary">${escape(input.summary)}</span>` : ""}</span>`;
     const view = input.view ? `<span class="dashboard-unit-view">${viewLink(input)}</span>` : "";
     if (!viewId) return `<li class="dashboard-unit-item"><article class="dashboard-unit">${content}</article>${view}</li>`;
@@ -425,18 +456,25 @@
     const steps = counted(input.process.steps);
     const selected = input.selected === COURSE;
     const stepsDone = doneCount(steps);
-    // The course step that produces the material runs for weeks: while a course step is current and
-    // unit steps are done, a partial value from the units keeps the counter moving (no extra data).
-    const material = (input.units ?? []).flatMap(item => counted(item.process?.steps));
-    const materialDone = doneCount(material);
-    const partial = steps.some(step => step.state === "current") && materialDone > 0
-      ? ` · ${t("courseStepsMaterial", materialDone, material.length)}` : "";
-    return `<div class="dashboard-course-entry"><button class="dashboard-unit dashboard-course${selected ? " dashboard-unit-selected" : ""}" type="button" data-dashboard-select="${COURSE}"${selected ? ' aria-current="true"' : ""} aria-label="${escape(input.courseLabel || t("course"))}; ${escape(t("showProcess"))}"><span class="dashboard-unit-number" aria-hidden="true">⌂</span><span class="dashboard-unit-content"><strong>${escape(input.courseLabel || t("course"))}</strong><span class="dashboard-unit-steps">${escape(t("courseSteps", stepsDone, steps.length) + partial)}</span><span class="dashboard-unit-summary">${escape(t("courseSummary"))}</span></span></button></div>`;
+    // The course step that produces the material runs for weeks: while a course step is current and a
+    // unit has material, the units with material keep the counter moving (the total is the unit count).
+    const all = input.units ?? [];
+    const withMaterial = all.filter(item => item.view || item.state === "done").length;
+    // While a step is current: "Planning done · Now: material for 2 of 4 units" once every step before it is
+    // done (a step with its own label, e.g. "checked per unit", does not hold it back), else "Now: {step}" –
+    // never "4 of 7 planning steps", which cannot move for weeks (SK68). Without a current step: the counter.
+    const current = steps.find(step => step.state === "current");
+    const before = current ? steps.slice(0, steps.indexOf(current)) : [];
+    const planningDone = current && before.length > 0 && before.every(step => step.state === "done" || step.statusLabel);
+    const now = current && (withMaterial > 0 && /materi/i.test(current.title ?? "")
+      ? t("courseStepsMaterial", withMaterial, all.length, input.unitLabel) : current.title);
+    const line = current ? (planningDone ? `${t("coursePlanningDone")} · ${t("courseNow", now)}` : t("courseNow", now)) : t("courseSteps", stepsDone, steps.length);
+    return `<div class="dashboard-course-entry"><button class="dashboard-unit dashboard-course${selected ? " dashboard-unit-selected" : ""}" type="button" data-dashboard-select="${COURSE}"${selected ? ' aria-current="true"' : ""} aria-label="${escape(input.courseLabel || t("course"))}; ${escape(t("showProcess"))}"><span class="dashboard-unit-number" aria-hidden="true">⌂</span><span class="dashboard-unit-content"><strong>${escape(input.courseLabel || t("course"))}</strong><span class="dashboard-unit-steps">${escape(line)}</span><span class="dashboard-unit-summary">${escape(t("courseSummary"))}</span></span></button></div>`;
   }
 
   function units(input, viewId) {
     const items = input.units ?? [];
-    return `<section class="dashboard-units"><h3>${escape(input.unitsTitle || t("units"))}</h3>${items.length ? `<p class="dashboard-hint">${escape(t("unitsHint"))}</p>${courseEntry(input, viewId)}<ol class="dashboard-unit-list">${items.map(item => unit(item, item.id === input.selected, viewId)).join("")}</ol>` : (input.plan ? plan(input.plan) : `<div class="dashboard-empty"><p>${escape(input.emptyUnits || t("unitsEmpty", input.unitsTitle || t("units")))}</p><p>${escape(t("unitsEmptyNext"))}</p></div>`)}</section>`;
+    return `<section class="dashboard-units"><h3>${escape(input.unitsTitle || t("units"))}</h3>${items.length ? `<p class="dashboard-hint">${escape(input.unitsNote ? `${input.unitsNote} ${t("unitsHint")}` : t("unitsHint"))}</p>${courseEntry(input, viewId)}<ol class="dashboard-unit-list">${items.map(item => unit(item, item.id === input.selected, viewId)).join("")}</ol>` : (input.plan ? plan(input.plan) : `<div class="dashboard-empty"><p>${escape(input.emptyUnits || t("unitsEmpty", input.unitsTitle || t("units")))}</p><p>${escape(t("unitsEmptyNext"))}</p></div>`)}</section>`;
   }
 
   // unit: the selected unit, so that a unit without steps still shows its state and summary;
@@ -485,9 +523,11 @@
     return `<section class="dashboard-plan"><h4>${escape(input.title || t("preview"))}</h4>${input.note ? `<p class="dashboard-plan-note">${escape(input.note)}</p>` : ""}<dl>${input.rows.map(row => `<div><dt>${escape(row.label)}</dt><dd>${escape(row.text)}</dd></div>`).join("")}</dl></section>`;
   }
 
-  function explore(items, label = t("explore")) {
+  function explore(all, label = t("explore")) {
+    const items = all.filter(item => !item.alongside);
     if (!items.length) return "";
-    return `<details class="dashboard-explore"><summary>${escape(label)}</summary><div class="dashboard-explore-grid">${items.map(action).join("")}</div></details>`;
+    // A few cards stay in sight (open); a longer list starts folded.
+    return `<details class="dashboard-explore"${items.length <= 3 ? " open" : ""}><summary>${escape(label)}</summary><div class="dashboard-explore-grid">${items.map(action).join("")}</div></details>`;
   }
 
   function viewContent(model, viewId) {
@@ -501,7 +541,7 @@
     const running = model.units.find(item => item.state !== "planned" || counted(item.process.steps).some(step => step.state !== "planned"));
     const runningSteps = counted(running?.process.steps);
     const start = model.completed > 0 ? null
-      : running ? { first: running.id, done: doneCount(runningSteps), total: runningSteps.length }
+      : running ? { first: running.id, done: doneCount(runningSteps), total: runningSteps.length, step: runningSteps.find(step => step.state === "current")?.title ?? "" }
       : model.units[0] ? { first: model.units[0].id } : null;
     const progressTitle = model.progressTitle || t("progress", model.unitsTitle || (lang === "en" ? model.unitLabel?.many : undefined));
     const usable = model.units.filter(item => item.state !== "done" && ["yes", "limited"].includes(item.usable?.state));

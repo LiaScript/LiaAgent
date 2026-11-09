@@ -13,16 +13,16 @@ template:
     input: json-code-block
   notes:
     - 'Derived state only; source sections remain authoritative.'
+    - 'Fields marked (computed) are set by `write-dashboard.mjs` from the journal (`tasks/update-dashboard.md` step 2) – write the texts, not these.'
     - 'units[].state determines progress and totals; no separate counters.'
     - 'Exactly one highlighted next action, with why.'
     - 'A draft or a pending review never counts as done.'
     - 'With zero units show a global process and an honest empty state.'
     - 'Keep the global process once units exist: the view offers it as a "whole course" entry above the units, so the instructor can switch between course and unit view.'
-    - 'Every unit gets the same material steps from the start: a unit not yet started has all steps `planned` (its first step''s `next` says when it is due); `validate-journal.mjs` reports units without `process.steps` as soon as another unit has them.'
+    - 'Every unit gets the same material steps from the start (computed); a unit not yet started has all steps `planned`, its first step''s `next` says when it is due.'
     - 'Course counter and unit cards count only required steps; a step in state `optional` (e.g. publishing) is an offer and is not counted.'
-    - 'A unit whose subsection exists has begun: give it the state that matches its work (e.g. `current`) or a `statusLabel`; `validate-journal.mjs` warns about `href` with `planned` and no `statusLabel`. The library itself shows a still `planned` unit with a done required step as "Started" (`state.started`), and derives progress sentences and the material partial count from the unit steps — no extra fields.'
-    - 'One ranking of the three measures of a unit: (1) `usable` — usable with learners now, from the check report, the first line of the card; (2) open points — the `statusLabel`, counting the points still open; (3) process steps — the counter. A unit that is usable never reads as "nothing finished": while no unit is done, the progress line names the usable ones ("Fully checked: none yet · Usable now: unit 2 (with limits)").'
-    - 'Every unit with material gets `view`, its own 👁 button for the material as the learners see it (`validate-journal.mjs` warns without it). The planning link (`href`) is always named by the library ("See planning", translated) — never renamed, never the only way to the material.'
+    - 'One ranking of the three measures of a unit: (1) `usable`, (2) open points (`statusLabel`), (3) process steps — `tasks/update-dashboard.md` → Rules.'
+    - 'Every unit with material gets `view` (computed), its own 👁 button for the material as the learners see it. The planning link (`href`) keeps the library''s name ("See planning") — never `labels.plan`.'
     - '`agent:` links additionally need `command` as the readable command, see `data/agent-links.md`.'
     - 'No hand-written HTML, CSS, JavaScript, tables or Mermaid — the layout belongs to `dashboard/`.'
     - 'Visible texts in the course language (`## Course Context` → Language); commands and URIs stay in English.'
@@ -31,17 +31,18 @@ template:
     context: 'Target group and time frame'
     subtitle: 'Current state of work in plain words; no repeated counters'
     notice: 'Optional: provisional sample data or pending decisions'
-    unitsTitle: 'Label from `## Course Context` → Terminology (sessions-called)'
-    unitLabel: '{one, many}: the word for one unit and for several, in the course language, from `## Course Context` → Terminology (sessions-called) — used in the progress line "1 of 4 …"; `many` in the form that follows "of" (German: dative plural after "von", e.g. `{"one": "Modul", "many": "Modulen"}`)'
+    unitsTitle: '(computed) from Terminology and the `## Sessions` suffix'
+    unitsNote: '(computed) the one-line note under `## Sessions`, shown above the units'
+    unitLabel: '(computed) {one, many} from Terminology and the `## Sessions` suffix; an inflected `many` you write (German dative after "von": "Modulen") stays while it starts with the suffix'
     labels: 'For German or English only `decide` and `prepare` (and, where the course has its own word for the learners, `usable.*` and `viewMaterial` — `tasks/update-dashboard.md` step 8); when the course language is neither German nor English: every fixed text of the library translated, keyed as listed in `specs/dashboard/README.md` → `labels`; counted texts as {one, many} with the placeholders listed there. Never `plan` in German or English (the planning link keeps its name)'
     units:
-      - id: 'Stable number from Sessions / Agenda'
+      - id: '(computed) Stable number from Sessions / Agenda'
         title: 'Unit title'
-        state: 'planned | current | draft | review | revision | done'
+        state: '(computed) planned | current | draft | review | revision | done'
         summary: 'Short, verifiable state; does not repeat `usable`'
-        usable: 'Once a check report exists: {state: yes | limited | no, missing: [what is still missing, short noun phrases such as "1 photo", "short re-check"]} — the report''s line "usable with learners now" (yes · yes, with limits · not yet); `missing` is required unless `yes`'
-        href: 'Anchor of the `### {n}. {title}` subsection, once a skeleton exists; the library names this link "See planning" (translated)'
-        view: 'Once the material exists: {href: "agent:teaching/preview?file={n}", command: ":preview {n}", label?} — the material as the learners see it; default label "How learners see it" (translated); `label` only to use the course''s word for learners'
+        usable: 'Once a check report exists: {state: yes | limited | no, missing: [short noun phrases]} from the report''s line "usable with learners now" (computed)'
+        href: '(computed) anchor of the `### {n}. {title}` subsection'
+        view: 'Once the material exists: {href: "agent:teaching/preview?file={n}", command: ":preview {n}", label?} (computed; `label` only for the course''s word for learners)'
         process:  # same steps for every unit, also for units not yet started (all `planned`)
           title: 'Unit title'
           steps:
@@ -52,7 +53,7 @@ template:
               next: 'Optional: what to do next'
               statusLabel: 'Optional: plain-language refinement of the state'
           note: 'Optional: loops back or special cases'
-    selected: 'Optional: id of the recommended unit; empty string "" opens the whole-course view'
+    selected: '(computed while next is a unit action; "" keeps the whole-course view) Optional: id of the recommended unit; empty string "" opens the whole-course view'
     process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`)'
     next:
       icon: 'Action symbol as in Markdown labels (`▶️` run, `✏️` revise, `🔍` check, `👁` preview, `🚀` publish only, agent icon for a switch); default `▶️`'
@@ -63,9 +64,9 @@ template:
       command: 'Readable command; required for `agent:` links'
     decisions: 'Open points: list of {key, kind: decide|prepare|internal, title, why?, how (required unless internal), href?, command?, label?, icon?, source?}; `source: {check: n, date?}` marks a point that comes from the check of unit n (its `href` then links that report heading, `validate-journal.mjs` checks both); `label` is required when `href` is set and names the destination (e.g. "See outline"), never the question; a section anchor (`#…`) is shown as a plain text link, only an `agent:` link becomes a button'
     plan: 'Provisional planning {title?, note, rows: [{label, text}]} — only while no agenda exists'
-    explore: 'Optional action cards with icon/title/description/label/href/command; icon is shown in the button, same symbols as `next.icon` but never the icon of `next` (default `▶️` for `agent:` links), so exactly one button stands for the next step'
-    links: 'Section links with label/href (full heading slug)'
-    footer: 'Date of the derived state'
+    explore: 'Optional action cards with icon/title/description/label/href/command; optional actions use ➕ or their agent''s icon, never the icon of `next` (`validate-journal.mjs` checks it)'
+    links: '(computed anchors and labels of the listed sections) Section links with label/href (full heading slug)'
+    footer: 'Computed: "As of {date}" from the pack'
   sections:
     - id: dashboard
       title: Dashboard

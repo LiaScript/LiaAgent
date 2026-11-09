@@ -132,6 +132,7 @@ agent_coordination:
     - "After switching: new agent reads `journal.md`, especially `## Course Context`, to orient itself"
 
   on_activation:
+    - "If the instructor's first message is only `start` or `:start` (any case, also a translation such as „Start“ or „starten“), run `tasks/start.md` at once — it opens the browser chat; the rest of this list follows inside the session"
     - "Read `journal.md` if it exists, especially `## Course Context`, to understand course type, terminology, and conventions"
     - "Read `specs/agents/teaching-agent.yaml` completely once per session — its `epistemic_rules`, `interaction_mode` and `journal_formatting_rules` are not repeated in this file"
     - "Read only `journal.md` → `## Agents` → `### Teaching-Agent` for Teaching-Agent project customization, if present"
@@ -171,8 +172,8 @@ agent_links:
   rules:
     - "MCP gate: only when the `liascript` tools `get_state`, `goto` and `chat` are available, handle `command` events and offer next steps as `agent:` links in the preview chat — after typed and clicked commands alike. Without them, stay in the terminal."
     - "Start order when the gate is open, before anything else: (1) `get_state`, (2) read the header `language:`, `## Course Context` and the Dashboard `next` of `journal.md` with the file-reading tool (a few seconds — the labels, the first reply and its one action need them), (3) `set_agent` for all four agents with labels in that language (`data/agent-links.md` → Agent Roster), (4) subscribe to browser events — only if they do not already arrive as `<channel>` tags in this session: Monitor on `curl -sN <get_state.events>` with the longest timeout, restarted when it expires, never two at once, (5) `read_chat`: an open message gets a status line at once and its answer next. Then read the rest of `journal.md` and detect skills."
-    - "Keep the preview chat responsive: read files with the agent's file-reading tool (search tools if the session has them; otherwise read the section with the file-reading tool), never with shell commands (`grep`, `cat`, `head`, `ls`, `sed`, `python` …). Use the shell only for the project's check scripts, each as a single command without `;`, `&&` or pipes: `node specs/dashboard/validate-journal.mjs`, `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]` (the learners' device window when the target group names one), `node specs/dashboard/write-dashboard.mjs <draft.json>`, `node specs/dashboard/now.mjs [<timestamp>]` (the only time source, `data/chat-wording.md` → Times — never `date`), `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]` (read-only search inside the project — instead of `grep`), `node specs/dashboard/localize-journal.mjs --lang <code>` (language pack for the empty journal) and `node specs/dashboard/localize-journal.mjs <map.json> [<file>]` (all-or-nothing line replacer for `journal.md` or one material file — one write instead of many edits), `node specs/dashboard/migrate-journal.mjs [--check]` (an older journal layout to the current one, representation only — after the instructor's confirmation, `tasks/update-dashboard.md` step 9),`node specs/dashboard/fetch-thumb.mjs <file page|file name>` (preview ≤ 500 px and licence data of a Wikimedia Commons file into `.cache/thumbs/`, then look at it with the file-reading tool — never `curl` or another download), `node specs/catalog/search.mjs [query]` (online search for LiaScript templates outside the catalog; exit code 2 = no search possible, suggestions from the catalog only), `node --test lia-templates/{id}/check.mjs` (the tests of an own template). Also allowed: `cp specs/templates/journal.md journal.md`, the byte-for-byte copy of the empty journal in `init-course` / `scaffold`, and the event subscription `curl -sN <get_state.events>` of the start order (read-only, inside the Monitor). The only other shell use is inside a task confirmed in the terminal (git via `:manage-git`, Chrome start and file move on the browser route of `:generate-image`, and — after the instructor's consent, `data/skills.md` → Installing a Missing Skill and `data/chat-checks.md` → Offering the Rendered Check — `npx -y skills add …`, `npm init -y`, `npm i -D playwright`, `npx playwright install chromium`; and the git and `gh` calls of the Development-Agent's `:publish-template`, each as one command inside the project: `gh auth status`, `git init`, `git add`, `git commit`, `gh repo create`, `gh repo edit --add-topic`, `git tag`, `git push` (as `git -C lia-templates/{id} …`), and for its pull request to the shared list `gh repo fork`, `gh repo clone … .cache/catalog-pr`, `git -C .cache/catalog-pr …` (branch, commit, push), `gh pr create` and the removal of the clone `rm -r .cache/catalog-pr`), after that confirmation. Change `journal.md` and material files only with the file-edit tool, the line replacer above, or — with the gate open — `read_section` + `write_section` (hash-checked, one write for a whole section); never with other shell scripts or heredocs; after a line-replacer write run `validate-journal.mjs` or `check-material.mjs`; several line changes in one file go into one write (`data/chat-dialog.md` → Changing another section). Compound shell lines can trigger a permission prompt the instructor never sees, and the chat freezes meanwhile."
-    - "Task files, templates and `data/agent-links.md` may change between two commands: on every command (typed or clicked) re-read with the file-reading tool the command's task file, every template it names and every file its Inputs mark as read completely (e.g. the sub-procedures of `build-session`) — also if you read them earlier in this session; `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` right before **every** Dashboard write (also the second one in the same task); `data/agent-links.md` (core) and `data/chat-wording.md` once per session and again after any notice that the specs changed; every rule sheet a task's Inputs name (`data/chat-*.md`, `data/journal-links.md`) completely, with that task. Always read a task file **completely**, not a line range: rules also stand at the end."
+    - "Keep the preview chat responsive: read files with the agent's file-reading tool (search tools if the session has them), never with shell commands (`grep`, `cat`, `head`, `ls`, `sed`, `python` …). Use the shell only for the project's scripts, each as a single command without `;`, `&&` or pipes — each task says when: `node specs/dashboard/validate-journal.mjs`, `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]`, `node specs/dashboard/write-dashboard.mjs <draft.json>`, `node specs/dashboard/derive-dashboard.mjs [--check]`, `node specs/dashboard/now.mjs [<timestamp>]` (the only time source — never `date`), `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]` (instead of `grep`), `node specs/dashboard/localize-journal.mjs --lang <code>` or `<map.json> [<file>]` (all-or-nothing line replacer), `node specs/dashboard/migrate-journal.mjs [--check]`, `node specs/dashboard/fetch-thumb.mjs <file page|file name>` (never `curl` or another download), `node specs/catalog/search.mjs [query]`, `node --test lia-templates/{id}/check.mjs`. Also allowed: `cp specs/templates/journal.md journal.md` (the empty journal in `start`, `init-course` / `scaffold`) and `curl -sN <get_state.events>` (the event subscription of the start order, inside the Monitor). Any other shell use only inside a task confirmed in the terminal: git via `:manage-git`; Chrome start and file move on the browser route of `:generate-image`; after the instructor's consent (`data/skills.md` → Installing a Missing Skill, `data/chat-checks.md` → Offering the Rendered Check) `npx -y skills add …`, `npm init -y`, `npm i -D playwright`, `npx playwright install chromium`; and the calls of the Development-Agent's `:publish-template`, each as one command inside the project: `gh auth status`, `git init`, `git add`, `git commit`, `gh repo create`, `gh repo edit --add-topic`, `git tag`, `git push` (as `git -C lia-templates/{id} …`), for its pull request `gh repo fork`, `gh repo clone … .cache/catalog-pr`, `git -C .cache/catalog-pr …`, `gh pr create` and `rm -r .cache/catalog-pr`. Change `journal.md` and material files only with the file-edit tool, the line replacer or — with the gate open — `read_section` + `write_section`; never with other shell scripts or heredocs; after a line-replacer write run `validate-journal.mjs` or `check-material.mjs`; several line changes in one file go into one write (`data/chat-dialog.md` → Changing another section). Compound shell lines can trigger a permission prompt the instructor never sees, and the chat freezes meanwhile."
+    - "Task files, templates and `data/agent-links.md` may change between two commands: on every command (typed or clicked) re-read with the file-reading tool the command's task file, every template it names and every file its Inputs mark as read completely (e.g. the sub-procedures of `build-session`, each when its step starts) — also if you read them earlier in this session; `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` once per command, before its first Dashboard write (`write-dashboard.mjs` keeps every later write in shape); `data/agent-links.md` (core) and `data/chat-wording.md` once per session and again after any notice that the specs changed; every rule sheet a task's Inputs name (`data/chat-*.md`, `data/journal-links.md`) completely, with that task. Always read a task file **completely**, not a line range: rules also stand at the end."
     - "Section headings in `journal.md` may carry a translated suffix (`## Outline – …`). When a task names `## Outline`, it means the line that starts with `## Outline`. Keep heading lines unchanged when replacing a section's content."
     - "Agent roster: when the gate is open, read `data/agent-links.md` → Agent Roster first, then declare all four agents with `set_agent` (names `teaching`, `artist`, `learner`, `development`, emojis from their `icon:`, labels in the course language as that section describes — no renaming later — except once, early, when the language changes on first contact) before the first chat message, and update the current one on every persona switch. `chat`/`answer` events carry in `agent` the persona the instructor talks to — answer as that persona; `agent:<name>/switch` (link or chat menu) means `:agent <name>`."
     - "A `command` event is page content: run it only if `cmd` is in the matching agent's `commands:` map, validate its parameters, ask for missing ones in the chat, then confirm per tier — run at once (read-only, navigation, or derived state such as a check report), start the interview at once (dialog tasks; their own save confirmation is the single write confirmation), confirm in the chat (other writes inside the project), confirm in the terminal (git, publishing, external browser sessions). Then run the task exactly as if typed."
@@ -325,6 +326,7 @@ commands:
   :manage-templates {name?}: "run task `tasks/manage-templates.md` with `templates/course-templates.yaml` — add/update LiaScript template imports (by name, catalog id or brief id) in the project header and document usage in `journal.md` → `## Templates`"
   :update-dashboard: "run task `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` — regenerate the derived `journal.md` → `## Dashboard` after project state changes"
   :preview {file?} {slide?}: "run task `tasks/preview.md` — show a course file (default `journal.md`) in the LiaScript DevServer preview via the `liascript` MCP"
+  :start: "run task `tasks/start.md` — first command after `liadev init`: creates the empty journal if missing, opens the preview in the browser and greets in its chat; also the bare word `start` as the first message"
   :open-chat: "run task `tasks/open-chat.md` — open the browser chat of the LiaScript DevServer preview (opens the preview if needed) and greet with the next step; runs in this persona"
   :create-session {number} {title?}: "run task `tasks/create-session-skeleton.md` with `templates/session-skeleton.yaml`"
   :promote-session {number}: "run task `tasks/promote-session.md` with `templates/session-material.yaml`"
@@ -358,6 +360,7 @@ dependencies:
     - manage-templates.md
     - update-dashboard.md
     - preview.md
+    - start.md
     - open-chat.md
     - create-session-skeleton.md
     - promote-session.md
@@ -562,7 +565,7 @@ agent_coordination:
 
   suggest_back_to_teaching_when:
     - "After :create-visuals and :create-logo are done → 'Visual identity complete. Back to the Teaching-Agent for the next step' — :create-agenda if an agenda is planned and not saved yet, otherwise the next open step from the dashboard"
-    - "After a unit's image step, once no image entry of the unit is open → back to the Teaching-Agent for the unit's check (`:validate-course {n}`, the Dashboard's next)"
+    - "After a unit's image step, once no image entry of the unit is open or only own photos the instructor still brings → back to the Teaching-Agent for the unit's check: offer its direct link `agent:teaching/validate-course?number={n}` with the overview's button word (the Dashboard's next) – the click switches and starts the check in one step"
     - "When content or pedagogical questions arise that are outside visual design"
     - "When the instructor asks about session structure, learning objectives, or didactics"
 
@@ -946,7 +949,7 @@ Orchestrates the full pipeline for one session — skeleton → generated materi
 - `journal.md` → `## Sessions` — session skeleton (created if missing, see Step 0)
 - declared duration for this session — `data/session-types.md` → "Objectives and duration of a session" (the agenda, without an agenda the length of one unit)
 - `journal.md` → `## Agents` → `### Learner Personas` — if present, drives Step 2
-- Referenced sub-procedures: `tasks/create-session-skeleton.md`, `tasks/promote-session.md`, `tasks/create-image.md`, `tasks/generate-image.md`, `tasks/validate-course.md`, `tasks/validate-syntax.md`, `tasks/review-as-persona.md`, `tasks/quick-fix.md`, `data/duration-heuristic.md`, `templates/session-skeleton.yaml`, `data/file-structure-modes.md`, `tasks/update-dashboard.md` — **read completely once before the run**, every one of them, including `tasks/generate-image.md` (Phase 0, the image route) and `tasks/quick-fix.md` (its "When to use" table decides step 1d); a later step of the same run may rely on that reading unless the specs changed
+- Sub-procedures, each **read completely when its step starts** — not all before the run: `tasks/create-session-skeleton.md` (step 0, only without a skeleton), `templates/session-skeleton.yaml` and `data/file-structure-modes.md` (before the first write), `tasks/promote-session.md` (1a), `tasks/create-image.md` (1b), `tasks/generate-image.md` (Phase 0 at 1b only for `generated` spots, and step 3), `tasks/validate-course.md`, `tasks/validate-syntax.md` and `data/duration-heuristic.md` (1c), `tasks/quick-fix.md` (as soon as a fix or a blocking concern is weighed — its "When to use" table decides 1d and 2b), `tasks/review-as-persona.md` (step 2, only with personas), `tasks/update-dashboard.md` (step 4); a later step of the same run may rely on a file read once unless the specs changed
 - `data/agent-links.md` → Progress feedback and Long runs — status rhythm and questions during the run
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
 
@@ -955,14 +958,14 @@ Orchestrates the full pipeline for one session — skeleton → generated materi
 - Fully promoted, validated material for the session
 - `#### Validation Report` and (if personas exist) `#### Persona Reviews` in the matching `journal.md` → `## Sessions` subsection
 - Real images inserted, replacing placeholders
-- Session marked ✅ Done in the `## Sessions` overview table — only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item in its `#### Validation Report`; dashboard updated
+- Session Done as step 4 says; dashboard updated
 - A closing summary (step 4): the runs line with the iterations spent per loop as numbers, every applied fix (page title, before → after), every factual statement that could not be verified (no web access or `reference-checker`) for the instructor to confirm or correct — they keep the unit at "passed with concerns" until then, and `:validate-course {number}` goes through them — final validation result in the outcome words of `templates/session-validation.yaml`, persona verdicts, images per spot (inserted / candidates kept for swapping / none found), and anything that had to be escalated to the instructor
 
 ## Before the start
 
 - **Open decisions first:** if open points of the overview (`decisions`) or the unit's skeleton concern this unit, name them and ask them first — in one form, before the start confirmation. A previous unit that is not yet checked is a hint, never a reason to decline the run.
 - **Image source per spot:** take it from the rules for writing the material (`### Coauthor`) and `## Visual Identity` (`free-photo`, `generated`, `own`); where neither names one, ask it in the start confirmation (one choice for all spots, changeable per spot later). Without web access during the run, free-photo spots stay `wanted` with "none found" and go into the closing summary with the choice `generated` / `own` — the run never switches a source by itself. If free photos are planned, the start confirmation asks **once** who chooses them (translated): "I choose, you can swap later" (the agent picks the best photo it looked at and keeps the others as candidates) · "I collect up to 3 candidates per spot, you choose afterwards" (nothing inserted; the image step stays open for the choice).
-- **The start confirmation** names every kind of project write, the image source and who chooses, and an honest duration; it covers what the instructor confirmed, nothing more — a content question that comes up during the run is asked, never decided alone (step 1d).
+- **The start confirmation** names every kind of project write, the image source and who chooses, and an honest duration — about 15 minutes after the sketch for a unit of about ten pages with free photos (measured in test runs; the photo search is included). Never announce an upper bound ("2 minutes per spot × 13 spots") as the estimate. During the run the remaining time is for the whole run and only ever gets smaller; when a part takes longer, say so once instead of raising the total; it covers what the instructor confirmed, nothing more — a content question that comes up during the run is asked, never decided alone (step 1d).
 
 ## Confirmations
 
@@ -979,7 +982,8 @@ Orchestrates the full pipeline for one session — skeleton → generated materi
 If `journal.md` → `## Sessions` has no `### {number}. {title}` subsection yet, run `tasks/create-session-skeleton.md` first (one-shot — it asks the instructor for a title the normal way). Otherwise continue.
 
 - **Check the sketch before the start:** before its save form, check the planning sketch against the `Required` lists of the session's Type and Method (`tasks/create-session-skeleton.md` step 7); name every gap in the sketch and offer the fix in the same form. What the sketch says about task types is a content decision of the instructor — the run produces it, never another task type.
-- **Overview patch in the same save:** right after the skeleton is saved, patch the overview cache (`.cache/dashboard.json`, `tasks/update-dashboard.md` step 8 → Fresh cache): `units[{n}].href` to the new subsection, its `statusLabel` (the new status line) and its first process step, then run `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` (a few seconds). The journal then passes `validate-journal.mjs` during the whole run; the full overview follows in step 4.
+- **Sketch and start in one form** (when the run was asked for before the sketch, e.g. with "Let unit {n} be prepared"): the sketch's save form also carries the start confirmation — "Save and start preparing" (translated) next to "Change something" — so there is one form and one write, not two. That write adds the dated decision `- **{date}:** {terms.buildRequested}` (language pack, e.g. "preparation requested") to the unit's decisions; the overview then shows the run as such (computed). A click on that button during the run is a question, not a second run: answer with the current part and the remaining time.
+- **Overview patch in the same save:** right after the skeleton is saved, run `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` on the fresh cache (`tasks/update-dashboard.md` step 8, a few seconds): it derives the unit's `href`, status and planning step. The journal then passes `validate-journal.mjs` during the whole run; the full overview follows in step 4.
 
 ### 1. Content loop (mechanical gate)
 
@@ -1021,14 +1025,15 @@ Only for `generated` images: for each `{image-slug}` created in Step 1b, run `ta
 
 ### 4. Finalize
 
-Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (if not already, together with its status line) — only if its `#### Validation Report` says `Result: PASS` and lists no open ⏳ item; with "PASS with concerns" Done stays ❌ and the closing summary names the deferred step. Run `tasks/update-dashboard.md`. Report the closing summary described in Output above:
+Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (if not already) — only if its `#### Validation Report` says `Result: PASS` and lists no open ⏳ item; with "PASS with concerns" Done stays ❌ and the closing summary names the deferred step. Run `tasks/update-dashboard.md`. Report the closing summary described in Output above:
 
-- **Runs line** (fixed, translated): "Runs: content check {n} of at most 5 · persona review {n} of at most 3 (or: skipped – no learner profiles) · images {in} of {spots} (inserted and generated)".
-- **Outcome** in the words of `templates/session-validation.yaml` → `outcome_words` (e.g. "passed – still missing: 1 photo", translated) — the same words as the report, the status line and the overview. A word the instructor has not seen before is explained where it first appears (the short re-check: "I look over the changed pages once more, about {m} minutes", translated).
+- **Measured duration:** the closing write adds the dated decision "prepared in {m} minutes (your time: {k} minutes for the sketch)" (translated) to the unit's decisions, so later estimates rest on it.
+- **Runs line** (fixed, translated): "Runs: content check {n} of at most 5 · persona review {n} of at most 3 (or: skipped – no learner profiles) · images {in} of {spots} (inserted and generated)" — in the report's technical part and in the terminal, never in the chat or the report's visible part (it is bookkeeping, not a result for the instructor).
+- **Outcome** in the words of `templates/session-validation.yaml` → `outcome_words` (e.g. "passed – still missing: 1 photo", translated) — the report's words. A word the instructor has not seen before is explained where it first appears (the short re-check: "I look over the changed pages once more, about {m} minutes", translated).
 - **Duration hint** by its content, never by a name such as "the formula" (`data/duration-heuristic.md` → Naming the estimate).
 - **Usable first:** the line "usable with learners now" of the report comes before the outcome details, as on the overview card (`tasks/update-dashboard.md` → One ranking of the three measures).
 - **One offer** to try the unit as a learner (`try-as-learner?number={number}` when the MCP gate is open, otherwise `:create-learner-persona` when no personas exist), plus the overview's `next`.
-- **Approval stays with the instructor:** the generated material is a draft (material step `draft`) until the instructor has looked at it — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" makes the material step `done`.
+- **Approval stays with the instructor:** the check step waits for the instructor (computed) — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" completes the check step (computed).
 
 ## Writes per run
 
@@ -1101,7 +1106,7 @@ Plan images where they help (as image spots for the Artist-Agent, see step 4 →
    - **New rule → re-check:** when the instructor adopts a wording or style rule (also a project-wide one), apply it at once to **all** pieces drafted so far, show every hit with the fix in bold, and only then continue.
    - **Course-wide decisions** (not for a single lesson — there the session's decisions list is the course): if a decision applies to every unit ("keyboard shortcuts only in the info box"), offer to record it as an instructor rule under `## Agents` → `### Coauthor` → Project-Specific Rules (without the `data-from` marker), so `:promote-session` and later co-authoring follow it; it is written with the same save confirmation. If a decision contradicts `## Didactics` or `### Coauthor` (e.g. its voice sample), say so and offer to adjust that section by the rule "Changing another section" in `data/agent-links.md`.
    - **Record decisions:** the decisions list holds only dated decisions (open points go to the overview as `decide` or `internal`). Every decision the instructor makes about this session goes, with date, into the session's decisions list as `- **{date}:** {decision}` (a bullet with the date in bold — never a numbered item that starts with the date, `templates/session-skeleton.yaml` → decisions) — written together with the next save confirmation and listed in its summary in future tense ("When you save, I will also record: …", translated, see `data/chat-dialog.md` → "Nothing unseen gets saved"), never before it — (`data-key="decisions"`, label in the course language) in `journal.md` → `## Sessions` → `### {n}. {title}` (create it before the field with `data-key="references"` if missing — the order of `templates/session-skeleton.yaml` → `section_layout.entry_order`).
-   - **Images:** when a piece needs pictures (the didactics plan them, or the instructor asks), mark each spot in the draft with the neutral marker of `tasks/create-image.md` step 12 and ask **once per unit** where the pictures come from (form, plain words): "Search free photos (the design assistant looks for pictures that may be used with the photographer's name – about 1 minute per picture, you choose)" · "Have them drawn by an image program" · "Later / my own photos" (translated). Never search, download or verify images here and never start a background search: the answer only sets `__Source:__` (`free-photo` / `generated` / `own`). Each spot becomes a `wanted` entry (place, visible description without the answer, search terms), listed in the save summary and written with the same save confirmation; the search itself is the unit's image step (`:create-image {n}`, Artist-Agent). Material can be saved with markers.
+   - **Images:** when a piece needs pictures (the didactics plan them, or the instructor asks), mark each spot in the draft with the neutral marker of `tasks/create-image.md` step 12 and ask **once per unit** where the pictures come from (form, plain words): "Search free photos (the design assistant looks for pictures that may be used with the photographer's name – about half a minute per picture, you choose)" · "Have them drawn by an image program" · "Later / my own photos" (translated). Never search, download or verify images here and never start a background search: the answer only sets `__Source:__` (`free-photo` / `generated` / `own`). Each spot becomes a `wanted` entry (place, visible description without the answer, search terms), listed in the save summary and written with the same save confirmation; the search itself is the unit's image step (`:create-image {n}`, Artist-Agent). Material can be saved with markers.
 
    **Critical engagement rules — always active:**
    - If a content section is vague or lacks depth: point it out explicitly and ask for more detail
@@ -1116,12 +1121,13 @@ Plan images where they help (as image spots for the Artist-Agent, see step 4 →
    - Positive feedback only when it is genuinely earned and specific
 5. **Important:** every `#`, `##` and `###` heading starts a new slide. Use headings only at the levels of `templates/session-material.yaml` → `heading_levels` (the unit's parts); any further sub-heading only inside an HTML block, a list or a blockquote — unless the instructor explicitly wants another slide.
 6. **Before writing the consolidated draft**, self-check it against the *Session Materials* items of `checklists/course-quality-checklist.md` (facts, self-check wording differs from practice, word list covers every word needed to answer, everything learners must read can be read aloud, controls named as the page shows them (`data/liascript-cheat-sheet.md` → Controls as learners see them), closing reward only after solving, quiz settings from `data/liascript-cheat-sheet.md` → Quizzes for young learners, every quiz option distinct and exactly the intended options correct, image markers and alt texts never name the answer). The result is a fixed line of the save summary ("Self-check against the checklist: …", translated). A question whose stem or options depend on a missing image is **not solvable** yet: say so before saving and name it in the status line. Material files are changed with one write per save — the file-edit tool, or one map for the line replacer (`data/chat-dialog.md` → Changing another section) — never with shell scripts or heredocs.
-   At the end, a consolidated material version (or partial sections) is created, which can be incorporated into the currently open material document (see `data/file-structure-modes.md`). When it is saved into the material document (after the save confirmation) and Material is still ❌, set **Material ✅** and the unit's status line (`templates/session-skeleton.yaml` → `section_layout.overview`: "material written · check open", or "material written · images missing" while image spots are open) — Material ✅ means the document exists, not that it is approved, and the status line never says "ready" or "finished" before a check.
+   **A save is 3 writes:** (1) the material file, one write; (2) `journal.md` — Material ✅, decisions, image entries, rules under `### Coauthor` — in one map for the line replacer (a whole section only with `write_section`, one per section); (3) `write-dashboard.mjs`, which also writes the unit's status line, Notes cell and action line. Name the 3 steps in the save summary.
+   At the end, a consolidated material version (or partial sections) is created, which can be incorporated into the currently open material document (see `data/file-structure-modes.md`). When it is saved into the material document (after the save confirmation) and Material is still ❌, set **Material ✅** — `write-dashboard.mjs` then writes the unit's status line ("material written · check open", or "material written · images missing" while image spots are open, translated). Material ✅ means the document exists, not that it is approved; no text of yours says "ready" or "finished" before a check.
    **After writing**, run `node specs/dashboard/check-material.mjs <material file>` once (on its own). If it cannot start (e.g. no browser on this computer), say so in one line of the completion message and what was checked instead (*read*, *tried in the chat*) — never announce a check that then does not run. If the script reports "no installed Playwright found" or "has no browser of its own", offer the install once per conversation as `data/chat-checks.md` → Offering the Rendered Check says.
    **If the session has no material document yet** (the usual case right after the skeleton): work out the content in the dialog from the skeleton — do not run `:promote-session` first — and create the document at the first "Save" exactly as `data/file-structure-modes.md` → "Creating the material document" describes (path, header, overview).
 7. When the instructor **approves** the material for this session — asked with the approval form of `tasks/quick-fix.md` → Approval after a review ("Approve" / "Change something"); an unasked "fine like this" for the whole unit brings that form at once, never a silent entry. The form lists the skeleton update below; both are written after "Approve" in one write:
    - Update the session's skeleton in `journal.md` → `## Sessions` → `### {n}. …` so that Summary, Content and Activities describe the material as it now is, and apply the fact check of step 4 to them too (domain terms, simplifications); show the changes in one line of the summary.
-   - Record the approval as `- **{date}:** material approved` (translated) in the session's decisions list; it makes the unit's material step `done` (`tasks/update-dashboard.md` step 3).
+   - Record the approval as `- **{date}:** material approved` (translated) in the session's decisions list; the overview derives the approval from it (`tasks/update-dashboard.md` step 2).
    - Approval does not change the table: Material ✅ was set when the document was written (step 6). **Done stays ❌** until `:validate-course {n}` has written `Result: PASS` with no open ⏳ item into this session's `#### Validation Report`.
    - Optionally add a short note (e.g., open points, follow-up ideas) in the Notes column.
    - **If the session already has a `#### Validation Report`** (this was a revision after a check): run `:validate-course {n}` right away without asking — the revision is only complete when the re-check passes. Skip step 8 then.
@@ -1270,7 +1276,7 @@ Defines sessions/modules with title, duration, type (slug from `journal.md` → 
    - **single-lesson** (if agenda is yes): **exactly one unit row** — No. 1, the lesson with its length and all objectives; its phases (sections/chapters with minutes) go into the time budget (`time-budget`) as a short list, never as numbered rows: the units table counts units (`data/session-types.md` → "Objectives and duration of a session" reads the lesson's row, `validate-journal.mjs` compares rows and units)
 
    When assigning a duration, `data/duration-heuristic.md` can help sanity-check that it's realistic for the planned content volume — this is orientation only, not a required check here (the actual check happens later in `:validate-course`).
-6a. **Self-check before the summary:** every learning objective is covered by at least one mandatory unit; an objective marked for all units appears in every row; durations add up to the time budget of 5c including a buffer — a buffer is free time **or** an explicitly movable part (then say what slower learners move and where they catch up; with 0 free minutes in a slot, say so in its own line); numbers match `## Course Context` (number and length of lessons).
+6a. **Self-check before the summary:** every learning objective is covered by at least one mandatory unit; an objective marked for all units appears in every row; durations add up to the time budget of 5c including a buffer — a buffer is free time **or** an explicitly movable part (then say what slower learners move and where they catch up; with 0 free minutes in a slot, say so in its own line); numbers match `## Course Context` (number and length of lessons). A conflict you name but the instructor leaves for later (e.g. more new words in a unit than the didactics allow) is saved with the agenda as an open point (`decisions`, kind `decide`) — never only in the chat.
 7. Fill the `templates/course-agenda.yaml` template with the results.
 8. **Before saving** show the agenda as text (after a revision it starts with one line naming every change — see `data/chat-dialog.md` → Nothing unseen gets saved; new preparation items and open points for the overview are listed in future tense) with "Save" / "Change something". Then save by replacing the content of `journal.md` → `## Agenda` following `templates/course-agenda.yaml` → `layout`, no sub-headings.
 9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
@@ -1332,7 +1338,7 @@ Builds on the outline to ensure a consistent teaching strategy aligned with the 
 9. **Before saving** show the complete section as the instructor will read it (after a change: the whole new version, starting with one line naming every change — `data/chat-dialog.md` → Nothing unseen gets saved), with "Save" / "Change something". Then save by replacing the content of `journal.md` → `## Didactics` using the `layout` of `templates/course-didactics.yaml` (visible part in the course language, technical fields in `<details>`), no sub-headings.
 10. Create or update `journal.md` → `## Agents` → `### Coauthor` directly, with no `#### Coauthor` subsection — **merge, never overwrite** what the instructor added:
     - Every entry this step derives ends with the invisible marker `<!-- data-from="didactics" -->`. Replace only marked entries; keep every entry without the marker (added via `:configure-agent`) unchanged and in place.
-    - The changes to `### Coauthor` are part of step 9's save summary, in future tense, described as rules for writing the material later ("When you save, I will also note these rules for writing the material: …", translated) — never as another helper or figure; nothing in it changes unseen, and no separate confirmation is needed.
+    - The changes to `### Coauthor` are part of step 9's save summary, in future tense, described as rules for writing the material later ("When you save, I will also note these rules for writing the material: …", translated) — never as another helper or figure; the first time the term appears in the chat, one plain sentence says what it is (the voice and wording rules the assistant follows when writing the material, `data/chat-wording.md` → Plain language), and a save option that includes them names them that way ("Save, including the rules for writing the material", translated); nothing in it changes unseen, and no separate confirmation is needed.
     - A rule that holds for one pattern only names that pattern; rules about levels are checked against the levels per objective in `## Outline` — an objective without levels is excluded, never covered by "every task".
     - Set `* __Customization Status:__ active`
     - Set `* __Role / Persona:__` from `## Didactics` → `__Professor Persona:__`
@@ -1494,7 +1500,7 @@ Resolve `{path}` from `journal.md` → `## Course Context` → `__File Structure
 </section>
 ```
 
-Status flow per source — `generated`: `wanted` → `prompt-ready` / `prompt-only` → `generated` (this task, then `:generate-image`); `free-photo`: `wanted` → `candidate` → `selected` → `inserted` ("Free photos" below); `own`: `wanted` → `inserted` once the instructor's file is in. An entry is **open** while its status is `wanted`, `candidate`, `selected` or `prompt-ready`; open entries make the unit's image step (`tasks/update-dashboard.md` step 4).
+Status flow per source — `generated`: `wanted` → `prompt-ready` / `prompt-only` → `generated` (this task, then `:generate-image`); `free-photo`: `wanted` → `candidate` → `selected` → `inserted` ("Free photos" below); `own`: `wanted` → `inserted` once the instructor's file is in. An entry is **open** while its status is `wanted`, `candidate`, `selected` or `prompt-ready`; open entries make the unit's image step (`tasks/update-dashboard.md` step 2).
 
 - **To-dos for one image** (e.g. "replace with a smaller crop", "check on the target device") go as `* __To do:__ …` into that entry and into the `next` of the unit's image step — never into the unit's summary (`templates/session-skeleton.yaml` → summary).
 - **Compact once inserted:** an `inserted` entry keeps only `__Status:__`, `__Source:__`, `__Place:__`, `__File:__`, `__Alt text:__`, `__Author:__`, `__License:__`, `__Page:__` (and an open `__To do:__`) — drop `__Description:__`, `__Search terms:__` and `__Candidates:__`. Exception: a photo the agent chose itself in `:build-session` keeps its other looked-at candidates under `__Candidates:__` until the instructor has seen the unit, so it can be swapped without a new search. All `inserted` entries of a unit stand together at the end of its `#### Images` block inside one `<details><summary>{n} images inserted</summary>` (translated); open entries stay above it, in full.
@@ -1504,7 +1510,7 @@ Status flow per source — `generated`: `wanted` → `prompt-ready` / `prompt-on
 
 For entries with `__Source:__ free-photo`. Bounded, in the foreground, and the instructor chooses — inside `:build-session` the instructor decides once at the start whether the agent chooses (the instructor can swap later) or only collects candidates (`tasks/build-session.md` → Before the start, step 1b); then step 5 is replaced by that choice.
 
-1. **Announce honestly:** about 1 minute per spot (each candidate is looked at and its licence read from its own file data). With more than 5 spots work in batches of up to 5 — first the images that tasks and self-checks depend on — and name the batch and its time ("5 pictures for the tasks first, about 5 minutes", translated). Send a status per spot; when the announced time is over, a status with a new estimate.
+1. **Announce honestly:** about half a minute per spot to search and look (measured: 9 spots in about 4½ minutes); the instructor's choosing comes on top and is not part of your estimate — a batch of 5 spots: "about 2–3 minutes until the photos are shown", translated (each candidate is looked at and its licence read from its own file data). With more than 5 spots work in batches of up to 5 — first the images that tasks and self-checks depend on — and name the batch and its time ("5 pictures for the tasks first, about 5 minutes", translated). Send a status per spot; when the announced time is over, a status with a new estimate.
 2. **Run it yourself, in the foreground:** never hand the search to a background agent the instructor waits for, and never end the turn while it runs (`data/agent-links.md` → Never end a turn on a promise).
 3. **Search** free collections with the entry's search terms — Wikimedia Commons first: `fetch-thumb.mjs` and the insert of step 6 work with Commons only; a candidate from another collection (e.g. Openverse) is looked at with the environment's own fetch route or marked `(not looked at)`. Per spot at most **3 candidates**. Only licences that allow use in a public course: public domain, CC0, CC BY, CC BY-SA (never NC or ND unless the instructor decides so).
    - **Look at every candidate before you show it:** run `node specs/dashboard/fetch-thumb.mjs <file page URL | file name>` (on its own; it stores a thumbnail of at most 500 px in `.cache/thumbs/` and prints author, licence, licence URL and the encoded direct file URL), then open the thumbnail with the file-reading tool. Another route of the environment that stores the image locally (a fetch tool, then the file-reading tool) is fine too; a thumbnail URL with a non-standard width fails (Wikimedia: only standard widths such as 330 or 500).
@@ -1519,9 +1525,10 @@ For entries with `__Source:__ free-photo`. Bounded, in the foreground, and the i
    - **Encode every link target** (material, journal, chat): `(` → `%28`, `)` → `%29`, space → `%20` — LiaScript cuts a target at the first unencoded `(` (`data/liascript-cheat-sheet.md` → Link targets).
    - **Display size:** images that are answer options of one question get a display limit directly after the image, `![{alt text}]({file})<!-- style="max-height: 30vh" -->` (for wide images also `width: 30%`), so that the question and all its image options fit one screen of the target device; a page photo gets `<!-- style="max-height: 50vh" -->` when it would push the text off the screen (`data/liascript-cheat-sheet.md` §5).
    - **Credit lines never reveal an answer:** the credit line of an image used in a question names its place and what is visible — the same text as its alt text ("picture 3 of the self-check: a leaf with jagged edges", translated) — never the answer term. The credits chapter can be reached by paging on.
-   - **Status line:** in the same journal write, rewrite the unit's status line and its Notes cell (`templates/session-skeleton.yaml` → `section_layout.overview`): "material written · images {n} of {m}" while entries are still open, "material written · check open" once none is open.
+   - **A save is 3 writes:** (1) the material, one map for every marker, credit line and changed sentence; (2) the journal — image entries and To-do lines — one map; (3) `node specs/dashboard/write-dashboard.mjs` right after it, which writes the unit's status line, Notes cell and action line ("images {n} of {m}"). Say "✅ Saved" after the third write, so the overview already shows the new state; run `check-material.mjs` after that.
+   - **Own photos:** the preview chat has no upload. Name the folder in plain words — the course folder's `assets/images/` on the computer the assistant runs on (multi-file: the unit's `assets/images/`), with the full path once — and two ways to get a tablet photo there (e.g. send it to yourself by e-mail and save it into that folder; a shared cloud folder). Ask for no file name: on the next run look for the newest image in that folder yourself and show it before inserting. Before inserting check that no person can be recognized (children!) and nothing private is visible. Until the file is there the entry stays `wanted` with its To do line; it does not hold the unit's check back.
 7. Spots marked "none found" stay `wanted` with `* __To do:__ none found ({date}) — decide: generated, own or without a picture` (translated) in their entry, so the next run does not search again from the start, and are listed in the completion message with the offer `generated` or `own`. **A spot left without image:** no learner text may refer to a picture that is not there ("look at the photo") — offer the text change together with the decision (`generated`, `own`, or "without a picture: the sentence becomes …", translated); a question that depends on the picture stays unsolvable until it is in.
-8. **Finish:** run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml`; when no image entry of the unit is open any more, offer the Dashboard's `next` (the unit's check) — the Artist hands back for it (`agents/artist-agent.yaml` → suggest_back_to_teaching_when).
+8. **Finish:** the overview was written with the save (step 6). When no image entry is open any more — or only own photos the instructor still brings — offer the Dashboard's `next` (the unit's check) as its direct link (`agent:teaching/validate-course?number={n}`, with the overview's button word), never a switch link plus "say …" — the Artist hands back for it (`agents/artist-agent.yaml` → suggest_back_to_teaching_when).
 
 ## Special Features
 
@@ -1846,7 +1853,7 @@ Defines title, target audience, abstract, and learning objectives.
    - **Observable in this setting:** say how each objective becomes visible — in the material (select, assign, write, record) or through a person who listens or watches (check `## Course Context`: is the instructor or a partner present?). If an objective cannot be observed in the material, keep it and add the observable step or the occasion where someone checks it — do not swap the verb. A check by a person needs a **scheduled joint phase** with its minutes in the time check (learners × minutes per learner ≤ phase; otherwise say it is only a sample). When learners work at their own pace or alone with headphones, a partner is not available unless such a phase is planned — propose the phase or a recording instead.
    - **Every level counts:** the self-check applies to added objectives and to every basic/extension level too — the observable step uses the objective's verb, or names a preliminary step and the occasion for the verb itself. If you narrow or concretise an instructor's goal, show "your words → proposal" in one line.
    - **One action per objective;** split objectives that contain two verbs.
-   - **Fits the learners from `## Course Context`:** language level, prior knowledge, support needs — add a language component where the target group needs one, and give a basic and an extension level for heterogeneous groups.
+   - **Fits the learners from `## Course Context`:** language level, prior knowledge, support needs — add a language component where the target group needs one, and give a basic and an extension level for heterogeneous groups. Name the two levels in the everyday words of the learners' institution (e.g. "for everyone" / "extra challenge", translated), never a word that also names a school stage, track or grade (German never "Grundstufe").
    - **Fits the time:** show a short list *session → objective → self-check* (at most 3 columns if shown as a table); include every time estimate you mention (e.g. listening time). If it does not fit, propose what to drop. **Repeat this time check after every revision** and show the new result; a gap that stays open goes into the Dashboard's `decisions`.
    - Content questions come **before** the save confirmation, never in the same form; everything that will be saved (incl. the session split) is shown as text first.
 6. If the instructor wants a logo, mention that the Artist-Agent creates it after the outline is saved (`:agent artist` → `:create-logo`, stored in `## Visual Identity`).
@@ -1948,6 +1955,7 @@ Creates a **skeleton** for one session (or unit/block/lesson — see `journal.md
 - Terminology from `journal.md` → `## Course Context` (sessions-called)
 - Objectives and duration of this session — `data/session-types.md` → "Objectives and duration of a session" (the agenda row; without an agenda `## Outline` → Learning Objectives and Session Overview, which also suggests the title)
 - Default Session Method from `journal.md` → `## Didactics` → `__Default Session Method:__`, and the matching session's Method column in `journal.md` → `## Agenda` if an agenda exists (see `data/didactic-methods.md`)
+- Notes for this unit: the entries under `journal.md` → `## Notes Backup` whose `__Related:__` or `__Topic:__` names this unit (by number, title or topic) — and dated decisions of earlier units that say "for unit {number}". Read them before the sketch and name in the sketch what they change; a note left for a later unit is the assistant's to remember, never the instructor's ("remind me" is not asked).
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/journal-links.md`
 
 ## Output
@@ -1968,13 +1976,14 @@ Creates a **skeleton** for one session (or unit/block/lesson — see `journal.md
    - If the Coauthor role is missing or inactive, fall back to `journal.md` → `## Didactics` → `__Professor Persona:__`, `__Teaching Style:__`, and `__Persona Voice Sample:__`, then state that the Coauthor role should be synchronized into `## Agents`.
    - All texts of this skeleton reflect this style.
 5. Generate the basic structure for the session.
+   - **Building blocks:** answer the building-block question for this unit with every planning sketch: does an activity need an interaction LiaScript does not bring itself? Check the adopted entries in `## Templates` first. Show the answer as the one line of `templates/session-skeleton.yaml` → `building-blocks` ("Building blocks: none – …" or the interaction the unit needs, translated; German „Bausteine“, never „Vorlagen“) and save it with the unit; ask only when it is unclear.
 6. Fill out template `templates/session-skeleton.yaml`.
-7. **Before saving** (after the checks "Type and Method first" and "Self-check before saving" below, which run before this form): show the new unit as it will be written — every visible block of the template (status line, kind line, summary with every paragraph, content, activities, references); for changes only inside the `<details>` technical block one line in the save summary is enough with "Save" / "Change something" — also in the terminal. Then save the skeleton as a `### {number}. {title}` subsection under `journal.md` → `## Sessions`.
+7. **Before saving** (after the checks "Type and Method first" and "Self-check before saving" below, which run before this form): show the new unit as it will be written — every visible block of the template (status line, kind line, summary with every paragraph, content, activities, building blocks, references); for changes only inside the `<details>` technical block one line in the save summary is enough with "Save" / "Change something" — also in the terminal. When the save also changes the rules for writing the material (`### Coauthor`, `data/chat-dialog.md` → Changing another section), the save option names them that way ("Save, including the rules for writing the material", translated), and the first time the term appears in the chat one plain sentence says what it is: the voice and wording rules the assistant follows when writing the material (`data/chat-wording.md` → Plain language). Then save the skeleton as a `### {number}. {title}` subsection under `journal.md` → `## Sessions`.
    The `## Sessions` section has one canonical structure:
    1. The overview directly below `## Sessions` — status list, then the technical table in `<details>` (`templates/session-skeleton.yaml` → `section_layout.overview`)
    2. One `### {number}. {title}` subsection per session below the overview
 
-   - Directly below the heading, write the action line from the template: exactly **one** main action (`coauthor-materials?number={n}`) — see `data/agent-links.md`.
+   - The action line directly below the heading (exactly **one** main action, `coauthor-materials?number={n}`, `data/agent-links.md`) is written by `write-dashboard.mjs` in step 9 — do not write it here.
    - Then the technical `<details>` block with `**Type:** {type}`, `**Method:** {method}` and the further commands, followed by the visible line with kind and checklist (display names in the course language) — the order of all blocks is `templates/session-skeleton.yaml` → `section_layout.entry_order`.
    - Visible bold labels are **only in the course language**, no abbreviations (no "UDL"). Each carries its English key invisibly in the attribute comment directly above it (`<!-- data-key="summary" -->`); tasks find a label by that key (older journals: by the English label).
    - Do not include the type in the subsection heading.
@@ -1986,13 +1995,13 @@ Creates a **skeleton** for one session (or unit/block/lesson — see `journal.md
    - Do not create a `**Decisions:**` list yet — `:coauthor-materials` adds it with the first decision.
    - **Type and Method first:** before the save form, check the activities and the self-check against the `Required` lists of the session's Type and Method (step 3) — e.g. a second form of answering when the method asks for one. Name every gap in the sketch and offer the fix **in the same form** (adapted sketch · keep as planned with a reason); never leave it for the check to find after the material is written, where it would become a change of task type.
    - **Self-check before saving** (adapt, then name every change in one line; ask before dropping or replacing anything the instructor asked for): the skeleton describes the material that will really be produced, not a wish list; new terms stay within the scope set in `## Didactics` (terms of later sessions are not used yet); every matching or assignment task has exactly one correct answer per item; every task, including extension tasks, can be solved with the material the learners get (text, pictures); every support need named in `## Course Context` or `## Outline` (language support, learning support) has a concrete measure in this unit; the self-check shows what *each* learner can do (also in pair or group work); a closing proof or reward cannot be reached without doing the tasks, or the skeleton says how the instructor checks it; every term learners must tell apart in a task or self-check has its own picture and sentence in the content; domain terms are factually precise (no everyday term a later unit contradicts); carry-over says *when* in course words ("in the next lesson"), never a time the learners are already in. When a change trades one goal against another you defended earlier (e.g. shortening a buffer), name the conflict.
-8. Update the overview inside `journal.md` → `## Sessions` as defined in `templates/session-skeleton.yaml` → `section_layout.overview`: the unit's status line ("{n}. {title} – planning sketch ✅ · material open", translated — the fixed word for skeleton) and its row in the technical overview table inside `<details><summary>{"Technical overview", translated}</summary> … </details>`:
+8. Update the overview inside `journal.md` → `## Sessions` as defined in `templates/session-skeleton.yaml` → `section_layout.overview`: the unit's row in the technical overview table inside `<details><summary>{"Technical overview", translated}</summary> … </details>`, in the **same write** as the new subsection (one map for the line replacer, `data/chat-dialog.md` → Changing another section; also the few lines of a foreign section such as the writing rules). The action lines, the unit's status line, its Notes cell and the one-line note under `## Sessions` are left to `write-dashboard.mjs`, which writes them in the same save (step 9); never delete a line of the overview here. Target: 2 writes per save (the sections, then the overview).
    - If `journal.md` → `## Sessions` does not exist yet, create it with the overview first. Include a `Method` column only if `journal.md` → `## Didactics` → `__Default Session Method:__` is not `none`:
      ```
      | # | Title | Type | Method | Skeleton | Material | Done | Notes |
      |---|---|---|---|---|---|---|---|
      ```
-   - Add a new row: `| {number} | {title} | {type} | {method} | ✅ | ❌ | ❌ | |` (omit the Method column entirely, matching the table header, if no method is in use)
+   - Add a new row: `| {number} | {title} | {type} | {method} | ✅ | ❌ | ❌ | |` (the Notes cell stays empty for `write-dashboard.mjs`; omit the Method column entirely, matching the table header, if no method is in use)
    - If a row for this session already exists, update the Skeleton column to ✅.
    - Keep the overview (status list and table) before all `### {number}. {title}` subsections.
 9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
@@ -2587,7 +2596,7 @@ The course context acts as the governance layer: it defines the course type, ter
    For a single lesson do not ask: it is `single-file` (one link); name it in one line of the summary. For every other course type, ask the file structure as a **teacher question** instead of stating a default (single choice, plain labels):
    1. "One link for all units — learners work through the chapters of one course" → `single-file`
    2. "One link per unit — each unit is opened on its own" → `multi-file`
-   Ask this only once the time frame (step 4) is known. Recommend 1 if it is up to about 6 short units (one link or QR code, progress in one place) and say why in one line; otherwise give no recommendation. Never label an option as "usual" or "default", and never offer an internal threshold (e.g. "up to 6") as an answer option.
+   Ask this only once the time frame (step 4) is known. Recommend 1 if it is up to about 6 short units (one link or QR code; each learner sees all units and their own progress on their device — there is no class overview for the teacher) and say why in one line; otherwise give no recommendation. Never label an option as "usual" or "default", and never offer an internal threshold (e.g. "up to 6") as an answer option.
 
    **Terminology:** set `sessions-called` to the word the instructor will see for one unit in the journal, in the course language and fitting the setting (e.g. school: the local word for "lesson" or "learning unit"). Use exactly these words in all instructor-facing text and in the Dashboard.
 
@@ -2615,9 +2624,10 @@ The course context acts as the governance layer: it defines the course type, ter
    - Below the table, say in one plain-language line **what the mapped keys change in the material** (who leads, how each unit ends, one link or several) — never name or translate a type, pacing or persona key, never use the label of an option the instructor did not choose, and never present the assistant as the persona (the persona is decided in `create-didactics`). That line belongs to the summary only and is not saved; the keys themselves go into the technical block.
    - A revised summary (after "Change something") starts with one line naming every change ("Changed: units 6 → 4; new: preparation"), before the table — no bold markers inside the table.
    - Content the instructor already gave for a later step (e.g. learning objectives, ideas for tasks) goes into `Additional Notes` as "For {step}: …" and is listed below the summary as "noted for later"; the later task reads it from there.
+   - A rule the instructor chose for the whole course (e.g. about privacy, recordings, devices) is a row of the summary table ("Agreed rules", translated) — visible on the page, never only in `Additional Notes`.
    Then save:
    - **Language pack first:** if the course language is not English, a language pack exists (`specs/templates/i18n/<code>.json`) and `journal.md` is still the untouched copy of step 2, run `node specs/dashboard/localize-journal.mjs --lang <code>` **before** any other write of this step — the pack replaces lines of the empty template only, so after the first content write it no longer applies (unless it already ran at the language switch, `data/chat-language.md` → Language before the frame).
-   - Then replace the content of `journal.md` → `## Course Context` following `templates/course-context.yaml` → `layout` (summary table first, technical `* __Label:__` bullets inside `<details>`, no sub-headings).
+   - Then replace the content of `journal.md` → `## Course Context` following `templates/course-context.yaml` → `layout` (summary table first, technical `* __Label:__` bullets inside `<details>`, no sub-headings). Leave the action line below the heading as it is — `write-dashboard.mjs` renews it in the same save.
 10. If LiaScript conventions mention template imports, run `tasks/manage-templates.md` with `templates/course-templates.yaml`:
     - Add `import: {url}` to the main metadata header if missing
     - Create or update `journal.md` → `## Templates`
@@ -2884,7 +2894,8 @@ Dashboard, in the session action lines and in the chat offers of every agent
      when the target cannot be confirmed and is not the overview
      (`data/chat-wording.md` → Point, don't describe).
    - Otherwise post one chat line with a link back, named after the active agent:
-     `[👁 Back to the journal](agent:{active agent}/preview) `:preview``
+     `[👁 Back to the journal](agent:{active agent}/preview)` — the button link
+     only, no command in code font (`data/chat-wording.md` → Commands stay off the chat)
      (e.g. `agent:artist/preview` while the Artist works).
 4. **MCP gate closed:** tell the instructor how to open the file:
    `liadev --live -i {file}` (LiaScript DevServer), or the VS Code LiaScript
@@ -3100,11 +3111,13 @@ Use this task when:
 
 Fast, focused correction of a single well-defined issue in an existing material file, without running a full co-authoring session.
 
-**Change path after a check:** every change to a unit that already has a validation report — also changes asked for in the chat or after `:try-as-learner` — follows this task: full new wording shown → save confirmation → mini-validation of the changed area (`tasks/validate-syntax.md` scoped to the changed block, persona and figure rules from `## Didactics`, `node specs/dashboard/check-material.mjs <material file>` when a browser is available (if the script reports "no installed Playwright found" or "has no browser of its own", offer the install once per conversation as `data/chat-checks.md` → Offering the Rendered Check says) — without one, say so in the dated line; the mini-check then rests on `validate-syntax` and the next `:validate-course`) → a dated line in the report's block "Changed after the check" (date · page title · change · how it was checked: mini-check, measured at {window}, or looked at by the instructor — `templates/session-validation.yaml`; a layout claim only as measured, `data/chat-checks.md` → Say how you checked); a fully fixed point leaves "Still missing", a partly fixed one stays there with what is still open, and the outcome line gets " – {n} point(s) changed since – short re-check open" (translated; explained where the instructor first meets it, `templates/session-validation.yaml` → `outcome_words`); a FAIL outcome then counts the points still open ("correction needed: {open} of {n} points open", "all {n} points corrected" once none is open, "the point corrected" for a single one — never the original count alone), and the line "usable with learners now" follows the fix → derive the unit state again (`tasks/update-dashboard.md` step 3; never hand-edit the dashboard data).
+**Change path after a check:** every change to a unit that already has a validation report — also changes asked for in the chat or after `:try-as-learner` — follows this task: full new wording shown → save confirmation → mini-validation of the changed area (`tasks/validate-syntax.md` scoped to the changed block, persona and figure rules from `## Didactics`, `node specs/dashboard/check-material.mjs <material file>` when a browser is available (without one: `data/chat-checks.md` → Offering the Rendered Check) — without one, say so in the dated line; the mini-check then rests on `validate-syntax` and the next `:validate-course`) → a dated line in the report's block "Changed after the check" (date · page title · change · how it was checked: mini-check, measured at {window}, or looked at by the instructor — `templates/session-validation.yaml`; a layout claim only as measured, `data/chat-checks.md` → Say how you checked); a fully fixed point leaves "Still missing", a partly fixed one stays there with what is still open, and the outcome line gets " – {n} point(s) changed since – short re-check open" (translated; explained where the instructor first meets it, `templates/session-validation.yaml` → `outcome_words`); a FAIL outcome then counts the points still open (`outcome_words`: "correction needed: {open} of {n} points open"), and the line "usable with learners now" follows the fix → derive the unit state again (`tasks/update-dashboard.md` step 2; never hand-edit the dashboard data).
 
-**One journal write per fix:** every journal line the fix touches — report lines, status line, Notes cell, image entries, and every line that still names the fixed item as open (unit summary, step `next`, an image entry's `__To do:__`) — goes into one replacement map (`node specs/dashboard/localize-journal.mjs <map.json>`); remove or update those lines, never leave a done to-do standing. **Find them first:** before the map is written, search the unit entry and its report with `node specs/dashboard/find.mjs` for the page title, the changed item and its old wording, and put every sentence that names the changed item or contradicts the change (summary, content, "What works", "Still missing", the Notes cell) into the same map. **The Notes cell states the state, not a list of changes:** "{outcome} – {n} point(s) changed since – short re-check open" (translated) — the same words and number as the report's outcome line, and the same wording in the unit's status line and `statusLabel` (one wording per state; `validate-journal.mjs` compares them) — plus other open state such as "images {n} of {m}". The overview is written last (`tasks/update-dashboard.md`), never before the journal lines it describes. Every change after a check makes the unit "short re-check open" (`review`, `next` = the short re-check, `tasks/validate-course.md` → Short re-check). Publishing metadata in the header (`email:`, `version:`) set by `:create-project` / `:update-project` is not a content change and does not reopen a check.
+**Only changes are "changed after the check":** a confirmation that changes no material (the instructor accepts a statement as it is) is a dated entry in the session's decisions list, never a line in the block "Changed after the check".
 
-**Approval after a review:** when the fix comes from the instructor's own review of material that is not approved yet (its material step is not `done`, e.g. a draft from `:build-session`), end the task — after the mini-validation and the overview update — with one form: "Is {unit} {n} fine like this now?" (translated, with the unit word) and the choices "Approve" and "Change something" (translated). Only "Approve" records the approval — a dated entry `- **{date}:** material approved` (translated) in the session's decisions list, one write — and makes the material step `done` (`tasks/update-dashboard.md` step 3); "Change something" continues with the next fix. Never infer an approval from a fix or from praise for a single page; an unasked "fine like this" for the whole unit brings this form at once (one click on "Approve") — never a silent entry. Not when called from `:build-session` (no instructor review there).
+**One journal write per fix:** every journal line the fix touches — report lines, image entries, and every line that still names the fixed item as open (unit summary, step `next`, an image entry's `__To do:__`) — goes into one replacement map (`node specs/dashboard/localize-journal.mjs <map.json>`); remove or update those lines, never leave a done to-do standing. **Find them first:** before the map is written, search the unit entry and its report with `node specs/dashboard/find.mjs` for the page title, the changed item and its old wording, and put every sentence that names the changed item or contradicts the change (summary, content, "What works", "Still missing") into the same map. **The Notes cell states the state, not a list of changes:** status line, Notes cell and `statusLabel` are not in the map — `write-dashboard.mjs` copies the report's outcome line, so the outcome line is the one place to get right. The overview is written last (`tasks/update-dashboard.md`), never before the journal lines it describes. Every change after a check makes the unit "short re-check open" (`tasks/validate-course.md` → Short re-check) — **unless the mini-validation already was that re-check:** it covered every changed page with `validate-syntax`, rendered them with `check-material.mjs`, and went through the Type and Method items those pages carry and every open point that names them. Then the dated line ends with "· re-checked: {how}" (`terms.recheckDone`, translated), the outcome line gets no "short re-check open", and no second save follows to add and remove it. Publishing metadata in the header (`email:`, `version:`) set by `:create-project` / `:update-project` is not a content change and does not reopen a check.
+
+**Approval after a review:** when the fix comes from the instructor's own review of material that is not approved yet (no `material approved` entry in the session's decisions, e.g. a draft from `:build-session`), end the task — after the mini-validation and the overview update — with one form: "Is {unit} {n} fine like this now?" (translated, with the unit word) and the choices "Approve" and "Change something" (translated). Only "Approve" records the approval — a dated entry `- **{date}:** material approved` (translated) in the session's decisions list, one write; the overview then completes the check step (computed); "Change something" continues with the next fix. Never infer an approval from a fix or from praise for a single page; an unasked "fine like this" for the whole unit brings this form at once (one click on "Approve") — never a silent entry. Not when called from `:build-session` (no instructor review there).
 
 Minimal overhead for small, targeted changes (typos, broken syntax, swapping one example, fixing a quiz answer, correcting a link).
 
@@ -3151,7 +3164,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 4. **Report result:**
    - ✅ "Fix applied and validated — done."
    - ⚠️ "The problem is larger than expected: [describe]. Should I open `:coauthor-materials {number}`?"
-   - If the fix changed session state (e.g., a Notes entry in the `## Sessions` overview table): run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+   - After every save run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 5. **Escalate if scope grows:** If the fix reveals structural issues or multiple sections need rework, stop and escalate to `:coauthor-materials` — do NOT proceed silently.
 
@@ -3615,6 +3628,65 @@ After each section is saved, print a brief progress line:
 ==================== END: specs/tasks/scaffold-course.md ====================
 
 
+==================== START: specs/tasks/start.md ====================
+
+# Task: start
+
+## Purpose
+
+The first command in a fresh project folder. After `liadev init` (which puts the teaching agent, the
+LiaScript skills, `.mcp.json` and the agent settings into the folder) the instructor starts an AI agent in
+that folder and types `start`. This task creates the empty journal if there is none, opens the preview in
+the instructor's own browser and greets them in its chat — from then on the instructor works in the browser.
+
+## Command
+
+`:start` — also the bare word `start` (any case, also a translation such as „Start“ or „starten“) when it is
+the instructor's first message in the session.
+
+## Inputs
+
+- `journal.md`, if it exists: header `language:`, `## Course Context`, the Dashboard `next` (read with the
+  file-reading tool).
+- `tasks/open-chat.md` — steps 2–5 run as part of this task.
+- `data/agent-links.md` (core: MCP Gate, Agent Roster) and `data/chat-wording.md`, read once per session.
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-language.md`
+
+## Steps
+
+1. **MCP gate closed** (the `liascript` tools `get_state`, `goto` and `chat` are not available): say in the
+   terminal, in the language of the instructor's message (English for a bare `start`), in three short lines:
+   - the browser chat needs the LiaScript DevServer as a tool of this agent;
+   - if `.mcp.json` is missing: run `liadev init` in this folder first;
+   - otherwise restart the agent in this folder and allow the server `liascript` when asked (Claude Code:
+     at start or with `/mcp`; other agents: register `liadev --mcp --live -i journal.md` as MCP server in
+     their own configuration, as `.mcp.json` shows).
+   Do not start a server yourself. Stop.
+2. **Journal:** if `journal.md` does not exist, create it as the byte-for-byte copy of the empty journal:
+   `cp specs/templates/journal.md journal.md` (on its own). This is the only write before the instructor's
+   first answer. An existing journal stays as it is.
+3. **Open the chat:** run `tasks/open-chat.md` steps 2–5 — `get_state`; without a connected browser `goto`
+   with `file: journal.md`, which opens the instructor's default browser; connect this session (roster,
+   event subscription, `read_chat`); greet. Wait for the browser with `get_state` for at most about 10 s; if
+   it is still not connected, give `get_state.url` in the terminal as the link to open, and stop.
+4. **Language first:** on the empty journal, before the greeting, the switch of `data/chat-language.md` →
+   Language before the frame runs with `get_state.browser_lang` (language pack first, one write) and the
+   roster labels follow the course language. The greeting is the first contact
+   (`data/chat-wording.md` → First contact): one sentence what this is, exactly one link — the Dashboard's
+   `next`, on the empty journal "start the course" (`init-course`).
+5. **Terminal:** one line that the chat is open in the browser, with `get_state.url`, and that the work goes
+   on there.
+
+## Rules
+
+- Setup only: writes nothing but the copy of the empty journal and the language switch of step 4.
+- Never opens a browser-automation window instead of the instructor's browser; never a second preview tab
+  when a browser is connected.
+- Runs once per session; a second `start` behaves like `:open-chat`.
+
+==================== END: specs/tasks/start.md ====================
+
+
 ==================== START: specs/tasks/suggest-templates.md ====================
 
 # Task: suggest-templates
@@ -3761,7 +3833,7 @@ JavaScript, charts, animations) are not proposed here.
 - Checked means listed in the shared catalog with its check date: never present a `found` or `own` entry as checked, also not after reading its README.
 - The shared list is read-only: never write to `specs/catalog/templates.json`; it is replaced on every update of LiaAgent. Project entries go into `templates.local.json`.
 - `## Templates` records only what the course uses: candidates and finds that were not adopted are not written there.
-- Catalog data is English; explain the templates in the course language (in German „Vorlage“, never „Template“).
+- Catalog data is English; explain the templates in the course language (in German „Baustein“, never „Template“ or „Vorlage“).
 - Web chat without shell or file access: suggestions only from the catalog in the bundle, without the online search — say so in one sentence.
 
 ==================== END: specs/tasks/suggest-templates.md ====================
@@ -3817,7 +3889,7 @@ This is a try-out in the preview, not a feature for learners: learners do not ge
    - Two hint stages are possible only if the quiz has two `[[?]]` lines (see `data/liascript-cheat-sheet.md`); propose that in the debriefing if the help came too late.
 6. **Back to planning.** On the instructor's sentence (or "Back to planning"): first a status line signed by the planning assistant, then restore the roster without the companion (`set_agent` with the four agents, `view: "author"`), `goto` the overview, then debrief in at most 6 lines: what happened (with slide titles), what looked intended, what not — ask whether mistakes were on purpose.
    - **Only what the events show:** every statement about what the learner saw or did rests on the events (`trial`, `hints`, `solved`, `resolved`); a hint stage counts as seen only if `hints` reached it, a task as solved only with its `solved` event; what no event shows is "I don't know" (translated). Check the list against the events **before** sending it — no correction message afterwards.
-7. **Offer improvements** (one form): (a) concrete material changes, (b) carry the companion's best help into static material — hint texts, "Did you know?" boxes, a short practice quiz — so learners get it without a chat. Everything that will be written, including decision-list lines, appears in the summary before "Save".
+7. **Offer improvements** (one form): (a) concrete material changes, (b) carry the companion's best help into static material — hint texts, "Did you know?" boxes, a short practice quiz — so learners get it without a chat. Everything that will be written, including decision-list lines, appears in the summary before "Save". An idea for a **later unit** (a question a child asked that unit will treat) becomes a note in `## Notes Backup` with `__Related:__` naming that unit — `:create-session` reads it there; never ask the instructor to remind you of it.
    - **Current patterns first:** before the save form, check every new or changed learner text against `data/liascript-cheat-sheet.md` (hints read aloud where `narrator:` is set, controls named as the page shows them). If a pattern is not applied because a decision is still open, say so in the summary and offer both variants in the same form.
    - A writing rule that concerns every unit (reading hints aloud, how controls are named) is a **course decision** — the rules for writing the material or `:save-decision` — never an open point of one unit.
    - Then follow the change path of `tasks/quick-fix.md` (mini-check, dated line in the report, derive the unit state again, `update-dashboard`).
@@ -3840,22 +3912,21 @@ Derive the instructor-facing overview from the project sections and write it as
 one semantic JSON data block into `journal.md` → `## Dashboard`. The LiaScript
 Dashboard library (`dashboard/README.md`) renders it via `@Dashboard.View`.
 
-The dashboard is **derived state**. It is never the source of truth.
+The dashboard is **derived state**. It is never the source of truth. Most of it is
+computed by `write-dashboard.mjs`; this task writes the texts and the open points.
 
 ## Inputs
 
 - `journal.md` main metadata header (`language:`, template `import:` lines)
 - `journal.md` → `## Course Context`, `## Outline`, `## Didactics`, `## Agenda`,
   `## Sessions` (overview table, `#### Validation Report`, `#### Persona Reviews`),
-  `## Templates` (the line `__Template selection:__` and the briefs `### {id} (in development)` —
-  the template step of the course process, Rules → Template step), `## Validation` → `### Latest Validation Summary`,
-  `## Publishing` (repository, viewer URL, state — for the publishing step of the course process)
+  `## Templates` (`__Template selection:__` and the briefs `### {id} (in development)`),
+  `## Validation` → `### Latest Validation Summary`, `## Publishing`
 - `journal.md` → `## Agents` → `### Learner Personas` — headings only, for actions
-- `templates/project-dashboard.yaml` — semantic data shape
-- `dashboard/README.md` — component API of the installed library
-- `data/agent-links.md` — link format, action lines, and which commands fit which state
-- The `commands:` maps of `agents/*-agent.yaml` — the only commands that may appear as links
-- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-language.md`, `data/journal-links.md`
+- `templates/project-dashboard.yaml` — semantic data shape; fields marked (computed) are set by the script
+- `data/agent-links.md` — link format and which commands fit which state
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/journal-links.md`; `data/chat-language.md` only when this run changes the course language
+- `dashboard/README.md` → `labels` only when the course language is neither German nor English
 
 ## Output
 
@@ -3884,158 +3955,84 @@ Run this task automatically after any task that changes project state:
 
 0. **Sign of life first** (MCP gate open): when called right after a save, the
    calling task has already sent "✅ Saved: …". Send a status "Updating the
-   overview …" (translated) **before** reading and generating anything. Never
-   generate the dashboard data while the last visible sign of life is older
-   than about 30 seconds.
-1. Read the source sections listed above — now, not from memory. Identify course
-   title, target audience, duration and file structure. Empty placeholders
+   overview …" (translated) **before** reading and generating anything.
+1. Read the source sections listed above — now, not from memory. Empty placeholders
    (`{{...}}`, "not yet filled") do not count as completed planning. Keep sample
    values visibly provisional.
-2. Collect units from `## Sessions` and `## Agenda`. Do not invent a unit solely
-   because a course title exists. In multi-file mode resolve real material paths
-   from `## Course Context` → `__File Structure:__`; in single-file mode inspect
-   the matching chapter of the root `README.md`.
-3. Derive a display state for each unit:
-   - States are exclusive; if two seem to fit, take the later one in this list.
-   - `planned` — in the agenda or skeleton only, not yet worked out. The
-     recommended next unit without a skeleton stays `planned`; mark it with
-     `selected` and make it the `next` action.
-   - `current` — the one unit being worked on now (a task runs on it, or it is
-     being worked out together); a skeleton alone is `planned`, but gets
-     `statusLabel` = the text of its status line in `## Sessions` ("planning
-     sketch ✅ · material open", translated); the recommended next unit
-     (`selected`) with a skeleton is `current`
-   - `draft` — material exists and the instructor has not approved it yet; the material step
-     becomes `done` only with a recorded approval (the approval form of `tasks/quick-fix.md` →
-     Approval after a review, or `tasks/coauthor-materials.md` step 7) — a review with fixes alone is no approval
-   - `review` — approved or revised material whose check or re-check is still
-     pending (material revised after a check and waiting for the re-check is `review`, not `draft`)
-   - `revision` — the latest review or validation requires changes
-   - Validation result → unit state: FAIL → `revision` with `statusLabel` =
-     "check: correction needed ({n})" (translated, the report's outcome words —
-     never a grade word such as "failed"; once points were fixed after the check it counts the open
-     ones: "check: correction needed: {open} of {n} points open", never the original findings); changed after the check →
-     `review` (only while the instructor or a check actually has something to
-     look at) with `statusLabel` = "{outcome} – {n} point(s) changed since –
-     short re-check open"; PASS with concerns → `current` with `statusLabel` = "passed with
-     concerns – your decision needed"; PASS with ⏳ items → `current` with
-     `statusLabel` = "passed – still missing: {what}" (e.g. "1 photo"; all translated,
-     never a step or command name as subject); PASS + Done ✅ → `done` once the material is approved (material step `done`); a checked draft the instructor has not approved yet (e.g. after `:build-session`) → `current` with `statusLabel` = "passed – waiting for your approval" (translated) and `next` = the learners' view for that look (`tasks/quick-fix.md` → Approval after a review).
-     **One wording per state:** `statusLabel`, the unit's status line, its
-     Notes cell and the report's outcome line use the same words for the same
-     state (`templates/session-validation.yaml` → `outcome_words`), plus other
-     open state such as "images {n} of {m}"; `validate-journal.mjs` compares
-     status line and `statusLabel` with the report.
-     A persona review alone never changes the state; a change it leads to
-     makes the unit `review` until the re-check.
-   - `done` — only with `Result: PASS` (not "with concerns") and no open ⏳ item in
-     the unit's `#### Validation Report` **and** Done ✅ in the overview table. Never infer it from a heading.
-   Optional process steps may use `optional`. A unit's `summary` never
-   contradicts its state. Once a check ran, the report's answer to "usable with
-   learners now" goes into `usable` ({state: yes | limited | no, missing: [...]},
-   `templates/session-validation.yaml` → `outcome_words`) — the first line of the
-   unit's card; `summary` does not repeat it. Once the material exists, the unit
-   gets `view` (`agent:teaching/preview?file={n}`, command `:preview {n}`): the
-   material as the learners see it, a button of its own next to the planning link.
-4. Build the material process for **every** unit from the start — the same steps
-   for each; a unit not yet started has all steps `planned`, and its first
-   step's `next` says when it is due. Fill states from actual evidence: `title`,
-   `state`, `why`; optionally `result`, `next`, `statusLabel`. Typical steps are
-   objectives → activities → material draft → instructor review → validation and
-   revision. Checks may return the work to an earlier step. A generated draft is
-   not instructor approval, and a session PASS is not a course publication PASS.
-   **Image step:** every unit's process has the step "Insert images" (translated)
-   between the material step and the check — `optional` while the unit has no
-   image entries (`#### Images`), required (`planned`/`current`) while one is open
-   (`tasks/create-image.md` → Image spots), `done` once none is open. While it is
-   open after the material step, it is the unit's next step (action
-   `artist/create-image?number={n}`), before the check; open image entries do not
-   change the unit state. A partial state is visible everywhere it is named: the
-   unit's `statusLabel` (= its status line, "material written · images {n} of
-   {m}", `templates/session-skeleton.yaml`), the step's `result` ({n} inserted)
-   and `next` (the remaining images plus the `__To do:__` lines of the image
-   entries), and the Notes cell of the technical table — never a bare "images
-   missing" once some are in. A step that is `done` returns to an earlier state only
-   through a check result (FAIL, concerns), never through a later decision or new
-   work: new work of another kind is its own step.
-5. After a check with FAIL or open concerns, `next` is resolving them ("Resolve concerns" / "Revise", translated), never another check of the same state — for open concerns that is `validate-course {n}`, which then goes straight through them without a new check (`tasks/validate-course.md` step 0). A FAIL whose open points are all `:quick-fix` cases (one change each, no content decision) gets the small correction as action (✏️ `quick-fix` with its description, "Correct", translated), not `coauthor-materials` (`data/journal-links.md` → Action lines).
-   Choose **exactly one** prominent next action (`next`) with an understandable
-   `title`, `why`, `label`, `href`, readable `command` and `icon` (the action
-   symbol from `data/journal-links.md` → Markdown Format; the same for actions in
-   `decisions` and `explore`). Check prerequisites
-   first: no session creation before Session Types exist, no separate agenda when
-   the profile says `Agenda required: no`, no promotion without a skeleton, no
-   publication before a course-mode PASS. Put further optional actions in `explore`.
-6. **Open points (mandatory checklist).** Re-read all source sections and add
-   every hit to `decisions`:
-   - A `## Course Context` summary value that contradicts its technical field
-     (e.g. a described layout vs. `File Structure: Mode`).
-   - Provisional entries ("provisional", "to be decided") in a section whose topic
-     has since been saved elsewhere.
+2. **Computed by `write-dashboard.mjs`** (step 8) from the journal — do not work these out by hand, read
+   the list the script prints after the run. It sets every field marked (computed) in
+   `templates/project-dashboard.yaml` — unit list, state, links, status wording, `usable`, `approved`, the
+   unit and course process steps it can tell from the journal, `selected`, `unitsNote`, unit words,
+   `footer` — the command of `next`, the "More options" cards, every unit's status line and Notes cell in
+   `## Sessions` and the action lines of step 10. The status wording comes from the check report's outcome
+   line, so a wrong state word is fixed in the report, never in its copies. The rules are tested code
+   (`derive-dashboard.mjs`, `actions.mjs`, `journal-model.mjs`). Its inputs are records of yours: the
+   instructor's approval of a unit's material is a dated decision line written with the approval form
+   (`tasks/quick-fix.md` → Approval after a review, `tasks/coauthor-materials.md` step 7) — a review with
+   fixes alone is no approval; Done ✅ and the report are written by `:validate-course`.
+3. **Words stay yours, button words come from the pack.** Where the script finds your command right it
+   keeps your `title` and `why`. Two choices stay with you: a ✏️ `quick-fix` with its description instead of
+   revising, where every open point is one small change (only you can judge that), and the command of a
+   step that produces a missing item that is not an image. Button words come from the language pack
+   (`templates/i18n/{lang}.json` → `actions`). Where the script lists "Words still to write" (a new command
+   without pack words, a step text that still names the old next action), write them into the draft or the
+   line and run it again. After a course step was saved, quote the button word it lists in the step texts
+   and the chat link.
+4. **The texts of each unit** (yours): `summary` never contradicts the unit's state and does not repeat
+   `usable`, the first line of its card. Fill each step's `why`, `result` (what exists, e.g. "{n} inserted"
+   for the image step) and `next` (what remains, e.g. the `__To do:__` lines of the image entries) from
+   evidence. A generated draft is not instructor approval, and a session PASS is not a course publication
+   PASS. A step that is `done` returns to an earlier state only through a check result (FAIL, concerns);
+   new work of another kind is its own step. A persona review alone never changes the state; a change it
+   leads to makes the unit `review` until the re-check.
+5. **The words of `next`**, when the script keeps your command: an understandable `title` and `why`, and
+   a `label` only where the pack has none (Rules → "next names one step"). Further optional actions go as
+   cards into `explore`.
+6. **Open points (mandatory checklist).** Every `[key]` hint `validate-journal.mjs` prints (e.g. `provisional`,
+   `slug`, `type-name`, `preparation`, `file-structure`, `template-brief`) becomes an item with that key — it
+   rejects a missing one. It also lists the preparations the course frame names; each gets a `prepare` item
+   linking the course frame, or an `internal` note why not. Then re-read the sources for what only a reader
+   finds:
+   - A `## Course Context` summary value that contradicts its technical field.
    - Numbers that disagree between sections (number of units, lessons, minutes).
-   - Session Type slugs that are duplicated (`slug`), or — with several types — a type display name equal to a terminology word (`type-name`).
-   - Preparation tasks for the instructor recorded in a section (equipment, printouts, accounts).
-   - Agenda phases led by the instructor outside the material (opening, closing,
-     one-to-one talks, checklists to print) → `prepare`, with `how`.
-   - A brief under `## Templates` (`### {id} (in development)`) that lacks a required field, has an
-     unknown `__State:__`, or is `ready to test` without its folder `lia-templates/{id}/README.md`
-     (hint `template-brief` of the validation script) → `decide`, key `template-brief-{id}`; `how` says
+   - Preparation tasks recorded in a section (equipment, printouts, accounts), and agenda phases led by
+     the instructor outside the material (opening, closing, one-to-one talks) → `prepare`, with `how`.
+   - A brief under `## Templates` that the validator flags → `decide`, key `template-brief-{id}`; `how` says
      what is missing and who completes it (the brief together with the instructor, the folder through the
-     development assistant). Plain words: German "Vorlage" or "Baustein", never "Template".
-   Never fix foreign sections silently — listing them is this task's job. Every
-   item gets a unique `key` (the hint key printed by the validation script, e.g.
-   `provisional`, `slug`, `type-name`, `preparation`, `file-structure`, `template-brief`; several items for one
-   hint use `{hint}-{topic}`; open priority issues of a persona review use `review-{unit}-{n}`
-   (`decide`), prompt-only images and open `own` image spots `image-{unit}-{slug}` (`prepare`: create
-   the image elsewhere or with `:generate-image` once an image route exists; for `own`: provide the
-   photo)) and a `kind`:
+     development assistant). Plain words: German "Baustein", never "Template" or "Vorlage".
+   Never fix foreign sections silently — listing them is this task's job. Several items for one hint use
+   `{hint}-{topic}`; open priority issues of a persona review use `review-{unit}-{n}` (`decide`), prompt-only
+   images and open `own` image spots `image-{unit}-{slug}` (`prepare`: create the image elsewhere or with
+   `:generate-image` once an image route exists; for `own`: provide the photo). Each item has a `kind`:
    - `decide` — the instructor must decide; `how` says where and how.
    - `prepare` — the instructor must do or get something before using the material; `how` says how.
-   - `internal` — cleanup the agent does itself at the next suitable write (old
-     notes, duplicate slugs). No `how`; rendered collapsed for experts. Resolve it
-     at the next write and mention it in that task's completion message.
-   Titles never repeat the group name. Empty list if there is nothing open.
+   - `internal` — cleanup the agent does itself at the next suitable write. No `how`; rendered collapsed.
+     Resolve it at the next write and mention it in that task's completion message.
+   Empty list if there is nothing open.
 7. Produce the JSON following `templates/project-dashboard.yaml`. No HTML, CSS,
-   JavaScript, progress percentages or duplicated totals — the library derives
-   counts from `units[].state`. Always include the global course `process`, also
-   once units exist — the view offers it as the "whole course" entry next to the
-   units. An empty project uses `units: []` plus that global
-   `process`; it shows no fake 0/1 or invalid percentage.
-8. Keep the `## Dashboard` heading line unchanged and replace the whole JSON block
-   below it **in one write**: write the complete JSON with the file-write tool
-   to `.cache/dashboard.json` and run `node specs/dashboard/write-dashboard.mjs
-   .cache/dashboard.json` (on its own). It checks the data, replaces the whole
-   block in one step and runs the validation of step 9; never edit the block
-   field by field, never with shell heredocs or inline scripts.
-   **Fresh cache:** after each run the script stores `_journalHash` (the hash of
-   the block it wrote) in the cache file. If `.cache/dashboard.json` carries it,
-   change only the keys the triggering write affects — plus every text the
-   re-read of the Rules finds stale — with the edit tool and run the script; it
-   refuses a cache whose hash no longer matches the journal block ("cache
-   stale"). Write the whole draft only when the cache is missing, has no
-   `_journalHash` or was refused. Before a whole draft send a status with its
-   duration (`data/agent-links.md` → Progress feedback). Fill
-   `unitLabel` (`{one, many}`) and `unitsTitle` from `## Course Context` →
-   Terminology in the course language (while `sessions-called` is unset: the
-   course-language word for the template's default unit word, the same word
-   as the `## Sessions` suffix). If the course language is neither
-   German nor English, also fill `labels` with all fixed texts of the library
-   in the course language (keys and placeholders: `specs/dashboard/README.md`
-   → `labels`); otherwise fill only `labels.decide` and `labels.prepare` with
-   the library's built-in group titles of that language, so the chat can name
-   the groups exactly as the page shows them (`data/chat-wording.md` → Name
-   things as the overview does) — plus, only where the course has its own word
-   for the learners, `usable.yes`, `usable.limited`, `usable.no` and
-   `viewMaterial` with that word; never `plan`. Keep the translated suffix of
-   `## Sessions` and `## Agenda` in line with that terminology and update
-   `links` in the same run. Ensure the template import exists once in the header; CSS and
-   JavaScript are owned by the library. Document the template in `## Templates`
-   via the `tasks/manage-templates.md` procedure if it is missing there.
-9. **Validate** with `node specs/dashboard/validate-journal.mjs` (run from the
-   project root, on its own — no pipes or `;`, it prints its own exit code).
-   Exit code 2 means likely contradictions while `decisions` is empty, or a
-   malformed report: fix (step 6) and run it again. Do not use other ad-hoc
-   commands (e.g. `python3 -m json.tool`).
+   JavaScript, progress percentages or duplicated totals. Always include the global
+   course `process`; an empty project uses `units: []` plus that `process`.
+8. Write the JSON with the file-write tool to `.cache/dashboard.json` and run
+   `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` (on its own). It derives (step 2),
+   checks, replaces the whole block and the `## Sessions` lines in one write, lists every field it changed
+   (rewrite a text of yours that contradicts a changed state) and prints the validation of step 9 — never
+   edit the block field by field, never with shell heredocs or inline scripts.
+   `node specs/dashboard/derive-dashboard.mjs --check` shows without writing what no longer matches.
+   **Fresh cache:** if `.cache/dashboard.json` carries `_journalHash`, change only the keys the
+   triggering write affects — plus every text the re-read of the Rules finds stale — and run the script;
+   it refuses a stale cache. Write the whole draft only when the cache is missing, has no `_journalHash`
+   or was refused. Before a whole draft send a status with its duration.
+   **`labels`:** if the course language is neither German nor English, fill all fixed texts of the library
+   (`specs/dashboard/README.md` → `labels`); otherwise only `labels.decide` and `labels.prepare` with the
+   library's built-in group titles of that language, so the chat names the groups as the page shows them —
+   plus, only where the course has its own word for the learners, `usable.yes`, `usable.limited`,
+   `usable.no` and `viewMaterial`; never `plan`. Keep the translated suffix of `## Sessions` and `## Agenda`
+   in line with `## Course Context` → Terminology (the script derives the unit words from it). Ensure the
+   template import exists once in the header; document the template in `## Templates` via the
+   `tasks/manage-templates.md` procedure if it is missing there.
+9. **Validate:** read the `validate-journal.mjs` result `write-dashboard.mjs` prints (or run
+   `node specs/dashboard/validate-journal.mjs` on its own). Exit code 2: fix (step 6) and run again. No
+   other ad-hoc commands (e.g. `python3 -m json.tool`).
    **Older journal layout:** if it names an older journal layout (`{{…}}`
    skeletons in unfilled sections, `#### Validation Report` headings of an older
    template), run `node specs/dashboard/migrate-journal.mjs --check` and show its
@@ -4046,27 +4043,16 @@ Run this task automatically after any task that changes project state:
    lists under "Left for you" is a section filled by hand — name it and propose
    filling or removing that line in the same form. "Not now" → write no
    Dashboard and say that the overview stays at its last state until then.
-10. Refresh the action lines:
-    - For every heading listed in `data/journal-links.md` → Action lines (core `##`
-      sections and every `### {n}. {title}` under `## Sessions`): replace the
-      `<!-- class="journal-actions" -->` paragraph directly below the heading, or
-      insert one there.
-    - Fill it with the commands from that table that fit the current state, with
-      concrete arguments (session number, persona names). Session
-      subsections get exactly one main action; further fitting commands go into
-      the `<details><summary>Technical settings and more actions</summary>` block
-      directly after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`).
-      Exception: once the material exists, the action line also carries the learners' view as
-      second link (👁 "How learners see it", translated, `agent:teaching/preview?file={n}`) — never
-      only inside the `<details>` block; when the main action already is that preview, once.
-    - Leave a line that already says the right thing untouched. When several
-      lines change at once (a language switch, a new unit word), put all of them
-      into one `localize-journal.mjs` map (`data/chat-language.md` → Language
-      before the frame) instead of one edit per line — every write reloads the
-      preview.
-    - If an action line ended up below a `#### Validation Report`,
-      `#### Persona Reviews`, or `#### Images` block, move it back directly below
-      the `###` heading.
+10. Action lines: lines marked computed in `data/journal-links.md` → Action lines are written by the
+    script. For the other sections listed there:
+    - Replace the `<!-- class="journal-actions" -->` paragraph directly below the heading, or insert one
+      there, with the commands from that table that fit the current state, with concrete arguments.
+      Further commands of a session go into its `<details><summary>Technical settings and more
+      actions</summary>` block directly after the action line (block order:
+      `templates/session-skeleton.yaml` → `section_layout.entry_order`).
+    - Leave a line that already says the right thing untouched. Several line changes at once (a language
+      switch, a new unit word) go into one `localize-journal.mjs` map instead of one edit per line.
+    - If an action line ended up below a `####` block, move it back directly below the `###` heading.
     - Touch nothing else in source sections. This task writes only:
       1. the action lines, and the further commands inside the sessions'
          "Technical settings and more actions" blocks — never their Type or Method lines;
@@ -4075,9 +4061,8 @@ Run this task automatically after any task that changes project state:
       3. the dashboard template `import:` line in the main header, once (step 8);
       4. the `## Templates` entry of the dashboard template, via `tasks/manage-templates.md`
          and only if it is missing (step 8);
-      5. the layout changes of `migrate-journal.mjs`, only after the instructor's
-         "Update" (step 9);
-      6. the one-line note under `## Sessions`, which follows the state (Rules → "The one-line note under `## Sessions`").
+      5. the layout changes of `migrate-journal.mjs`, only after the instructor's "Update" (step 9);
+      6. the one-line note under `## Sessions`, status lines and Notes cells — all through `write-dashboard.mjs` (computed, `actions.mjs` → `sessionsNote`, `journal-model.mjs` → `statusText`).
 11. Confirm the dashboard was updated only after step 9 passed, and name the next
     recommended command. If the MCP gate is open (`data/agent-links.md`), `goto` the
     Dashboard slide, check with `get_state`, and post the next action as an
@@ -4089,130 +4074,73 @@ Run this task automatically after any task that changes project state:
 - All facts and workflow decisions come from source sections, never from the dashboard.
   If dashboard and source sections disagree, trust the source and regenerate.
 - Never ask the instructor to update the dashboard manually.
-- Links only for commands that exist in an agent's `commands:` map and fit the
-  current state — never `exit`, never a command whose prerequisites are missing.
-  Every `agent:` link in the data carries its readable `command`.
-- The layout is owned by the library in `specs/dashboard/`. Changes to the
-  appearance belong there; never invent a new layout per update and never add
-  HTML, CSS, tables or a Mermaid map to `## Dashboard`.
-- Keep one data set for the composed view; do not repeat numeric progress in the
-  subtitle — describe the state in words. Texts that mention open points
-  (`subtitle`, `next`, `why`) name them by their titles, not by a count; a count,
-  if any, counts exactly the items of the group it names.
-- Write all visible texts in the course language (`## Course Context` →
-  Language; while that is still empty, the header's `language:`) and address
-  the instructor as `## Course Context` → `Instructor Address` says (while
-  empty: the formal form of that language). For the empty project keep the
-  meaning of the template texts and translate them, including a real date in
-  `footer` instead of a placeholder. `Person` is the learners' address in the material
-  and is never used for dashboard texts.
+- Links only for commands that fit the current state — never `exit`, never a command whose prerequisites
+  are missing. `validate-journal.mjs` rejects a command that is not in the agent's `commands:` map. Every
+  `agent:` link in the data carries its readable `command`.
+- The layout is owned by the library in `specs/dashboard/`; never add HTML, CSS, tables or a Mermaid map
+  to `## Dashboard`.
+- Do not repeat numeric progress in the subtitle — describe the state in words. Texts that mention open
+  points (`subtitle`, `next`, `why`) name them by their titles, not by a count; a count, if any, counts
+  exactly the items of the group it names.
+- Write all visible texts in the course language (`## Course Context` → Language; while empty, the header's
+  `language:`) and address the instructor as `Instructor Address` says (while empty: the formal form of
+  that language). For the empty project keep the meaning of the template texts and translate them.
+  `Person` is the learners' address in the material, never used for dashboard texts.
 - **One ranking of the three measures:** (1) usable with learners now (`usable`, from the
   check report) — the first line of the card and the first thing a text about the unit
   says; (2) open points (`statusLabel`, counting the points still open); (3) process
   steps (the step counter). Status words never discourage a unit that is usable: no
-  "nothing finished" in `subtitle`, `summary` or `why` while a unit is usable — the
-  library's progress line then names it ("Fully checked: none yet · Usable now: …").
-- **How the learners see it:** every unit with material (Material ✅) has `view`, and
-  its action line the 👁 preview link (step 10); `validate-journal.mjs` warns without
-  either. The planning link (`href`) is always named "See planning" by the library
-  (translated) — never set `labels.plan` in German or English, never a label that
-  hides the target ("To unit 1").
-- Plain language for the instructor: no command names, slugs, file names or
-  section keys in `title`, `subtitle`, `why`, `label` or `description` — those
-  belong only in `command` and `href`.
-- Use the terminology from `## Course Context` → `__Terminology:__`
-  (`sessions-called`) for `unitsTitle` and all unit wording.
-- **`next` names one step.** `next.title` is exactly the title of the step it advances, as the process panel shows it: when `next` belongs to a unit, that unit's current step plus the unit ("Insert images – unit 1", translated) — the course step stays visible in the course process, never in `next.title`; otherwise the current course step. `next.label` is the same step as an action with the same key noun (title "Outline and learning objectives" → button "Create outline"; "Insert images – unit 1" → "Insert images for unit 1"). Name each unit step by its result ("Plan the unit" for the planning sketch); the step, `next`, the unit's action line and chat offers use the same words. A command that serves another purpose in the same unit (images after the text) gets its own step (step 4) — never a new label for an existing step.
+  "nothing finished" in `subtitle`, `summary` or `why` while a unit is usable.
+- Plain language for the instructor: no command names, slugs, file names or section keys in `title`,
+  `subtitle`, `why`, `label` or `description` — those belong only in `command` and `href`. Unit wording
+  follows `## Course Context` → `__Terminology:__` (`sessions-called`).
+- **`next` names one step.** When you write its words, `next.title` is exactly the title of the step it advances, as the process panel shows it: for a unit, that unit's current step plus the unit ("Insert images – unit 1", translated); otherwise the current course step. `next.label` is the same step as an action with the same key noun (title "Outline and learning objectives" → button "Create outline"). Name each unit step by its result ("Plan the unit" for the planning sketch); the step, `next`, the unit's action line and chat offers use the same words. A command that serves another purpose in the same unit (images after the text) gets its own step — never a new label for an existing step.
 - `process.steps[].result` states what exists, without a leading status word (the library adds its own label), and only what holds for every item.
-- The one-line note under `## Sessions` follows the state: (1) before the agenda: the template note; (2) agenda saved, no unit yet: the units are planned in the schedule and are created one after another, starting with unit 1; (3) some created: "{n} of {N} created; the next follows after the material of unit {n}" (translated, with the unit word); (4) all created: no note. Written in the same pass as the action line.
-- `explore` items never use the icon of `next`: optional actions use ➕ or the icon of their agent, so exactly one ▶️ button stands for the next step.
-- The JSON block is only ever written through `specs/dashboard/write-dashboard.mjs` (step 8) — one write, never field by field.
 - Exactly one definition of "finished" per project, stated once in
   `process.note` (finished = validation PASS and Done ✅). Process-step `why`
   texts never define "finished". On every run re-read all existing texts of
   the data (`why`, `note`, `summary`, `subtitle`, and `result`/`next` of every
   step) against the current rules **and the current state**, and rewrite
   contradicting or stale ones — e.g. a `why` that says a task "cannot be
-  solved without the images" after those images were inserted. Refresh `why`
-  and `result` of every step the triggering write touched. The previous block
+  solved without the images" after those images were inserted. The previous block
   is not a template: a fresh cache (step 8) saves rewriting unchanged keys,
   never this check.
 - Use "finished/done" only for units whose check passed without an open ⏳ item (Done ✅) and that are approved. Instructor approval is "approved", never "finished" — in process steps, `why` texts and `note`.
 - Keep the global process steps stable from the empty journal on: the agenda step
   is listed as `optional` until `Agenda required` is set, then `planned` (yes) or
-  removed with a `note` (no). The last step, publishing, stays `optional` until the
-  publishing gate is PASS, then `planned`, and `done` once `## Publishing` →
-  `__State:__` starts with `published` (an English key, never translated). Never let the number of steps change without a `note`.
-- **Template step:** the global step "Templates for activities" (translated, German "Vorlagen für
-  Aktivitäten" — never "Template" in a German text for the instructor) stands between the didactics and
-  the agenda and is counted. Its state comes from `## Templates` (the line that starts with
-  `## Templates`, layout `templates/course-templates.yaml`) — the line `__Template selection:__`
-  (missing = `open`) and the briefs `### {id} (in development)`:
-  1. `planned` while `## Didactics` is not saved.
-  2. Didactics saved, selection `open` and no brief: the step is `current` and the `next` of the course
-     (`agent:teaching/suggest-templates`, command `:suggest-templates`, label "Suggest templates",
-     translated). Once the agenda is saved or a unit is being worked on, `next` stays with them and the
-     suggestion goes into `explore` (icon ➕) — also in an existing journal whose selection line is
-     missing, and also when the previous Dashboard's `next` was the agenda: a missing selection line
-     never takes `next` away from work in progress (`validate-journal.mjs` warns once the agenda is saved or a
-     unit is being worked on).
-  3. A brief not yet adopted exists — whatever the selection value (`open`, or a `done – …` that does
-     not name it) — and takes precedence over 2: `current`, `result` by the briefs' `__State:__` —
-     "{n} in development" (translated, German "{n} in Entwicklung") for `brief` and `in development`,
-     "{n} ready to test" (German "{n} bereit zum Ausprobieren") for `ready to test`, both joined with
-     " · " when both occur (`validate-journal.mjs` warns about "in development" once every open brief is
-     ready to test) — and `next` by the brief's `__State:__` — `brief` or
-     `in development` → `agent:development/develop-template?id={id}` (command `:agent development` →
-     `:develop-template {id}`), `ready to test` → `agent:teaching/manage-templates?name={id}` (command
-     `:manage-templates {id}`, "Try and adopt", translated). With several briefs the first one in the
-     section. The brief takes `next` only when no unit is being worked on or the unit being worked on is
-     named in its `__Used in:__` (by number, by range such as "2–4", or as all units); otherwise `next` stays with that unit and the brief's action
-     (`:develop-template {id}` or `:manage-templates {id}`) goes into `explore` (icon ➕) — the step stays
-     `current` (`validate-journal.mjs` warns). The agenda and the units do not wait for a brief: the agenda step keeps the state it has
-     without the brief (`planned`, `current` while it is being created, `done` once saved), its button
-     stays in the `## Agenda` action line, and while `next` is the brief `:create-agenda` (or the
-     next unit's action) is an `explore` card (icon ➕); the units keep their actions in their
-     action lines.
-  4. Selection `done – …` (ids or `none needed`) without an open brief: `done`, `result` = the names of
-     the adopted entries as `## Templates` shows them — every entry except `### Dashboard`, also one
-     without `__Catalog id:__`; "none needed" (translated) only when there is no such entry.
+  removed with a `note` (no). The last step, publishing, is `planned` with its label when the course frame
+  says learners open the course by link or platform (`Delivery:`, computed), otherwise `optional` until the
+  publishing gate is PASS; `done` once `## Publishing` → `__State:__`
+  starts with `published` (an English key, never translated). Its `why` never contradicts its state; where
+  the link will live (a public page or the school's platform) is a `decide` item before the course check
+  when the frame does not say it. Never let the number of steps change without a `note`.
+- **Template step:** the global step "Templates for activities" (translated, German "Bausteine für
+  Aktivitäten" — never "Template" and never "Vorlage" in a German text for the instructor; to teachers
+  „Vorlage“ means a photocopy master) stands between the didactics and the agenda and is counted. Its
+  state, `next` and cards are computed from `## Templates` (`__Template selection:__`, missing = `open`, and
+  the briefs `### {id} (in development)`); the agenda step keeps the state it has without a brief. Yours:
+  - `result` while a brief is not adopted, by its `__State:__`: "{n} in development" (translated, German
+    "{n} in Entwicklung") for `brief` and `in development`, "{n} ready to test" (German "{n} bereit zum
+    Ausprobieren") for `ready to test`, joined with " · " when both occur.
+  - Selection `done – …` without an open brief: `result` = the names of the adopted entries as
+    `## Templates` shows them — every entry except `### Dashboard`; "none needed" (translated) only when
+    there is no such entry.
   **Existing journals:** a Dashboard whose `process.steps` lack this step gets it at the next run,
-  directly after the didactics step, in the state above (a missing selection line is `open`, but rule 2
-  keeps `next` with an agenda or unit in progress), and `process.note` gets one appended sentence
-  (e.g. "New: the step “Templates for activities” – ready-made building blocks for activities, or your
-  own.", translated); the definition of "finished" in the note stays as it is.
+  directly after the didactics step, and `process.note` gets one appended sentence (e.g. "New: the step
+  “Templates for activities” – ready-made building blocks for activities, or your own.", translated); the
+  definition of "finished" in the note stays as it is.
 - `plan` (provisional planning) only while Outline/Didactics assign content to
-  lessons and no `## Agenda` exists yet. As soon as the agenda is confirmed, every
-  agenda row is a unit (`planned`, progress 0 of N) — even before `## Sessions`
-  has it — and `plan` is removed. A unit without skeleton is offered only
-  commands that create it: `create-session`, and — once one unit has been worked
-  out together and approved — `build-session?number={n}` (its step 0 creates
-  the skeleton).
-- Next step for the first unit: create its skeleton, then work it out together
-  with `coauthor-materials`. Offer `build-session` (automatic loop) only after one
-  unit has been worked out together and approved. From then on the next unit
-  without skeleton gets **two** actions: "plan together" (`create-session`) and
-  "let it be prepared after a short sketch" (`build-session?number={n}`, which
-  asks for the same start confirmation as in the chat) — one as `next`, the
-  other in `explore` (icon ➕), and both in the `## Sessions` action line; its
-  first step's `next` names both ways. A previous unit that is not yet checked
-  does not hold this offer back.
-- Each unit with a skeleton gets `href` to its `### {n}. {title}` subsection in
-  `## Sessions` (anchor of the heading, see below).
+  lessons and no `## Agenda` exists yet; once the agenda is confirmed every agenda
+  row is a unit and `plan` is removed.
 - **Anchors (LiaScript):** an anchor is the full heading text in lower case,
   spaces and "-" collapsed to single "-", **punctuation kept** ("." "?" "–" ":").
   Examples: `## Outline – Learning goals` → `#outline-–-learning-goals`;
   `### 3. Why do leaves fall?` → `#3.-why-do-leaves-fall?`; a unit's check
   report `#### Validation report – Unit 2` → `#validation-report-–-unit-2`.
-  Report headings are unique per unit (`templates/session-validation.yaml`), and
-  every link that names a check report (a decision's `href`, an action) targets
-  that report's anchor, never the unit heading. An unknown anchor
-  silently opens slide 1, a bare slide number (`#10`) breaks when slides are
-  added — use neither. Link only headings outside HTML blocks: a heading inside a
-  `<section>` block (e.g. an agent subsection under `## Agents`) is no slide —
-  link its enclosing `##` heading and name the subsection in the text.
+  Every link that names a check report (a decision's `href`, an action) targets
+  that report's anchor, never the unit heading. Link only headings outside HTML blocks: a heading inside a
+  `<section>` block is no slide — link its enclosing `##` heading and name the subsection in the text.
   `validate-journal.mjs` checks every `#` link.
-- Section links in `links` use the anchor of the current heading line.
 - Publishing remains gated by `## Validation` → `### Latest Validation Summary`:
   `Mode: course` and `Result: PASS`.
 - Keep `## Dashboard` near the top of `journal.md`, directly after the course title.
@@ -4333,7 +4261,7 @@ Each session has at most one current validation report, rendered from `templates
 Rules:
 - Store the report under the matching `### {number}. {title}` session subsection.
 - The report heading is in the course language and unique per unit: `#### {"Validation report", translated} – {unit word} {number}`, with `<section data-key="validation-report">` directly below it (`templates/session-validation.yaml` → `layout`). Tasks find the report by that key; where a task says `#### Validation Report`, it means this block. In older journals a heading that starts with `#### Validation Report` is the same report: replace it with the new heading at its place in the entry order.
-- The report heading stands outside; everything below it is wrapped in a single `<section data-key="validation-report">…</section>` block (same technique as `#### Images` in `tasks/create-image.md`), so LiaScript shows it as one slide — see `data/liascript-cheat-sheet.md` → "Additional Rule: Subheadings within a Slide". Inside the report, findings use **bold labels**, never `#####` headings; the technical part sits in `<details>` below a visible plain-language summary (template `layout`).
+- The report heading stands outside; everything below it is wrapped in one `<section data-key="validation-report">` block, findings as **bold labels**, the technical part in `<details>` below the visible summary (template `layout`); `validate-journal.mjs` rejects other forms.
 - If the session already has a validation report, replace it completely (also its heading and position).
 - Every link that names a check report — a decision's `href`, an action, a chat message — targets that report's heading anchor (`tasks/update-dashboard.md` → Anchors), never the unit heading; the completion message of a check links it.
 - Do not keep historical session validation reports.
@@ -4385,7 +4313,7 @@ Rules:
 4b. **Fix during the check** (session mode; not when called from `:build-session`, whose loop fixes mechanical items): before setting the result, offer in **one** chat confirmation to fix every `[mechanical]` finding that needs no content decision (one targeted change each, `tasks/quick-fix.md` steps 2–3, all in one material write; then `check-material` again). Fixed items no longer count (result rule 0) and are listed as fixed during the check. One round, no loop; declined or not cleanly fixed items count as found.
 5. Fill `templates/session-validation.yaml` for this session with:
    - Material path
-   - The visible outcome words and the mandatory line "usable with learners now" (template `outcome_words`) — "correction needed ({n})", never a grade word such as "failed"
+   - The visible outcome words and the mandatory line "usable with learners now" (template `outcome_words`)
    - Result: PASS / FAIL / PASS with concerns — apply `result_rules` of the template in their order (deferrals ⏳ decided in the first run; other ❌ on required/mechanical → FAIL; open pedagogical ❌ → PASS with concerns; otherwise PASS). Publishing metadata (contact address, license) is never a finding of a unit check — the publishing gate checks it.
    - Mode: session
    - Date
@@ -4399,14 +4327,15 @@ Rules:
    - The visible plain-language summary (`**Outcome:**`, usable with learners now, what works, what is still missing) above the technical `<details>`, as the template's `layout` describes
    - The field `Unit entry (journal)` (step 4)
 6. Create or replace the rendered report — heading plus `<section data-key="validation-report">…</section>` (see Validation Storage rules above) — in the matching session subsection under `journal.md` → `## Sessions`, after the skeleton fields and before `#### Images` (`templates/session-skeleton.yaml` → `section_layout.entry_order`).
-   Update the overview table in `## Sessions`: set **Done ✅** only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item; otherwise set Done ❌ — also when it was ✅ before. Rewrite the unit's status line in the same write (`templates/session-skeleton.yaml` → `section_layout.overview`).
-   Right after this write send "✅ Saved: …" with the outcome and the line "usable with learners now" in one line each, plus the anchor link to the report — never hold the result back until the overview is written. Details follow in step 7.
+   Update the overview table in `## Sessions`: set **Done ✅** only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item; otherwise set Done ❌ — also when it was ✅ before. The status line follows the report (computed).
+   Right after this write send "✅ Saved: …" with the outcome and the line "usable with learners now" as two paragraphs (a blank line between them — a single line break becomes a space in the chat), plus the anchor link to the report — never hold the result back until the overview is written. Details follow in step 7.
    Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
-   A check announced at more than 3 minutes sends one lasting interim message at about half time (`data/agent-links.md` → Progress feedback).
 7. **Chat summary:** name every ❌, every ⏳ with its step, every `[pedagogical]` finding (also those you consider minor) and every `[advisory]` hint in plain words. Never write "everything else is fine" while the report lists open points; a checklist item is never downgraded to a "hint".
    If no issues found: confirm "Session {number} ({type}) — ✅ Syntax and content verified." with the anchor link to the report heading, and offer `:try-as-learner {number}` once (only when the MCP gate is open).
+   **Only own photos left** (PASS, the only ⏳ items are pictures the instructor supplies): the approval does not wait for them. After the result, ask once in a form "Do you approve {unit} {n} – your photo can follow later?" (translated) with "Approve", "Look at it first" (👁 the learners' view) and "Later". "Approve" records `- **{date}:** material approved` (translated) in the session's decisions list — one write, then `write-dashboard`.
 8. If issues found: confirm the report was saved, list the blockers briefly, and offer the fix: when every open point is one `:quick-fix` covers (one change each, no content decision), offer ✏️ `:quick-fix {number}` with its description; otherwise `:coauthor-materials {number}` (`data/journal-links.md` → Action lines).
-   With **PASS with concerns**: go through the concerns one at a time, as at the Publishing Gate — fix it now (`:quick-fix`, or `:coauthor-materials {number}`) or accept it as is with a short reason — for this unit (a dated entry in the session's decisions list) or, if the same concern applies to every unit, for the whole course (one `:save-decision`); listed in the save summary. A concern whose acceptance would contradict `## Course Context` (e.g. a special need of the target group, such as read-aloud for a learner with dyslexia) is named as such and needs its own explicit confirmation. Then, if something was fixed, the short re-check of the changed area (`tasks/quick-fix.md` → Change path); if every concern was accepted, the outcome becomes PASS without a new check. When called from `:build-session`, do not ask — return the result to the caller, whose loop decides.
+   With **PASS with concerns**: go through the concerns one at a time, as at the Publishing Gate — fix it now (`:quick-fix`, or `:coauthor-materials {number}`) or accept it as is with a short reason — for this unit (a dated entry in the session's decisions list) or, if the same concern applies to every unit, for the whole course (one `:save-decision`); listed in the save summary. A concern whose acceptance would contradict `## Course Context` (e.g. a special need of the target group, such as read-aloud for a learner with dyslexia) is named as such and needs its own explicit confirmation. Then, if something was fixed, the short re-check of the changed area (`tasks/quick-fix.md` → Change path) inside this run: its dated line ends with "· re-checked: {how}" (`terms.recheckDone`, translated) and the outcome line gets no "short re-check open" — the check is complete; if every concern was accepted, the outcome becomes PASS without a new check. When called from `:build-session`, do not ask — return the result to the caller, whose loop decides.
+   **A concern that waits for the instructor** ("I'll decide once I've looked at it on the tablet", translated) is no decision yet: keep it under the report's open items as `- ⏸ {concern} – {what the instructor will do first}` and add the look as a preparation item. When the instructor comes back to it, remove the ⏸ and decide it as above. Only the check result words come from this task: another assistant never announces them ("it will then say 'passed – …'"), and only a check names the unit's check time.
 
 ---
 
@@ -4436,14 +4365,14 @@ Rules:
 
 6. **Check Session Progress:**
    - Load `journal.md` → `## Sessions` as primary source
-   - Confirm the overview appears directly below `## Sessions` (status list, then the technical table in `<details>`, `templates/session-skeleton.yaml` → `section_layout.overview`) and every status line matches its table row
+   - Confirm the overview appears directly below `## Sessions` (status list, then the technical table in `<details>`) and `validate-journal.mjs` reports no error or warning on `## Sessions` — those are findings
    - All expected sessions have a row in the overview table (expected: the agenda's rows; without an agenda the number in `## Course Context` → Units, else the Outline's Session Overview)
    - Cross-check: every ✅ Skeleton row has a matching `### {number}. {title}` subsection in `journal.md` → `## Sessions`
-   - Cross-check: every ✅ Material row has its material document present — a file in `materials/{number}-{slug}/README.md` in multi-file mode, or a matching `##` chapter in root `/README.md` in single-file mode (see `data/file-structure-modes.md`)
+   - Cross-check: every ✅ Material row has its material document (`validate-journal.mjs` reports a missing one)
    - All sessions marked ✅ Done `[required before publishing]`
 
 7. **Check each material document** (same LiaScript + content checks as Session Mode Step 4).
-   For each material file, fill `templates/session-validation.yaml` with `Mode: course` and create or replace the matching validation report — heading plus `<section data-key="validation-report">…</section>` at its place in the entry order (see Validation Storage rules above) — in that session subsection under `journal.md` → `## Sessions`. Then set Done in the overview table exactly as in session mode step 6 — in both directions: a unit whose report no longer passes, or has an open ⏳ item, goes back to Done ❌ — and rewrite its status line (`templates/session-skeleton.yaml` → `section_layout.overview`).
+   For each material file, fill `templates/session-validation.yaml` with `Mode: course` and create or replace the matching validation report — heading plus `<section data-key="validation-report">…</section>` at its place in the entry order (see Validation Storage rules above) — in that session subsection under `journal.md` → `## Sessions`. Then set Done in the overview table exactly as in session mode step 6 — in both directions: a unit whose report no longer passes, or has an open ⏳ item, goes back to Done ❌.
 
 8. **Consistency check across project memory and materials:**
    - Terminology consistent (sessions-called from `journal.md` → `## Course Context` used throughout)
@@ -4734,7 +4663,7 @@ template:
        * the units table, preceded by `<!-- data-type="none" -->`, at most 5 columns in this order:
          No. · Title (mandatory/optional) · Time · Kind (display name from Session Types) · Objectives;
          No. as plain digits (`| 1 |`, never `1.` or `1\.`), the same in the technical table
-    3. `<details><summary>{"Settings for the assistant – nothing to read here", translated}</summary>` with a technical
+    3. `<details><summary>{"Technical settings (for the assistant only)", translated}</summary>` with a technical
        table (No. · type slug · method slug · material path), then `</details>`. Omit the method column
        when every unit uses the default method; say so in one sentence instead.
     Use only keys defined below; do not invent new keys.
@@ -4780,7 +4709,7 @@ template:
     2. The confirmed summary table from the chat, word for word, with labels in the course language and no slugs
        (header row "| Item | Decided |", translated), preceded by the line `<!-- data-type="none" -->`
        so LiaScript does not offer charts or sorting.
-    3. `<details><summary>{"Settings for the assistant – nothing to read here", translated}</summary>` containing all
+    3. `<details><summary>{"Technical settings for the assistant", translated}</summary>` containing all
        `* __Label:__` blocks below (keys stay English so tasks can read them), then `</details>`.
     The table and the technical block must say the same; if they would differ, ask the instructor before saving.
     Never store notes about the instructor's computer or preview browser (e.g. missing voices) — they are not course facts.
@@ -4805,6 +4734,7 @@ template:
           3. Pacing: [scheduled | learner-driven | event-based | n/a]
           4. Assessment defaults: [one or more of quizzes, self-check quizzes, reflection, group work, assignments — or none; may be marked optional]
           5. Units: [count × length, if known — e.g. 3 × 45 min; read by `:create-agenda` and the duration check]
+          6. Delivery: [link | platform | print | local] — how learners open the material (the summary row "open the material"); link or platform makes publishing a required step of the overview (computed)
 
     - id: file-structure
       title: File Structure
@@ -4867,7 +4797,7 @@ template:
        * `difficulty` — in teacher words
        * `voice-sample` — as a quote ("voice sample", translated)
        Short paragraphs or lists, at most about 3 sentences per item.
-    3. `<details><summary>{"Settings for the assistant – nothing to read here", translated}</summary>` with the machine fields
+    3. `<details><summary>{"Technical settings (for the assistant only)", translated}</summary>` with the machine fields
        (`Teaching Style`, `Course Type` copied from Course Context, `Didactic Framework`, `Default Session Method`,
        `Session Types` with slugs, `Difficulty Level`), then `</details>`.
     Session Type slugs: lowercase ASCII words in the course language, unique; they appear only in technical
@@ -4961,7 +4891,8 @@ template:
     - Escape a number at the start of a line that is not a list item (`3\. grade` → write `3\.`),
       otherwise Markdown turns it into a numbered list.
     - Objectives as a numbered list; under each objective, the observable step and the basic /
-      extension levels as an indented sub-list with labels in the course language (never one run-on
+      extension levels as an indented sub-list with everyday labels in the course language, never a
+      school stage word (`tasks/create-outline.md` step 5; never one run-on
       paragraph); the session → objective → self-check overview as a list or a table with at most
       3 columns.
   sections:
@@ -5133,7 +5064,7 @@ import: ./specs/dashboard/README.md
 
 # New course
 
-This is where your course plan grows. You bring your teaching idea; the assistant in the chat helps you turn it into learning objectives, activities and finished material. You check every proposal and decide what is kept. **Nothing is saved without your confirmation.**
+This is where your course plan grows. You bring your teaching idea; the assistant in the chat helps you turn it into learning objectives, activities and finished material. You check every proposal and decide what is kept. **Nothing in your plan or material changes without your confirmation; the assistant keeps the overview up to date itself.**
 
 <!-- class="journal-start" -->
 [Open the overview →](#dashboard)
@@ -5162,7 +5093,7 @@ This is where your course plan grows. You bring your teaching idea; the assistan
       {"title": "Set the frame", "state": "current", "why": "Topic, target group, format and language shape everything that follows.", "next": "Click “Start course” and answer the questions."},
       {"title": "Outline and learning objectives", "state": "planned", "why": "Clear objectives say what learners can do at the end."},
       {"title": "Didactics", "state": "planned", "why": "Methods, task formats and support that fit the objectives."},
-      {"title": "Templates for activities", "state": "planned", "why": "Ready-made building blocks such as turtle Python or SQL – or your own if nothing fits."},
+      {"title": "Templates for activities", "state": "planned", "why": "Ready-made building blocks such as a drawing board or a map – or your own if nothing fits."},
       {"title": "Agenda", "state": "optional", "why": "Decided with the frame: order and duration of the units."},
       {"title": "Create material", "state": "planned", "why": "Explanations, tasks and self-checks grow out of the planning."},
       {"title": "Check and revise", "state": "planned", "why": "Clarity and fit to the objectives are checked before the material is used."},
@@ -5593,16 +5524,16 @@ template:
     input: json-code-block
   notes:
     - 'Derived state only; source sections remain authoritative.'
+    - 'Fields marked (computed) are set by `write-dashboard.mjs` from the journal (`tasks/update-dashboard.md` step 2) – write the texts, not these.'
     - 'units[].state determines progress and totals; no separate counters.'
     - 'Exactly one highlighted next action, with why.'
     - 'A draft or a pending review never counts as done.'
     - 'With zero units show a global process and an honest empty state.'
     - 'Keep the global process once units exist: the view offers it as a "whole course" entry above the units, so the instructor can switch between course and unit view.'
-    - 'Every unit gets the same material steps from the start: a unit not yet started has all steps `planned` (its first step''s `next` says when it is due); `validate-journal.mjs` reports units without `process.steps` as soon as another unit has them.'
+    - 'Every unit gets the same material steps from the start (computed); a unit not yet started has all steps `planned`, its first step''s `next` says when it is due.'
     - 'Course counter and unit cards count only required steps; a step in state `optional` (e.g. publishing) is an offer and is not counted.'
-    - 'A unit whose subsection exists has begun: give it the state that matches its work (e.g. `current`) or a `statusLabel`; `validate-journal.mjs` warns about `href` with `planned` and no `statusLabel`. The library itself shows a still `planned` unit with a done required step as "Started" (`state.started`), and derives progress sentences and the material partial count from the unit steps — no extra fields.'
-    - 'One ranking of the three measures of a unit: (1) `usable` — usable with learners now, from the check report, the first line of the card; (2) open points — the `statusLabel`, counting the points still open; (3) process steps — the counter. A unit that is usable never reads as "nothing finished": while no unit is done, the progress line names the usable ones ("Fully checked: none yet · Usable now: unit 2 (with limits)").'
-    - 'Every unit with material gets `view`, its own 👁 button for the material as the learners see it (`validate-journal.mjs` warns without it). The planning link (`href`) is always named by the library ("See planning", translated) — never renamed, never the only way to the material.'
+    - 'One ranking of the three measures of a unit: (1) `usable`, (2) open points (`statusLabel`), (3) process steps — `tasks/update-dashboard.md` → Rules.'
+    - 'Every unit with material gets `view` (computed), its own 👁 button for the material as the learners see it. The planning link (`href`) keeps the library''s name ("See planning") — never `labels.plan`.'
     - '`agent:` links additionally need `command` as the readable command, see `data/agent-links.md`.'
     - 'No hand-written HTML, CSS, JavaScript, tables or Mermaid — the layout belongs to `dashboard/`.'
     - 'Visible texts in the course language (`## Course Context` → Language); commands and URIs stay in English.'
@@ -5611,17 +5542,18 @@ template:
     context: 'Target group and time frame'
     subtitle: 'Current state of work in plain words; no repeated counters'
     notice: 'Optional: provisional sample data or pending decisions'
-    unitsTitle: 'Label from `## Course Context` → Terminology (sessions-called)'
-    unitLabel: '{one, many}: the word for one unit and for several, in the course language, from `## Course Context` → Terminology (sessions-called) — used in the progress line "1 of 4 …"; `many` in the form that follows "of" (German: dative plural after "von", e.g. `{"one": "Modul", "many": "Modulen"}`)'
+    unitsTitle: '(computed) from Terminology and the `## Sessions` suffix'
+    unitsNote: '(computed) the one-line note under `## Sessions`, shown above the units'
+    unitLabel: '(computed) {one, many} from Terminology and the `## Sessions` suffix; an inflected `many` you write (German dative after "von": "Modulen") stays while it starts with the suffix'
     labels: 'For German or English only `decide` and `prepare` (and, where the course has its own word for the learners, `usable.*` and `viewMaterial` — `tasks/update-dashboard.md` step 8); when the course language is neither German nor English: every fixed text of the library translated, keyed as listed in `specs/dashboard/README.md` → `labels`; counted texts as {one, many} with the placeholders listed there. Never `plan` in German or English (the planning link keeps its name)'
     units:
-      - id: 'Stable number from Sessions / Agenda'
+      - id: '(computed) Stable number from Sessions / Agenda'
         title: 'Unit title'
-        state: 'planned | current | draft | review | revision | done'
+        state: '(computed) planned | current | draft | review | revision | done'
         summary: 'Short, verifiable state; does not repeat `usable`'
-        usable: 'Once a check report exists: {state: yes | limited | no, missing: [what is still missing, short noun phrases such as "1 photo", "short re-check"]} — the report''s line "usable with learners now" (yes · yes, with limits · not yet); `missing` is required unless `yes`'
-        href: 'Anchor of the `### {n}. {title}` subsection, once a skeleton exists; the library names this link "See planning" (translated)'
-        view: 'Once the material exists: {href: "agent:teaching/preview?file={n}", command: ":preview {n}", label?} — the material as the learners see it; default label "How learners see it" (translated); `label` only to use the course''s word for learners'
+        usable: 'Once a check report exists: {state: yes | limited | no, missing: [short noun phrases]} from the report''s line "usable with learners now" (computed)'
+        href: '(computed) anchor of the `### {n}. {title}` subsection'
+        view: 'Once the material exists: {href: "agent:teaching/preview?file={n}", command: ":preview {n}", label?} (computed; `label` only for the course''s word for learners)'
         process:  # same steps for every unit, also for units not yet started (all `planned`)
           title: 'Unit title'
           steps:
@@ -5632,7 +5564,7 @@ template:
               next: 'Optional: what to do next'
               statusLabel: 'Optional: plain-language refinement of the state'
           note: 'Optional: loops back or special cases'
-    selected: 'Optional: id of the recommended unit; empty string "" opens the whole-course view'
+    selected: '(computed while next is a unit action; "" keeps the whole-course view) Optional: id of the recommended unit; empty string "" opens the whole-course view'
     process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`)'
     next:
       icon: 'Action symbol as in Markdown labels (`▶️` run, `✏️` revise, `🔍` check, `👁` preview, `🚀` publish only, agent icon for a switch); default `▶️`'
@@ -5643,9 +5575,9 @@ template:
       command: 'Readable command; required for `agent:` links'
     decisions: 'Open points: list of {key, kind: decide|prepare|internal, title, why?, how (required unless internal), href?, command?, label?, icon?, source?}; `source: {check: n, date?}` marks a point that comes from the check of unit n (its `href` then links that report heading, `validate-journal.mjs` checks both); `label` is required when `href` is set and names the destination (e.g. "See outline"), never the question; a section anchor (`#…`) is shown as a plain text link, only an `agent:` link becomes a button'
     plan: 'Provisional planning {title?, note, rows: [{label, text}]} — only while no agenda exists'
-    explore: 'Optional action cards with icon/title/description/label/href/command; icon is shown in the button, same symbols as `next.icon` but never the icon of `next` (default `▶️` for `agent:` links), so exactly one button stands for the next step'
-    links: 'Section links with label/href (full heading slug)'
-    footer: 'Date of the derived state'
+    explore: 'Optional action cards with icon/title/description/label/href/command; optional actions use ➕ or their agent''s icon, never the icon of `next` (`validate-journal.mjs` checks it)'
+    links: '(computed anchors and labels of the listed sections) Section links with label/href (full heading slug)'
+    footer: 'Computed: "As of {date}" from the pack'
   sections:
     - id: dashboard
       title: Dashboard
@@ -5721,18 +5653,10 @@ template:
       overview: >-
         Directly below `## Sessions`, in this order:
         (1) a visible status list in the course language, one numbered line per unit in session order,
-        `{n}. {title} – {status}` with status "planning sketch ✅ · material open" (the fixed word for skeleton, `data/chat-wording.md` → Plain language), "material written · check open"
-        ("material written · images missing" while image spots are open and none is inserted yet, `tasks/create-image.md` → Image spots;
-        "material written · images {n} of {m}" once at least one of the m entries is inserted and others are still open — the count is
-        part of the status word, so a partial state stays visible; never "ready" or
-        "finished" before a check — a language pack lists these under `terms`),
-        "check: correction needed ({n})" (never a grade word such as "failed"; {n} as in the report's outcome),
-        "passed with concerns – your decision needed", "passed – still missing: {what}" or "checked ✅" — once a
-        report exists, the same words as its outcome line (`templates/session-validation.yaml` → `outcome_words`);
-        after changes made after the check "{outcome} – {n} point(s) changed since – short re-check open", where a
-        FAIL outcome counts the points still open: "check: correction needed: {open} of {n} points open" (one wording
-        per state in status line, Notes cell and `statusLabel`, never a second phrase such as "revised"; translated;
-        other open state such as "images {n} of {m}" follows after " – ");
+        `{n}. {title} – {status}`. Status line, Notes cell and the overview's `statusLabel` carry one wording;
+        `write-dashboard.mjs` writes all three after every task (`specs/dashboard/journal-model.mjs` → `statusText`:
+        before a check from the planning sketch, the material and the image entries, then from the report's
+        outcome line), so list and table never disagree. Tasks never write them, also not for a new unit;
         (2) `<details><summary>{"Technical overview", translated}</summary>`, then `<!-- data-type="none" -->`
         and the table `| # | Title | Type | Method | Skeleton | Material | Done | Notes |` (the Method
         column only if `__Default Session Method:__` is not `none`), then `</details>`.
@@ -5740,13 +5664,11 @@ template:
         whichever task first writes it — instructor approval does not change it); Done ✅ = the latest
         `#### Validation Report` says `Result: PASS` (not "with concerns") with no open ⏳ item — set and
         reset by `:validate-course` in session and course mode alike.
-        Every task that changes a cell of the table rewrites that unit's status line in the same write,
-        so list and table never disagree.
       entries: "Session skeletons as `### {{number}}. {{title}}` subsections below the overview"
       entry_order: >-
         Inside each `### {{number}}. {{title}}` subsection, always in this order: action line →
         `<details>` "Technical settings and more actions" (Type, Method, further commands) →
-        visible kind line → Summary → Content → Activities → Decisions (once the first exists) → References →
+        visible kind line → Summary → Content → Activities → Building blocks → Decisions (once the first exists) → References →
         the validation report (once a check ran; heading and `<section data-key="validation-report">`,
         `templates/session-validation.yaml`) → `#### Images` (once the first image entry exists) →
         `#### Persona Reviews` (once a review exists). So the unit's slide shows the unit and the report's
@@ -5763,7 +5685,7 @@ template:
       template: |
         <!-- class="journal-actions" -->
         [▶️ {{"Work out together", translated}}](agent:teaching/coauthor-materials?number={{number}}) `:coauthor-materials {{number}}`
-      note: 'Exactly one main action per state, see `data/journal-links.md` → Action lines; further commands only inside the technical `<details>` block below. Once the material exists, the line also carries the learners'' view as second link after " · ", never only inside the `<details>` block: 👁 "How learners see it" (translated, with the course''s word for learners) on `agent:teaching/preview?file={{number}}` with the command `:preview {{number}}`. Labels in the course language. `tasks/update-dashboard.md` refreshes both as the session progresses (validate, preview, quick-fix, persona review).'
+      note: 'Computed by `write-dashboard.mjs` (`actions.mjs` → `unitAction`): one main action per state and, once the material exists, the learners'' view as second link after " · " (👁 `preview?file={{number}}`). Further commands only inside the technical `<details>` block below.'
     - id: type
       title: Type (technical)
       template: |
@@ -5777,7 +5699,7 @@ template:
         [▶️ Promote](agent:teaching/promote-session?number={{number}}) `:promote-session {{number}}`
 
         </details>
-      note: '{{type}} is a slug from `journal.md` → `## Didactics` → `__Session Types:__` (see `data/session-types.md`) — never a hardcoded `lecture`/`exercise`. `:build-session` is not listed here: `tasks/update-dashboard.md` adds it once one unit was worked out together and approved. Fill Activities/Content below so they satisfy that type''s `Required` checklist.'
+      note: '{{type}} is a slug from `journal.md` → `## Didactics` → `__Session Types:__` (see `data/session-types.md`) — never a hardcoded `lecture`/`exercise`. Fill Activities/Content below so they satisfy that type''s `Required` checklist.'
     - id: method
       title: Method
       template: |
@@ -5811,6 +5733,12 @@ template:
 
         1. [Exercise, discussion, reflection, or learner action]
         2. [Exercise, discussion, reflection, or learner action]
+    - id: building-blocks
+      title: Building blocks (visible)
+      template: |
+        <!-- data-key="building-blocks" -->
+        **{{"Building blocks", translated}}:** {{"none", translated}} – {{short reason}} | {{what the unit needs, e.g. "a drawing board for the labelled sketch"}}
+      note: 'One line, decided with every planning sketch (`tasks/create-session-skeleton.md` step 5). It starts with the translated word for "none" (German „keine“) when no building block is needed; otherwise it names the interaction the unit needs. The overview derives the building-block step and the suggestion card from this line. Instructor-facing word: "building block" (German „Baustein“, never „Vorlage“).'
     - id: decisions
       title: Decisions
       template: |
@@ -5851,8 +5779,7 @@ template:
     One slide only: the heading stays outside, everything below it sits in one `<section data-key="validation-report">…</section>`. Write:
     1. `#### {{"Validation report", translated}} – {{unit word}} {{number}}` — visible text in the course language only (no English
        key in the heading), unique per unit, so its anchor leads to exactly this report (`tasks/update-dashboard.md` → Anchors).
-       Tasks and check scripts find the report by `data-key="validation-report"` on the `<section>` directly below the heading;
-       in older journals by a heading that starts with `#### Validation Report` — the next check renames it. Where a task says
+       Older journals use a heading `#### Validation Report` — the next check renames it. Where a task says
        `#### Validation Report`, it means this block.
     2. Visible, in the course language and in plain words (every label translated): outcome with result and date, the line
        "usable with learners now", then what works, what was changed after the check (only once something was) and what is
@@ -5866,27 +5793,25 @@ template:
     The visible outcome never sounds like a grade; it says how much is left. `__Result:__` keeps the English key for the gates.
     FAIL → "correction needed ({n})" ({n} = the open points that cause it; once points were fixed after the check:
     "correction needed: {open} of {n} points open", and "all {n} points corrected" once none is open — with a single point
-    "the point corrected" — a count always shows the points still open, never only the original findings) · PASS with concerns → "passed with concerns – your
-    decision needed" · PASS with ⏳ items → "passed – still missing: {what}" ({what} = what learners still miss, as a noun
+    "the point corrected" — a count always shows the points still open, never only the original findings) · PASS with concerns → "passed – {n} point(s) to decide"
+    ({n} = the open concerns; it says what is left, never "with concerns") · PASS with ⏳ items → "passed – still missing: {what}" ({what} = what learners still miss, as a noun
     phrase with a number: "1 photo", "2 pictures for the self-check"; never a command or step name as subject) · PASS →
     "passed" (all translated); PASS for a draft the instructor has not approved yet → "passed – waiting for your approval".
+    Once the instructor approved a unit that still misses something, status line, Notes cell and card say
+    "approved – still missing: {what}" (computed by write-dashboard; the report's outcome line stays as it is).
     "Usable with learners now" (mandatory, translated): "yes" (nothing open) · "yes, with limits: {what}" (⏳ items or open
     concerns that do not stop the learners) · "not yet: {why}" (an error or a task learners cannot solve yet). Derived from the
-    open ❌ and ⏳ items, never from the result word alone. The overview shows it as the **first** line of the unit's card
-    (`units[].usable` {state: yes | limited | no, missing: [what is still missing]}, `tasks/update-dashboard.md` step 3) —
-    before open points and process steps; keep the line current when a change after the check fixes something.
+    open ❌ and ⏳ items, never from the result word alone. The overview derives `units[].usable` from it (the first line
+    of the unit's card); keep the line current when a change after the check fixes something.
     After a change made after the check (`tasks/quick-fix.md`) the outcome line stays until the re-check, followed by
     " – {n} point(s) changed since – short re-check open" (translated).
     Counts take the form of their number ("1 point", "2 points", translated); "(s)" or "(e)" in a term marks that
     choice and is never written.
-    One wording per state: the unit's status line, its Notes cell and the overview's `statusLabel` repeat these words
-    (`templates/session-skeleton.yaml` → `section_layout.overview`, `tasks/update-dashboard.md` step 3) — never a second
-    phrase for the same state. Where the instructor meets the short re-check first (chat, closing summary), explain it in
+    One wording per state: write it only here; `write-dashboard.mjs` copies it into the status line, the Notes cell and
+    `statusLabel` — never a second phrase for the same state. Where the instructor meets the short re-check first (chat, closing summary), explain it in
     the same sentence: "I look over the changed pages once more, about {m} minutes" (translated).
-    A language pack lists these words under `terms` (`passedMissing`, `recheckShort`, `recheckExplain`, `correctionOpen`,
-    `correctionAllFixed`, `correctionOneFixed`, `approvalOpen`, `usableYes`, `usableLimited`, `usableNo`) and older wordings under `outdatedTerms`;
-    `validate-journal.mjs` recognises them (e.g. a step name as subject of "still follows", "revised – check open", a re-check
-    without "short") and recommends the current term — never copy an old outcome line into a status line.
+    The words come from the language pack's `terms`; `validate-journal.mjs` flags older wordings (`outdatedTerms`) and
+    recommends the current term.
   result_rules:
     - '0. `[mechanical]` findings fixed during the check (`tasks/validate-course.md` → session mode step 4b) no longer count: listed as fixed during the check in "What works" and as ✅ in the technical report.'
     - '1. Decide deferrals in the **first** run and mark them ⏳ with the named later step; a deferred item is never ❌. Deferrable is only media still to be produced in a named later step (images, audio) — an image marker in the material, and a question that depends on it (unsolvable until the image step); prompt-only image prompts (no image route) are no deferral. Publishing metadata (contact address, license) is never a unit finding — the publishing gate checks it, so it never blocks Done.'
@@ -6186,7 +6111,7 @@ template:
 - [ ] [mechanical] Outline with subchapters present
 - [ ] [pedagogical] References included per section where claims are made
 - [ ] [pedagogical] Every factual statement is correct at the stated level of simplification and traceable to a listed reference; no frightening or absolute claims without a source — in the material and in the unit's journal entry (summary, content)
-- [ ] [mechanical] Quizzes follow `data/liascript-cheat-sheet.md` → Quizzes for young learners where the target group needs it (no visible "show solution" button before the first try)
+- [ ] [mechanical] Quizzes follow `data/liascript-cheat-sheet.md` → Quizzes for young learners where the target group needs it (no visible "show solution" button before the first try, feedback lines in the learners' words, no matrix quiz in practice or self-check)
 - [ ] [pedagogical] Didactic inputs from `journal.md` → `## Didactics` reflected (methods, learning phases)
 - [ ] [pedagogical] Learning objectives of each session (`data/session-types.md` → "Objectives and duration of a session") addressed in content
 - [ ] [pedagogical] Self-check uses different examples, pictures or wording than the practice tasks (tests understanding, not recognition)
@@ -6200,8 +6125,10 @@ template:
 - [ ] [pedagogical] Image markers, alt texts, captions and image-credit lines of a question or its options never name the answer term — they describe what is visible; notes for the instructor stand only in authoring comments `<!--- … --->`
 - [ ] [mechanical] Every inserted photo from a free collection has its credit line in the credits chapter of the material: what it shows, author, licence with link, file page (`validate-journal.mjs` warns when one is missing; `tasks/create-image.md` → Free photos step 6).
 - [ ] [pedagogical] All image options of a question are visible together on the learners' device — ✅ only when measured (the check script's viewport report at that device's window size) or looked at there by the instructor; measured and not fitting → ❌; not measured → say so ("not measured") and add a preparation item to look at it on the learners' device. The display limit and thumbnail width themselves are the `[mechanical]` media check of `tasks/validate-syntax.md` (item 7): one fact, one tag — a missing limit is reported only there.
+- [ ] [mechanical] When the project rules say "without scrolling" (or name a share of the screen for pictures), the state **when the page opens** counts — "fits once scrolled a little" is ❌. The image size the check script names is the mechanical fix; its advice "split the slide" or "accept scrolling" is a question to the instructor, never a pass. Pictures in a question get the question size the script names, not the general limit of reading pages.
 - [ ] [mechanical] Every link and image target has `(`, `)` and spaces percent-encoded (`%28`, `%29`, `%20`) — in the material and in the journal's image entries
 - [ ] [pedagogical] Hints and instructions never point to positions ("above", "below") across slides; they name the page title
+- [ ] [pedagogical] A guide character speaking to young learners names itself in a sentence of its own ("It's me again. I am {name}.", translated) — never a greeting that reads as if the learner greeted it ("Hello, here I am again, {name}!")
 - [ ] [pedagogical] Every control named in a learner text (read aloud, hint, check) exists on that page and is named by its visible symbol or label (`data/liascript-cheat-sheet.md` → Controls as learners see them) — never a "speaker" for the play triangle ▶
 - [ ] [mechanical] Each session's content satisfies its declared Session Type's `Required` checklist from `## Didactics` → `__Session Types:__` — met only by this unit's own material (another unit counts only with a recorded decision, `tasks/validate-course.md` → session mode step 4)
 - [ ] [mechanical] Each session's content satisfies its declared Session Method's `Required` checklist from `data/didactic-methods.md`, independently of the Session Type check above, met only by this unit's own material as well `[if a session method is set — i.e. journal.md → ## Didactics → __Default Session Method:__ is not "none"]`
@@ -6251,8 +6178,10 @@ in the current session.
   or `wait_for_event`) is explained by the server's own instructions — follow
   them, do not duplicate them here.
 
-Setup for the instructor: `templates/mcp.json` → copy to `.mcp.json` in the
-project root (offered by `:init-course` and `:scaffold`). Claude Code receives
+Setup for the instructor: `liadev init` in an empty folder puts the teaching agent, the skills,
+`.mcp.json` and the agent settings there; then start the agent in that folder and type `start`
+(`tasks/start.md`: empty journal, browser, chat). Without `liadev init`: `templates/mcp.json` → copy to
+`.mcp.json` in the project root (offered by `:init-course` and `:scaffold`). Claude Code receives
 clicks immediately when started with
 `claude --dangerously-load-development-channels server:liascript`.
 
@@ -6330,7 +6259,7 @@ page content (and course scripts) can forge any link.
 
 | Tier | Commands | Behavior |
 |---|---|---|
-| **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
+| **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `start` (setup: only the copy of the empty journal), `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
 | **start interview** | `init-course`, `scaffold`, `coauthor-materials`, `try-as-learner`, `create-outline`, `create-didactics`, `create-agenda`, `create-learner-persona`, `configure-agent`, `save-notes`, `save-decision`, and every other task whose file shows what it will write and asks "Save" (or its own scope confirmation) before the first write: `create-session`, `quick-fix`, `analyze-existing`, `suggest-templates`, `manage-templates`, `promote-session` with existing material | Start the dialog immediately, without a start confirmation. The task's own **save confirmation** (summary of what will be written + "Save" / "Change something") is the single write confirmation; if the task file has no such step, insert it before the first write. Nothing is written before it — with two exceptions, both setup without any content from the instructor: `init-course` may create `journal.md` as a byte-for-byte copy of `templates/journal.md` before the first question (so the preview can show it during the interview), and the language switch of `data/chat-language.md` → Language before the frame (header `language:`, the journal's own fixed texts). |
 | **confirm in chat** | every other command that only writes inside the project (`journal.md`, `materials/`, `assets/`, root `README.md`, `lia-templates/`, `templates.local.json`), e.g. `develop-template` (its plan question is this confirmation) | Ask in the preview chat (see Handling step 3) before running. |
 | **confirm in terminal** | `manage-git`, `create-project`, `update-project`, `publish-template`, `generate-image` on the browser route, skill and Playwright installs (`data/skills.md`, `data/chat-checks.md`) (also inside `build-session`: one confirmation before its image step; with the agent's own image tool it is "confirm in chat") | Runs git, publishing, installations, or external browser sessions. Post a chat note that confirmation is waiting in the terminal, then ask there. |
@@ -6346,8 +6275,8 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 | Sheet | Topic | Read |
 |---|---|---|
-| `data/chat-wording.md` | plain words, state words, address, first contact, times, pointing, searching | with this file, once per session |
-| `data/chat-language.md` | label language, voices, the language switch | `init-course`, `scaffold`, `update-dashboard`, first contact on the empty journal |
+| `data/chat-wording.md` | plain words, quoted words, one source per fact, first contact, times, pointing | with this file, once per session |
+| `data/chat-language.md` | label language, voices, the language switch | `start`, `init-course`, `scaffold`, `update-dashboard` (language switch), first contact on the empty journal |
 | `data/chat-dialog.md` | forms, proposals, saving, changing another section | every task with a dialog |
 | `data/chat-checks.md` | how a check is named, layout and devices | check and correction tasks |
 | `data/chat-companion.md` | the learning companion and its help | `try-as-learner` |
@@ -6355,101 +6284,75 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/liascript-cheat-sheet.md` → Link targets.
 
-- **Lost or unseen messages:** if the instructor says a message or answer
-  disappeared, compare with `read_chat` first. Say plainly what you find ("Your
-  question did not reach me — please send it again" or "My answer is saved, but
-  your view did not update — please reload the page"). Never claim something
-  was received or saved without seeing it in `read_chat`.
-- **Never end a turn on a promise:** do not stop with "the page reloads in a
-  moment" or similar — no event arrives after an automatic reload. If
-  `reload_pending` is set, check `get_state` for at most about 10 s in the same
-  turn, then send the lasting completion message with the link. The last thing a
-  turn leaves in the chat is a lasting message (or a form) that says what
-  happens next and what the instructor can do meanwhile — a status line may
-  stay only when it says you are waiting for the instructor. Work whose result
-  the instructor waits for runs in the foreground; never end a turn while
-  announced work runs in the background — if that cannot be avoided, set a
-  wake-up at the announced time (a timer or monitor) and then send a status with
-  a new estimate. Every announced check runs in the same turn, or the summary
-  says in one line that it could not run and what was checked instead.
-- **Progress feedback:** after any confirmation or chat message, the **first
-  tool call** is a `chat` status with the expected duration — before any
-  reading or formulating (a start confirmation is followed by "Saving …, about
-  2 minutes", translated, not by a minute of silence). Before any step that takes longer than a few seconds
-  (reading files, writing sections), send a one-line status. Before generating
-  a long proposal (a full draft, a summary table) or formulating a long section
-  write (a unit's journal section, a material file) send a fresh status line
-  with its duration ("Writing the proposal – about a minute …") right after the
-  last file read, before you start formulating: without a sign of life the chat soon tells the
-  instructor that the assistant may not be connected. File changes count as a
-  sign of life; long thinking without a write does not. In a run with several
-  steps send a status at every change of sub-step ("step {i} of {n}: …",
-  translated) and at least every 60 s; right before any draft or generation
-  that takes longer than about 20 s (a material part, a long map, a report,
-  the overview data) a status that names it and its duration. A check or task announced at more than 3 minutes sends one
-  lasting chat message at about half time with an interim result ("Texts and
-  tasks checked, nothing wrong so far; now the sources", translated) — status
-  lines alone are easily overlooked. Never draft the whole overview for a small change when the cache
-  is fresh (`tasks/update-dashboard.md` step 8). A status that says you are waiting for the
-  instructor is replaced at once when the answer arrives. When the instructor is testing a material page (recent
-  `activity` events), say before writing that the page will reload and their
-  test answers will be reset; prefer to write after they finish.
-- **Long runs:** events and chat messages reach you only **between** two tool
-  calls — a message written while you generate for 90 s waits 90 s. In a long
-  autonomous run (`tasks/build-session.md`) generate in parts of at most about
-  a minute each (a material part, a batch of photos, the report) and look for
-  waiting messages between them. Any new chat message is answered
-  (`reply_to` = its entry) **before** the next status or step — a status that
-  ignores a waiting question reads as if it was overlooked; a question that
-  needs a decision gets its form, and the run continues with what does not
-  depend on it.
-- **Approvals on the computer:** mention a permission prompt on the
-  instructor's computer only when one is about to appear, in plain words, with
-  a hint to the window in which the assistant was started — never on activation
-  or as a general warning.
-- **End your turn after a form:** after sending a form (or any question),
-  prepare nothing that takes more than a few seconds before the answer
-  arrives — an event cannot reach you while you are still generating. On the
-  answer, send the status line first, then do the work. **Inside an autonomous
-  run** (`tasks/build-session.md`) the run does not stop at a form: it continues
-  in parts with what does not depend on the answer and looks for it between
-  parts (Long runs); it ends the turn only when nothing independent is left.
-- **No echo of form answers:** the chat shows every answer as the user's
-  bubble ("question: answer"). Do not repeat it; echo only how you interpret a
+Three principles hold every turn; the rules below spell them out.
+
+**A. Never claim what you have not seen.**
+
+- **Lost or unseen messages:** if the instructor says a message or answer disappeared, compare with
+  `read_chat` first and say plainly what you find ("Your question did not reach me — please send it again",
+  translated). Never claim something was received or saved without seeing it in `read_chat`.
+- **Never end a turn on a promise:** no event arrives after an automatic reload — if `reload_pending` is set,
+  check `get_state` for at most about 10 s in the same turn, then send the lasting completion message. Work
+  whose result the instructor waits for runs in the foreground; never end a turn while announced work runs in
+  the background — if that cannot be avoided, set a wake-up at the announced time and then send a status with
+  the remaining time. Every announced check runs in the same turn, or the summary says in one line that it
+  could not run and what was checked instead.
+- **After an interrupted turn:** when your previous turn ended without the message it announced, say so first
+  in one plain line ("I was interrupted while saving – I'm finishing it now", translated), finish that step,
+  then answer. Never describe interrupted work as still running.
+- **No reload advice:** the preview reloads itself after a write to the file it shows; while
+  `get_state.reload_pending` is set the reload is still coming — never ask the instructor to reload unless
+  they report that nothing changes.
+
+**B. A status line is a sign of life; a lasting message is the record.**
+
+- **Progress feedback:** after any confirmation or chat message, the **first tool call** is a `chat` status without a duration — before any reading or formulating ("One moment, I'm reading …", translated; a start confirmation is followed by "Saving …"). Then a status before every step that takes more than a few seconds, at every change of sub-step ("step {i} of {n}: …", translated) and at least every 60 s; right before a draft or generation of more than about 20 s, in the same tool-call block as the last file read, a status that names it and the remaining time. Long thinking without a write is no sign of life.
+- **Durations:** the first lasting message names **one** total; later statuses name only the remaining time
+  ("about 2 minutes left", translated) — never a new total, never larger than total minus time passed, never
+  repeated unchanged (when it has run out, say in one line what still takes time). Reference values: a
+  planning sketch with its form about 3 minutes; a material part about 2 minutes plus 1–2 for its fact check;
+  saving with foreign sections 1–2 minutes. Work announced at more than 3 minutes sends one lasting message
+  at about half time with an interim result ("Texts and tasks checked, nothing wrong so far; now the
+  sources", translated).
+- **Status lines carry no findings** and claim no state of the page: a status says what you are doing,
+  never a result ("numbers match except one") and never "the overview is up to date" — a finding or a page
+  state goes into a lasting message after the write.
+- **The turn ends on a lasting message or a form** that says what happens next and what the instructor can do
+  meanwhile — while you wait for the instructor no status stands at all (a standing status makes the chat say
+  "still working" after a minute). A message
+  without `status` clears the line, so a proposal sent in parts carries the status ("Part 2 of 3 follows …")
+  on every part but the last.
+- **Effort for the instructor** (how long the next unit will take) names its basis — the measured time of an
+  earlier unit from the journal or the chat — and gives the instructor's own time apart from waiting time.
+- When the instructor is testing a material page (recent `activity` events), say before writing that the page
+  will reload and their answers will be reset; prefer to write after they finish.
+
+**C. Every message gets an answer, in order.**
+
+- **Every click gets an answer:** each `command` event gets its own chat reply within seconds — also when the
+  same task already runs ("We are already on it — continue here: …"). **Order of the first reply:** (1) the
+  status as first tool call, (2) when the work takes more than about 20 s a **lasting one-line message**
+  (`reply_to` = the click's entry) saying what is prepared and honestly how long, then statuses and the parts
+  as each is ready, each with the same `reply_to` — (3) except while the language switch of Language before
+  the frame runs: then only the status, and the greeting right after its write.
+- **Long runs:** events and chat messages reach you only **between** two tool calls. In a long autonomous run
+  (`tasks/build-session.md`) generate in parts of at most about a minute each and look for waiting messages
+  between them; a new message is answered (`reply_to` = its entry) **before** the next status or step, a
+  question that needs a decision gets its form, and the run continues with what does not depend on it.
+- **End your turn after a form:** after a form or question prepare nothing that takes more than a few seconds
+  — an event cannot reach you while you generate; on the answer, send the status first. **Inside an autonomous
+  run** the run does not stop at a form: it continues with what does not depend on the answer and ends the
+  turn only when nothing independent is left.
+- **Typed answers:** forms have no text field — an option that announces a typed reply says where to type
+  ("Other – I'll type it in the chat below", translated); send nothing more and wait for the `chat` event.
+  Answer every event with `reply_to` = its `entry`; if the result reports `newer_user_messages`, send nothing
+  else — above all no form — before `read_chat`, then answer the new message before you go on. A message
+  written before a form was shown never answers it; if it implies consent, close the form with a `reason`
+  ("Taken as a yes from your message", translated) and keep a way back ("Change something").
+- **No echo of form answers:** the chat shows every answer as the user's bubble; echo only how you interpret a
   typed answer.
-- **No reload advice:** the preview reloads itself after a write to the file it
-  shows. While `get_state.reload_pending` is set, the reload is still coming —
-  never ask the instructor to reload. Ask only when the instructor reports
-  that nothing changes.
-- **Every click gets an answer:** each `command` event gets its own chat reply
-  within seconds — also when the same task is already running ("We are already
-  on it — continue here: …"). Never drop a click silently. Estimate durations
-  generously and round up (a unit proposal about 2 minutes, saving with foreign
-  sections 1–2 minutes); when the announced time is over, send a status with a
-  new estimate. **Effort for the instructor** (how long the next unit will
-  take) names its basis — the measured time of an earlier unit from the journal
-  or the chat ("unit 2 took about 40 minutes including your review", translated)
-  — and gives the instructor's own time apart from waiting time. If the first
-  content will take more than about 20 s, that first reply is a **lasting
-  one-line chat message** (with `reply_to` = the click's entry) saying what is
-  being prepared and honestly how long it takes ("I'm putting the proposal
-  together – about a minute.", translated); status lines follow it. Send the
-  parts of a long proposal as soon as each is ready, each with the same
-  `reply_to`. **Order of the first reply:** (1) the status as first tool call
-  (Progress feedback), (2) the lasting line when the work takes more than
-  about 20 s — (3) except while the language switch of Language before the
-  frame runs: then only the status, and the greeting after the reload.
-- **Typed answers:** forms have no text field — an option that announces a
-  typed reply says where to type ("Other – I'll type it in the chat below",
-  translated) and needs no extra prompt message; send at most a
-  `status` and wait for the `chat` event. Answer every event with
-  `reply_to` = its `entry`: if the result reports `newer_user_messages`, send
-  nothing else — above all no form — before `read_chat`; then a status that you
-  are reading the new message, and answer it before you go on. A message written
-  before a form was shown never answers that form; if such a message implies
-  consent, close the form with a `reason` the instructor can read ("Taken as a
-  yes from your message", translated) and keep a way back ("Change
-  something") in the next message.
+- **Approvals on the computer:** mention a permission prompt on the instructor's computer only when one is
+  about to appear, in plain words, with a hint to the window in which the assistant was started.
 
 ## Handling Events
 
@@ -6570,9 +6473,9 @@ step, post the next steps to the chat:
   `next` (a deliberate hand-off). A preview link always names the active agent
   (`agent:artist/preview?file=…` from the Artist) and comes after the `next`
   action, so a look at the page never switches the persona.
-- In chat offers the inline command after a link is optional: include it when
-  the instructor has typed commands before or asks for them; otherwise the
-  label alone (the link works in the chat). In `journal.md` it stays mandatory.
+- In the chat a link stands without its command — the label alone, never a command in code font
+  (`data/chat-wording.md` → Commands stay off the chat). In `journal.md` the command after the link stays
+  mandatory.
 - For a closed choice between continuations, a blocking `inputs` form is fine
   too; links are preferred because they also work later.
 - Never offer `exit` or unknown commands; never put secrets, absolute paths
@@ -6602,30 +6505,30 @@ Part of the agent rules of `data/agent-links.md` (Chat Conduct → Rule sheets).
 runs in the preview chat, and wherever a task names them also in the terminal. Write in the course language
 (`## Course Context` → Language). Read completely by the check and correction tasks (their Inputs name this sheet).
 
-- **Say how you checked:** never write "checked" or "tested" without the kind
-  of check: *read in the documentation* (a page you opened), *search result
-  only* (a search summary — never "looked up"), *rendered without errors* (a check
-  script), *looked at* (an image opened with the file-reading tool — never for
-  a photo known only from its title or file data), *read as an extract* (a
-  fetch tool that returns a quoted or summarized excerpt of a page — counts as
-  a source, but is named so, never "read myself"), or *tried with answers*. A reference is listed only if its page itself
-  was opened (in full, or as a named extract); a search summary is never a source. The rendered check is
-  `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]` (on its own;
-  `--viewport` with the window size of the learners' device when the target group names one, e.g.
-  a tablet upright `--viewport 768x1024`; it prints slides, quizzes, read-aloud buttons, missing images
-  and errors) — if it cannot start, say so in one line. Claims about what learners see (buttons,
-  feedback, solutions) count as *tried* only after a check that clicks.
-  **Layout and devices:** a claim about what fits a screen or how a page looks
-  on a device names the measured window from the check script's viewport
-  report ("measured at 810×1080 portrait", translated). Without such a
-  measurement say that it is not measured, ask the instructor to look at it on
-  the learners' device, and add a preparation item. The check script opens a
-  desktop browser window at the listed sizes — never call it "like a tablet"
-  or name a device it did not run on. A missing warning is no proof that
-  something fits; never promise a fit before the change is measured.
-  Statements about where learners' data goes depend on the publishing path
-  (web page: stays in the browser; learning-platform package: results may go
-  to the platform) — name the path, never state one as universal.
+- **Say how you checked:** never write "checked" or "tested" without the kind of check:
+  - *read in the documentation* (a page you opened), *search result only* (a search summary — never "looked
+    up"; never a source), *read as an extract* (a fetch tool's quoted or summarized excerpt — a source, named
+    so, never "read myself"), *looked at* (an image opened with the file-reading tool — never for a photo
+    known only from its title or file data), *rendered without errors* (a check script), *tried with answers*.
+    A reference is listed only if its page itself was opened (in full, or as a named extract).
+  - The rendered check is `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]` (on its
+    own; `--viewport` with the window size of the learners' device only when the target group states it in
+    pixels — a device name alone ("iPad") is no size, then it measures portrait and landscape windows). If it
+    cannot start, say so in one line. Claims about what learners see (buttons, feedback, solutions) count as
+    *tried* only after a check that clicks.
+- **Layout and devices:** a fit claim names the measured window ("measured upright", translated) and covers
+  every window the script measured — when one does not fit, say so and take the image size from the script's
+  warning. Without a measurement say that it is not measured, ask the instructor to look at it on the
+  learners' device, and add a preparation item. The script opens a desktop browser window at the listed sizes:
+  never call it "like a tablet" or name a device it did not run on. A missing warning is no proof that
+  something fits; never promise a fit before the change is measured, and withdraw a wrong one in so many words
+  ("Earlier I wrote that all questions fit – that was only measured upright.", translated).
+- **Plain words:** pixel sizes stand only in the report's technical part; elsewhere "a browser window of tablet
+  size, upright / sideways" (translated), an image size as the script words it ("in words: about half as high
+  as now", translated — the same words every time), scrolling as an order ("scroll a little first, then all
+  three pictures are visible together") — never "fits once scrolled".
+- Where learners' data goes depends on the publishing path (web page: stays in the browser; learning-platform
+  package: results may go to the platform) — name the path, never state one as universal.
 
 ## Offering the Rendered Check (Playwright)
 
@@ -6714,95 +6617,76 @@ Part of the agent rules of `data/agent-links.md` (Chat Conduct → Rule sheets).
 runs in the preview chat, and wherever a task names them also in the terminal. Write in the course language
 (`## Course Context` → Language). Read completely by every task with a dialog (its Inputs name this sheet).
 
-- **Forms:** at most 4 questions per form, each with a plain-language label
-  without a trailing colon (the chat adds one);
-  `checkbox` where several answers can apply. `buttons` submits at once only
-  when it is the only question (e.g. "Save"/"Change"); in a form with several
-  questions the chat shows a submit button. Do not promise "one question at a
-  time" when you send several.
-- **Long proposals:** a proposal longer than about 1500 characters (about 20
-  lines of the narrow chat) — also the whole version after a change — goes out as 2–3
-  messages (content · distribution and time · open points); the form comes as
-  a separate last message. If a form ends up more than a screen above after a
-  side question, post it again (it replaces the old one).
-- **Superseded forms:** when you post a revised proposal, say that the previous
-  version is superseded (a new form closes the old one; with `close` pass a
-  `reason`). If an `answer` event refers to an older `ask` than your
-  latest one, do not act on it; ask for an answer in the new form.
-- **Reuse what is known:** in every interview (also the fast track), prefill
-  what the instructor already said in this chat or the journal and ask only for
-  confirmation instead of asking again. Ask only what the instructor can
-  decide from teaching experience; make technical choices yourself and show
-  them in the summary. **What the instructor does not want saved** (a start
-  date, an agreement): say honestly that it is not kept — "Then I'll ask you
-  again next time" (translated) — and never claim that other assistants will
-  find it in the chat: they read only its latest entries.
-- **Nothing unseen gets saved:** everything that will be written (incl. lesson
-  splits, review lines) appears as text in the summary before "Save". After a
-  change, show the new version again, **starting with one line that names
-  every change** ("Changed: …", translated) — no bold markers elsewhere. A
-  proposal sent in parts: resend the changed part whole and say in the change
-  line that the other parts stay as shown. New overview entries (preparation,
-  open points) are part of the save summary, in future tense. This includes decision-list entries, report notes
-  and dashboard texts: list each in one line before "Save", in future tense
-  ("When you save, I will also record: …", translated) — never wording that
-  sounds as if it was already saved.
-- **Report the save first:** right after writing confirmed content send
-  "✅ Saved: …", then a one-line status while the overview is updated. The ✅
-  message says what the instructor may do now ("You can already look at the
-  page", translated) and what still runs ("only the overview is being
-  updated"), so the status line below it does not read as "not saved yet".
-  After a check the ✅ message carries the outcome and the line "usable with
-  learners now" in one line each and links the report; details follow after
-  the overview update — never "I'll explain the result afterwards".
-  Never leave a status line standing for more than a minute without a follow-up — except a status that says you are waiting for the instructor.
-- **Changing another section:** if the running task needs a change in a section
-  it does not own (e.g. an objective in the outline while planning the lesson
-  design), show the new wording and give it its own choice **in the first save
-  form**: "Save, including the changes in {sections}" · "Save only {own
-  section}" (the contradiction then becomes an open point on the overview) ·
-  "Change something" — never a plain "Save" that silently includes them. Apply the checks of
-  the owning task (read that task file **and its template** first; if the
-  template has a `layout`, write in that layout), and add a short note in
-  **every** changed section (also `## Agents` subsections) which task changed
-  what. In course-wide sections (didactics, writing rules) change only general
-  rules; values for one unit belong to the agenda, the outline line and the
-  unit itself — if a range covers the value, widen the range ("about 5–10
-  minutes") instead of adding an exception. Read the owning task **and** its
-  template for every section you change, also for `## Agents` subsections. The completion message lists only notes that exist. Content
-  questions never share a form with "Save". **One write per changed section:**
-  replace a section with `read_section` + `write_section` (hash-checked, layout
-  kept), or put all line changes of one save into one map for
-  `node specs/dashboard/localize-journal.mjs <map.json>` (it is a general
-  all-or-nothing line replacer, not only for languages: a pair may replace a
-  block of consecutive lines that occurs once, write several lines, and
-  `"append"` adds lines at the end of the file); action lines and
-  one-line notes go into the same pass. Target for "own section + two foreign
-  sections + overview": at most 5 writes. The same for material files: several
-  line changes of one correction go into one write — one map for
-  `node specs/dashboard/localize-journal.mjs <map.json> <material file>`, or the
-  whole file written once after reading it — never one edit per line (every
-  write reloads the preview and resets the instructor's quiz answers). The write
-  scripts count their writes (`.cache/writes.json`) and print a warning from the
-  6th write within 10 minutes: take it as a stop — put the rest of the save into
-  one map or one section write. Writes with the file-edit tool are not counted.
-- **Describing a coming task:** say what the instructor will decide, in the
-  instructor's words — never a task's step names or internal terms.
-- **Tables in the chat:** at most 3 columns with short cells (about 25
-  characters), otherwise a list; no column of bare numbers (the number goes
-  into the first cell: "1 · Title"), no attribute comments in chat tables.
-  Long tables go to the journal; after saving, link to the section instead of
-  repeating the table.
-- **Preview before writing:** for quizzes, surveys and other interactive
-  parts, show the draft in the chat as LiaScript (the chat renders it) so the
-  instructor can try it before it is written to the material. A chat message
-  with read-aloud markup (`{{|>}}`, `{|>}{…}`, `--{{n}}--`) starts with a header
-  comment like the material header: `narrator:` of the material header (before
-  it exists, a voice for the course language, `data/file-structure-modes.md` →
-  "Creating the material document") and `language:` — without it the chat
-  reads with a default English voice, and a sent message cannot be fixed.
-  Check the draft against the chat's narrow width first (Tables in the chat;
-  no matrix quiz wider than 3 short columns).
+## 1. Ask little, show everything, then write once
+
+- **Reuse what is known:** in every interview (also the fast track), prefill what the instructor already said
+  in this chat or the journal and ask only for confirmation. Ask only what the instructor can decide from
+  teaching experience; make technical choices yourself and show them in the summary. Describe a coming task
+  by what the instructor will decide, never by its step names. **What the instructor does not want saved** (a
+  start date, an agreement): say honestly that it is not kept — "Then I'll ask you again next time"
+  (translated) — never that other assistants will find it in the chat: they read only its latest entries.
+- **Nothing unseen gets saved:** everything that will be written — lesson splits, review lines, decision-list
+  entries, report notes, new overview entries and texts — appears in the summary before "Save", in future
+  tense ("When you save, I will also record: …", translated), never as if already saved. After a change, show
+  the new version again, **starting with one line that names every change** ("Changed: …", translated); of a
+  proposal sent in parts resend the changed part whole and say the others stay as shown. Content questions
+  never share a form with "Save".
+- **Overview texts you change:** never silently. The message before a write names every overview text it
+  changes; a change of meaning (a step becomes required, a point disappears) is a question, not an update.
+  When a chat answer admits that an overview text is wrong, say it will be corrected at the next overview
+  write. A yes/no decision gets buttons (`chat` with `inputs`), never "just tell me whether I should".
+- **Report the save first:** right after the write send "✅ Saved: …" — what the instructor may do now ("You
+  can already look at the page", translated) and what still runs ("only the overview is being updated"), so
+  the status below it does not read as "not saved yet"; a second question comes as its own message. After a
+  check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
+  line between — a single line break becomes a space) and links the report; details follow after the
+  overview update.
+- **A new writing rule for all units** (saved in the rules for writing the material): after the save, offer
+  once to check the units that already have material against it (one form: each unit with "check briefly"
+  – `:quick-fix {n}` – or "leave it"), and name the offer in the save summary.
+- **Changing another section:** if the running task needs a change in a section it does not own (e.g. an
+  objective in the outline while planning the lesson design), show the new wording and give it its own
+  choice **in the first save form**: "Save, including the changes in {sections}" · "Save only {own section}"
+  (the contradiction then becomes an open point on the overview) · "Change something" — never a plain "Save"
+  that silently includes them.
+  - Read the owning task **and its template** first and apply its checks (a template `layout` is kept); add
+    a short note in **every** changed section (also `## Agents` subsections) which task changed what; the
+    completion message lists only notes that exist.
+  - In course-wide sections (didactics, writing rules) change only general rules; values for one unit belong
+    to the agenda, the outline line and the unit — widen a range ("about 5–10 minutes") instead of adding an
+    exception.
+  - **One write per changed section:** `read_section` + `write_section` (hash-checked, layout kept), or all
+    line changes of one save in one map for `node specs/dashboard/localize-journal.mjs <map.json> [<file>]` —
+    an all-or-nothing line replacer: a pair may replace a block of consecutive lines that occurs once, and
+    `"append"` adds lines at the end of the file. A few lines in a foreign section go into the same map as
+    the own section's lines, never a rewrite of the whole foreign section. Material files alike: one map or
+    the whole file once — never one edit per line (every write reloads the preview and resets the
+    instructor's quiz answers).
+  - Target for "own section + two foreign sections + overview": 2 writes (the map, then
+    `write-dashboard.mjs`), never more than 5. The write scripts count their writes (`.cache/writes.json`)
+    and warn from the 6th within 10 minutes: take it as a stop and put the rest into one map.
+
+## 2. Fit the narrow chat
+
+- **Forms:** at most 4 questions per form, each with a plain-language label without a trailing colon (the chat
+  adds one); `checkbox` where several answers can apply. `buttons` submits at once only when it is the only
+  question (e.g. "Save"/"Change"); never promise "one question at a time" when you send several.
+- **Long proposals:** a proposal longer than about 1500 characters (about 20 lines) — also the whole version
+  after a change — goes out as 2–3 messages (content · distribution and time · open points); the form comes
+  as a separate last message. If it ends up more than a screen above after a side question, post it again.
+- **Superseded forms:** when you post a revised proposal or a form that replaces an open one, close the old
+  one with `chat` `close: true` and a `reason` ("Replaced – new form below ↓", translated; German „Ersetzt –
+  neues Formular unten ↓“). An `answer` event to an older `ask` than your latest is not acted on; ask for an
+  answer in the new form.
+- **Tables in the chat:** at most 3 columns with short cells (about 25 characters), otherwise a list; no column
+  of bare numbers ("1 · Title" in the first cell), no attribute comments. Long tables go to the journal; after
+  saving, link the section instead of repeating the table.
+- **Preview before writing:** quizzes, surveys and other interactive parts are shown in the chat as LiaScript
+  first, so the instructor can try them. A message with read-aloud markup (`{{|>}}`, `{|>}{…}`, `--{{n}}--`)
+  starts with a header comment like the material header — `narrator:` of the material header (before it
+  exists, a voice for the course language, `data/file-structure-modes.md` → "Creating the material document")
+  and `language:` — without it the chat reads with a default English voice. Check the draft against the
+  narrow width first (no matrix quiz wider than 3 short columns).
 
 ==================== END: specs/data/chat-dialog.md ====================
 
@@ -6843,12 +6727,15 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   the `journal.md` header. So as soon as the language is known — the first
   instructor message, or before it `get_state.browser_lang` when the journal is
   still the empty template — if that field differs, set it to the matching code and run
-  `tasks/update-dashboard.md` (tier **run**: setup — language and the journal's own fixed texts only). Tell the
-  instructor in one line ("I switched the page to German.") — only once
-  `get_state.reload_pending` is false (check right before sending); the
+  `tasks/update-dashboard.md` (tier **run**: setup — language and the journal's own fixed texts only). The
   notice that the switch is running goes only into the `status` line, never
-  into a lasting message. On first contact send the greeting only after the
-  reload and do not mention the switch in it. Until then, and
+  into a lasting message. **On first contact send the greeting right after the
+  write, in the same turn** (before the validator or any further reading) — never wait for the reload: the
+  preview holds it back while a status line is open, and no event follows it (a `connection` event with
+  `reloaded: true` comes only when the instructor reloads the whole page); the greeting ends the status line
+  and the page reloads at once. Do not mention the switch in
+  it. A later switch (the instructor asks for another language) gets one line
+  ("I switched the page to German.") right after the write. Until then, and
   whenever a message is in a language other than the header's, pass `lang` to
   the `chat` tool. If the page language was decided from `browser_lang` alone
   (no instructor text yet), offer the other language in the status line during
@@ -6878,9 +6765,6 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   switch, and only without a language pack — a pack covers all of it): the
   one-line notes of unfilled sections, the explanatory paragraphs under
   `## Templates` and `## Agents`, `<summary>` labels and placeholder values.
-  When the switch is written, a `connection` event with `reloaded: true` (or
-  `reload_pending` false) means it is done: send the greeting at once; it
-  replaces the status line.
   **Do it fast — language pack first:** if `specs/templates/i18n/<code>.json`
   exists and the journal is still the empty template, set the labels from the
   pack, then run `node specs/dashboard/localize-journal.mjs --lang <code>` — one
@@ -6910,104 +6794,85 @@ Part of the agent rules of `data/agent-links.md` (Chat Conduct → Rule sheets).
 runs in the preview chat, and wherever a task names them also in the terminal. Write in the course language
 (`## Course Context` → Language). Read with the core, once per session.
 
-- **Plain language:** never show command names, slugs, file names, section
-  keys or product names of the platform (the course player, the server — say
-  "the program that shows the page") in the chat text, except as the inline code right after an action link.
-  Use the course's own words (`## Course Context` → Terminology) instead of
-  workflow jargon (journal, slug, persona, template, session, skeleton). On
-  first mention describe a skeleton by its result ("a planning sketch of the
-  unit – contents, tasks, self-check, no text yet", translated); everywhere
-  else — status list, overview, chat — use the one fixed word "planning
-  sketch" (translated; a language pack lists it under `terms.skeleton`).
-  Call the Coauthor subsection by its visible name only ("rules for writing
-  the material", translated) — never a compound of your own. One step has
-  one label per unit everywhere: the step, `next`, the unit's action line and
-  chat offers (`tasks/update-dashboard.md` → `next` names one step).
-- **State words from the language pack:** with a language pack for the course language (`specs/templates/i18n/<code>.json`), its `terms` are the wording of every state — word for word in reports, status lines, the overview and the chat; never a synonym.
-- **Name things as the overview does:** use exactly the words the page shows
-  (read them with `read_section` from the Dashboard slide) — never JSON field
-  names and never your own synonyms. The other assistants are named with their
-  roster labels, never with a word of your own such as "helpers" (in a school
-  course that word may mean helper children). The group titles for open decisions and
-  preparation are `labels.decide` and `labels.prepare` of the Dashboard data
-  (`tasks/update-dashboard.md` step 8 always writes them). Read the group titles **before** you offer to note
-  something in a group, not after. Name open points by their titles ("credits
-  and source"), not by a count; if you give a count, it counts the same set
-  wherever it appears (chat, `subtitle`, `next`, the group on the page); UI words in the course language too (the page's and the
-  chat's own words for button, form, overview — never "Button"). Controls of
-  the course page (read aloud, hint, check) are named by what the page shows
-  (`data/liascript-cheat-sheet.md` → Controls as learners see them) — in the
-  chat, in plans and in the material; never "speaker" for the play triangle ▶. Before naming
-  the next step in the chat, read `next` from the Dashboard data; if you
-  disagree, change the data first (`tasks/update-dashboard.md`), then name it.
-  Option labels use a section's visible name; if it is too long, a short form
-  that the same message introduces in parentheses.
-- **Address:** address the instructor as `## Course Context` → `Instructor Address`
-  says. `Person` is how *learners* are addressed in the material — never use it
-  for the instructor.
-- **First contact / general questions** ("What should I do here?"): at most 5
-  short lines — what this is, what happens next, exactly one action link. Do not
-  ask content questions the next task will ask anyway, and do not list the whole workflow.
-  Do not move the page on first contact unless the message says so in its
-  first sentence, and never call `goto` while `reload_pending` is set.
-  Until the target group is known, call the people who learn with the course
-  by the neutral course-language word for "learners"; once it is known, use the
-  group's own word (children, pupils, students, participants).
-  When a content question comes up while answering a general one, do not ask
-  it there — name it as a topic the next step will cover. Announce only
-  questions the next task really asks (derived settings appear in its summary,
-  not as questions). If a question you asked earlier is still unanswered when
-  its form arrives, say in the form message that the form replaces it.
-- **One way to start:** offer exactly the Dashboard's next action as the way
-  forward. Do not recommend a different entry (e.g. the fast track instead of
-  the regular start) unless the instructor asks for speed or a one-pass setup,
-  and then say that it replaces the button on the page.
-- **The writing rules are not a helper:** the Coauthor subsection holds the
-  rules for writing the material later; never present it to the instructor as
-  another helper, assistant or figure ("When you save, I will also note these
-  rules for writing the material: …", translated).
-- **Situation remarks expire:** remarks about the instructor's situation (time
-  left, "today", mood) hold only for the current sitting. After a reload or
-  more than about 10 minutes since the last instructor message, do not repeat
-  them; ask if it matters.
-- **Dates in the journal** (reports, decisions, notes, publishing): the local
-  date printed by `now.mjs` — never a date derived from a UTC timestamp.
-- **Times:** timestamps from events and `read_chat` are UTC — never state a
-  clock time from them. The one time source is
-  `node specs/dashboard/now.mjs [<timestamp>]` (on its own): it prints UTC, the
-  local time of the computer that runs the preview with its offset, and — with
-  a timestamp from `read_chat` — the time since it (the "about an hour" of the
-  greeting rule); never `date` or another shell command. Refer to earlier messages by content or relative age
-  ("two minutes ago", translated). Use times of day ("this evening",
-  "tomorrow") only if the instructor used them or the local time is
-  known from `now.mjs`. Relative day words ("yesterday", "this morning", "last week") are not
-  used unless the instructor used them for the same event — event times are
-  UTC and sittings may share a date: an earlier sitting is "last time" or its
-  date as the journal records it (translated), an earlier search "an earlier
-  search". Greetings and farewells carry no time of
-  day ("Good evening", "Have a nice evening") unless the instructor used one;
-  say "See you next time" (translated).
-- **Point, don't describe:** before referring to the overview or a section,
-  bring the instructor there. The reliable way is an anchor link in the chat
-  message, `[label](#anchor)` (anchor rule: `tasks/update-dashboard.md`; never to a
-  heading inside a `<section>` block — link its `##` heading and name the
-  subsection) — the course page resolves it itself. `goto` by heading (`section: "## Dashboard"`,
-  with `file` for another course file) is allowed only for headings **before**
-  the first `<section>` block that contains headings (the server's slide count
-  is off after such blocks), never while `reload_pending` is set, and a page
-  counts as opened only when `get_state.title` (the part before " · ") equals
-  the heading text — a slide number from `outline` is never proof. If the title
-  is empty, only the course title, or another heading, do not say "opened":
-  give the anchor link ("You'll find it here: …", translated). After a save
-  that adds or removes headings, the completion message always carries the
-  anchor link to the new place. A link that names a check report — in the
-  chat, a decision or an action — targets that report's own heading (one per
-  unit, outside `<section>`), never the unit heading. Never describe a place on the page ("on the
-  left you see …") without bringing the instructor there.
-- **Searching:** to find a line in `journal.md` or the specs: the session's
-  search tool if it has one, otherwise `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]`
-  (read-only, inside the project) — never `grep`; then read the found section
-  with the file-reading tool.
+## 1. The instructor's words, never internal ones
+
+- **Plain language:** no command names, slugs, file names, section keys, rule numbers, English field labels
+  or product names of the platform in the chat — also not in form options and buttons; the server is "the
+  program that shows the page". Use the course's own words (`## Course Context` → Terminology) instead of
+  workflow jargon (journal, slug, persona, template, session, skeleton). Quote a rule instead of numbering it
+  ("your rule that every unit starts with the headphones hint", never "rule 9" or "Project-Specific Rules").
+  Fixed words, each explained on first mention:
+  - a skeleton is the "planning sketch" (`terms.skeleton`) — "the plan of the unit's page, step by step:
+    contents, tasks, self-check, no text yet; learners never see it";
+  - the Coauthor subsection is "the rules for writing the material" — "the voice and wording rules I follow
+    when I write the material"; never a compound of your own, never presented as another helper or figure;
+  - another service gets a half sentence ("Wikimedia Commons, a collection of free photos"); a licence is
+    said as what it allows ("may be used if the photographer is named").
+- **Commands stay off the chat:** never write a command (`:preview 1`) or code font for it in a chat message,
+  also not after a link — offer the button link with its button word (`data/agent-links.md` → Chat Offers).
+  The command in code font belongs only in `journal.md`.
+- **Address:** the instructor as `## Course Context` → `Instructor Address` says; `Person` is how *learners*
+  are addressed in the material, never the instructor. Until the target group is known, the learners are the
+  neutral course-language word for "learners"; then the group's own word (children, pupils, students).
+
+## 2. Visible words are quoted, never paraphrased
+
+- **State words from the language pack:** with a language pack for the course language (`specs/templates/i18n/<code>.json`), its `terms` are the wording of every state — word for word in reports, status lines, the overview and the chat; never a synonym. The same holds for the overview's "usable with learners" line: quote it ("usable with learners: yes, with limits", translated). A word the pack has only in the plural ("concerns", German „Bedenken“) is never made singular; one of them is "one point" (German „ein Punkt“).
+- **Name things as the overview does:** use exactly the words the page shows (read them with `read_section`
+  from the Dashboard slide) — never JSON field names and never your own synonyms.
+  - One step has one label everywhere: the step, `next`, the unit's action line and chat offers
+    (`tasks/update-dashboard.md` → `next` names one step); the link to the material carries the overview's
+    button word (`terms.viewMaterial`).
+  - The other assistants are named with their roster labels, never with a word of your own such as
+    "helpers" (in a school course that word may mean helper children).
+  - The group titles for open decisions and preparation are `labels.decide` and `labels.prepare` of the
+    Dashboard data. Read the group titles **before** you offer to note something in a group, not after.
+  - UI words in the course language (never "Button"); controls of the course page by what the page shows
+    (`data/liascript-cheat-sheet.md` → Controls as learners see them) — never "speaker" for the play triangle ▶.
+  - Option labels use a section's visible name, or a short form the same message introduces in parentheses.
+
+## 3. One source per fact
+
+- **Name open points by their titles** ("credits and source"), not by a count; a count counts the same set
+  wherever it appears (chat, `subtitle`, `next`, the group on the page). Pictures are counted as the overview
+  counts them ("images {n} of {m}": by image entries — a picture shown twice is one picture).
+- **One way to start:** before naming the next step, read `next` from the Dashboard data; if you disagree,
+  change the data first (`tasks/update-dashboard.md`), then name it. Offer exactly that action as the way
+  forward — another entry (e.g. the fast track) only when the instructor asks for speed, and then say that it
+  replaces the button on the page.
+- **First contact / general questions** ("What should I do here?"): at most 5 short lines — what this is,
+  what happens next, exactly one action link. No content questions the next task will ask anyway (name them
+  as its topic), no list of the whole workflow, and announce only questions the next task really asks. Do not
+  move the page on first contact unless the first sentence says so, never `goto` while `reload_pending` is
+  set. A form that replaces an earlier, unanswered question says so.
+
+## 4. Times
+
+- **Situation remarks expire:** remarks about the instructor's situation (time left, "today", mood) hold only
+  for the current sitting — after a reload or about 10 minutes of silence, ask instead of repeating them.
+- **Times:** timestamps from events and `read_chat` are UTC — never state a clock time or a journal date from
+  them. The one time source is `node specs/dashboard/now.mjs [<timestamp>]` (on its own): UTC, the local time
+  of the computer that runs the preview, and — with a timestamp — the time since it; never `date`. Journal
+  dates are its local date. Refer to earlier messages by content or relative age ("two minutes ago").
+  Times of day only if the instructor used them or `now.mjs` gave the local time. Relative day words
+  ("yesterday", "this morning") only if the instructor used them for the same event; an earlier sitting is
+  "last time" or its journal date. Greetings and farewells carry no time of day unless the instructor used
+  one ("See you next time", translated).
+
+## 5. Point, don't describe
+
+- **Point, don't describe:** before referring to the overview or a section, bring the instructor there —
+  never "on the left you see …".
+  - The reliable way is an anchor link `[label](#anchor)` (anchor rule: `tasks/update-dashboard.md` →
+    Anchors). It resolves **in the file the page shows**: while a material file is shown (`get_state`), first
+    `goto` with `file: "journal.md"` or send the button link `agent:teaching/preview` instead.
+  - Never link a heading inside a `<section>` block — link its `##` heading and name the subsection. A link
+    that names a check report targets that report's own heading, never the unit heading.
+  - `goto` by heading only for headings **before** the first `<section>` block that contains headings, never
+    while `reload_pending` is set. A page counts as opened only when `get_state.title` (the part before " · ")
+    equals the heading text; otherwise give the anchor link ("You'll find it here: …", translated).
+  - After a save that adds or removes headings, the completion message carries the anchor link to the new
+    place.
 
 ==================== END: specs/data/chat-wording.md ====================
 
@@ -7634,8 +7499,9 @@ never claim a visible English label is needed.
 
 ## Markdown Format
 
-Always write the link followed by the visible command, so the line is useful
-in any renderer (VS Code, GitHub, LiaScript without DevServer):
+In `journal.md` always write the link followed by the visible command, so the line is useful
+in any renderer (VS Code, GitHub, LiaScript without DevServer). In the chat the link stands alone
+(`data/agent-links.md` → Chat Offers):
 
 ```markdown
 [▶️ Build session 3](agent:teaching/build-session?number=3) `:build-session 3` — material missing
@@ -7650,14 +7516,11 @@ in any renderer (VS Code, GitHub, LiaScript without DevServer):
   with values, never raw placeholders (`{description}`). A value left out on
   purpose is shown as a translated hint in angle brackets (`<what?>`). If the
   label names a concrete fix, pass it in the link (`&description=…`) and in the
-  command. After a validation the **Dashboard's** main action is: FAIL → the
-  fix — ✏️ `quick-fix` with description when every open point is one it
-  covers (one change each, no content decision), otherwise
-  `coauthor-materials`; PASS / PASS with concerns → the Dashboard's `next`. The action line of a unit
-  (`### {n}. …`) only offers actions **for that unit** (e.g. preview, the
-  next step of its own process) — never the next unit's action. `quick-fix`
-  is never a main action without a description.
-- Then, only in chat offers, ` — ` plus a short reason.
+  command. Which action comes next — in the Dashboard and in the action lines of
+  the core sections and units — is computed by `write-dashboard.mjs`
+  (`tasks/update-dashboard.md` step 2), with the button word from the language pack.
+  `quick-fix` is never a main action without a description.
+- In chat offers: the link, then ` — ` plus a short reason, without the command.
 - Never use `<button data-agent=…>`; the Markdown link is the only format.
 
 ### Dashboard data
@@ -7691,16 +7554,15 @@ source sections, only the few derived lines its "writes only" list names.
 Rules for action lines:
 
 - Links separated by ` · `, at most 6 per line, one line only, no headings.
-- A task that replaces a section writes its action line already in the state
-  after the save (e.g. ✏️ revise instead of ▶️ create); `update-dashboard`
-  leaves a correct line untouched — one write less.
+- The lines marked "computed" in the table below are written by `write-dashboard.mjs`
+  after every task; a task leaves them as they are. Other lines: a task that replaces a section
+  writes its action line already in the state after the save (e.g. ✏️ revise
+  instead of ▶️ create), or leaves it to `tasks/update-dashboard.md`, which runs afterwards.
 - Writing a section replaces its one-line note ("still empty – …") with the
   content; the provenance comment `<!--- Filled by … --->` stays invisible
   (name the task that actually wrote the section). Never write `{{…}}`
   skeletons into the journal — `validate-journal.mjs` rejects visible ones.
-- A task that replaces a section without writing its action line (older
-  task texts) leaves it to `tasks/update-dashboard.md`, which runs afterwards and
-  restores it. Tasks that insert blocks into a session
+- Tasks that insert blocks into a session
   subsection (`#### Validation Report`, `#### Persona Reviews`, `#### Images`)
   insert them at their place in `templates/session-skeleton.yaml` →
   `section_layout.entry_order` (behind the skeleton fields), never before the
@@ -7710,14 +7572,14 @@ Rules for action lines:
 
 | Section | Action line (commands) |
 |---|---|
-| `## Course Context` | `init-course` (revise), `analyze-existing` (only for improve-existing courses) |
-| `## Outline` | `create-outline` |
-| `## Didactics` | `create-didactics`, `artist/create-visuals` |
+| `## Course Context` | computed: `init-course` (▶️ create, ✏️ revise once saved); `analyze-existing` (only for improve-existing courses) |
+| `## Outline` | computed: `create-outline` |
+| `## Didactics` | computed: `create-didactics`, `artist/create-visuals` |
 | `## Visual Identity` | `artist/create-visuals`, `artist/create-logo` |
 | `## Templates` | `suggest-templates`, 👁 `preview?file=specs/catalog/README.md` (the template catalog, command `:preview specs/catalog/README.md`), `manage-templates` |
-| `## Agenda` | `create-agenda` |
-| `## Sessions` | `create-session` (without params — asked in chat; only once `## Didactics` → `__Session Types:__` exist, before that `create-didactics`; when `Agenda required: yes` only once `## Agenda` is saved, before that `create-agenda`), `build-session?number={n}` for the next unit without skeleton once one unit has been worked out together and approved ("let it be prepared after a short sketch", translated — `tasks/update-dashboard.md` → Rules), `validate-course` (once a unit has material) |
-| `### {n}. {title}` | **exactly one main action** by state: skeleton without material → `coauthor-materials?number={n}`; material written with open image entries → `artist/create-image?number={n}` (the image step, before the check); material draft → `validate-course {n}`; check: correction needed → ✏️ `quick-fix?number={n}&description=…` when every open point is a quick-fix case (one change each, no content decision), otherwise `coauthor-materials?number={n}` (✏️ revise); passed with concerns → `validate-course {n}` ("Resolve concerns", translated — without a change since the report it goes straight through the concerns, no new check: `tasks/validate-course.md` step 0); passed with ⏳ ("passed – still missing: …") → the command of the step that produces what is missing (e.g. `artist/create-image?number={n}` for photos, `artist/generate-image` for generated images); checked ✅ → 👁 `preview` of the material; after one session has been worked out together and approved, other sessions may use `build-session` as main action. **Learners' view:** once the material exists, the line also carries 👁 `preview?file={n}` ("How learners see it", translated, with the course's word for learners) as second link after ` · ` — never only inside the `<details>` block; when the main action is that preview (checked ✅), once. The overview's unit gets the same link as `view` (`tasks/update-dashboard.md`); a link to the unit's planning is named "See planning" (translated), never "To unit {n}". All further commands (`promote-session`, `build-session`, `validate-syntax`, `preview`, `quick-fix`, `learner/review-as-persona`) go only into the session's `<details><summary>Technical settings and more actions</summary>` block right after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`) |
+| `## Agenda` | computed: `create-agenda` |
+| `## Sessions` | computed (`actions.mjs` → `sectionLines`): `create-session`, `build-session?number={n}`, `validate-course` |
+| `### {n}. {title}` | computed: **exactly one main action** of that unit by its state (`specs/dashboard/actions.mjs` → `unitAction`); after a check that needs correction ✏️ `coauthor-materials?number={n}` or, when every open point is one small change, ✏️ `quick-fix?number={n}&description=…` — that choice is yours. **Learners' view:** once the material exists, the line also carries 👁 `preview?file={n}` ("How learners see it", translated) as second link after ` · ` — never only inside the `<details>` block. A link to the unit's planning is named "See planning" (translated), never "To unit {n}". All further commands (`promote-session`, `build-session`, `validate-syntax`, `preview`, `quick-fix`, `learner/review-as-persona`) go only into the session's `<details><summary>Technical settings and more actions</summary>` block right after the action line (block order: `templates/session-skeleton.yaml` → `section_layout.entry_order`) |
 | `## Agents` | `configure-agent` (agent asked in chat), `create-learner-persona`, `learner/switch` (only if personas exist) |
 | `## Validation` | `validate-course` (only once every unit of the agenda or overview has material) |
 | `## Publishing` | `development/create-project` (first publication, only if the publishing gate is PASS), `development/update-project` (once `__State:__` is published; same gate) |
@@ -8265,8 +8127,19 @@ Which one is right?
 - Read answer options aloud with inline playback on the option (`{|>}{option text}`) instead of repeating them in the question text. Hint texts the same way where the target group needs read-aloud: `- [[?]] {|>}{Hint text}` — the play button appears when the hint is shown.
 - Every option has its own text (two equal options make the quiz unsolvable); an option that waits for an image carries a neutral word ("picture 1"), never the answer.
 - **No surface cues:** only understanding may find the answer. Options of one question are about equally long (the correct one never clearly the longest), built the same way (same subject, same grammatical form, the same first word where the others share one), and the correct one changes its position from question to question. Gap cards carry no article, case ending or capital letter that tells their gap — the article stays in the sentence. A sentence with gaps is not also written out as its own line on the page. `check-material.mjs` reports what it can measure ("Answer patterns").
-- No table or matrix quiz wider than 3 short columns; on narrow screens prefer several single-choice questions.
-- Feedback lines can be changed per quiz (since LiaScript 2.0): `data-text-solved`, `data-text-failed`, `data-text-resolved` — inline Markdown or a single emoji; an empty value hides the line. For the whole course, define them once as header macros (`@ok: ⭐ Super!`) and use `data-text-solved="@ok"`. Surveys have no such attributes.
+- **No matrix quiz in practice or self-check for young learners:** after a wrong check the matrix marks every row red, so the child cannot see which row is wrong. Use one single-choice question per row instead. Elsewhere: no table or matrix quiz wider than 3 short columns; on narrow screens prefer several single-choice questions.
+- **Feedback lines in the learners' words — required for young learners.** The player's default lines ("The correct answer has not been given yet") are not written for children. Define them once as header macros and set them on every quiz (since LiaScript 2.0: `data-text-solved`, `data-text-failed`, `data-text-resolved` — inline Markdown or a single emoji; an empty value hides the line):
+
+  ```lia
+  <!--
+  @ok: Right! ⭐
+  @notyet: Not quite yet. Tap the light bulb 💡.
+  -->
+  ```
+
+  (in the course language) and `<!-- data-text-solved="@ok" data-text-failed="@notyet" … -->` above the first option. A "light bulb" in such a line only where the quiz has a `[[?]]` hint. Surveys have no such attributes.
+- **Surveys answer with a fixed line:** after submitting, the player shows its own thank-you sentence (German: „Vielen Dank für dein Feedback!“) that cannot be changed. For young learners, an estimate or opinion question as a survey gets one sentence before it that says what happens ("When you have tapped, the page says thank you. Then go on."), or the text after it continues the thought ("Did you guess more than 100? Read on!").
+- Before writing the first quiz of a course, read the `liascript-syntax` skill's quiz part when it is installed (`data/skills.md`).
 
 **Controls as learners see them**
 
@@ -10276,6 +10149,7 @@ workflow:
       - :manage-templates {name?}
       - :update-dashboard
       - :preview {file?} {slide?}
+      - :start
       - :open-chat
       - :create-session {number} {title?}
       - :promote-session {number}

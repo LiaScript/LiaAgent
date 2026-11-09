@@ -11,18 +11,10 @@ template:
       overview: >-
         Directly below `## Sessions`, in this order:
         (1) a visible status list in the course language, one numbered line per unit in session order,
-        `{n}. {title} – {status}` with status "planning sketch ✅ · material open" (the fixed word for skeleton, `data/chat-wording.md` → Plain language), "material written · check open"
-        ("material written · images missing" while image spots are open and none is inserted yet, `tasks/create-image.md` → Image spots;
-        "material written · images {n} of {m}" once at least one of the m entries is inserted and others are still open — the count is
-        part of the status word, so a partial state stays visible; never "ready" or
-        "finished" before a check — a language pack lists these under `terms`),
-        "check: correction needed ({n})" (never a grade word such as "failed"; {n} as in the report's outcome),
-        "passed with concerns – your decision needed", "passed – still missing: {what}" or "checked ✅" — once a
-        report exists, the same words as its outcome line (`templates/session-validation.yaml` → `outcome_words`);
-        after changes made after the check "{outcome} – {n} point(s) changed since – short re-check open", where a
-        FAIL outcome counts the points still open: "check: correction needed: {open} of {n} points open" (one wording
-        per state in status line, Notes cell and `statusLabel`, never a second phrase such as "revised"; translated;
-        other open state such as "images {n} of {m}" follows after " – ");
+        `{n}. {title} – {status}`. Status line, Notes cell and the overview's `statusLabel` carry one wording;
+        `write-dashboard.mjs` writes all three after every task (`specs/dashboard/journal-model.mjs` → `statusText`:
+        before a check from the planning sketch, the material and the image entries, then from the report's
+        outcome line), so list and table never disagree. Tasks never write them, also not for a new unit;
         (2) `<details><summary>{"Technical overview", translated}</summary>`, then `<!-- data-type="none" -->`
         and the table `| # | Title | Type | Method | Skeleton | Material | Done | Notes |` (the Method
         column only if `__Default Session Method:__` is not `none`), then `</details>`.
@@ -30,13 +22,11 @@ template:
         whichever task first writes it — instructor approval does not change it); Done ✅ = the latest
         `#### Validation Report` says `Result: PASS` (not "with concerns") with no open ⏳ item — set and
         reset by `:validate-course` in session and course mode alike.
-        Every task that changes a cell of the table rewrites that unit's status line in the same write,
-        so list and table never disagree.
       entries: "Session skeletons as `### {{number}}. {{title}}` subsections below the overview"
       entry_order: >-
         Inside each `### {{number}}. {{title}}` subsection, always in this order: action line →
         `<details>` "Technical settings and more actions" (Type, Method, further commands) →
-        visible kind line → Summary → Content → Activities → Decisions (once the first exists) → References →
+        visible kind line → Summary → Content → Activities → Building blocks → Decisions (once the first exists) → References →
         the validation report (once a check ran; heading and `<section data-key="validation-report">`,
         `templates/session-validation.yaml`) → `#### Images` (once the first image entry exists) →
         `#### Persona Reviews` (once a review exists). So the unit's slide shows the unit and the report's
@@ -53,7 +43,7 @@ template:
       template: |
         <!-- class="journal-actions" -->
         [▶️ {{"Work out together", translated}}](agent:teaching/coauthor-materials?number={{number}}) `:coauthor-materials {{number}}`
-      note: 'Exactly one main action per state, see `data/journal-links.md` → Action lines; further commands only inside the technical `<details>` block below. Once the material exists, the line also carries the learners'' view as second link after " · ", never only inside the `<details>` block: 👁 "How learners see it" (translated, with the course''s word for learners) on `agent:teaching/preview?file={{number}}` with the command `:preview {{number}}`. Labels in the course language. `tasks/update-dashboard.md` refreshes both as the session progresses (validate, preview, quick-fix, persona review).'
+      note: 'Computed by `write-dashboard.mjs` (`actions.mjs` → `unitAction`): one main action per state and, once the material exists, the learners'' view as second link after " · " (👁 `preview?file={{number}}`). Further commands only inside the technical `<details>` block below.'
     - id: type
       title: Type (technical)
       template: |
@@ -67,7 +57,7 @@ template:
         [▶️ Promote](agent:teaching/promote-session?number={{number}}) `:promote-session {{number}}`
 
         </details>
-      note: '{{type}} is a slug from `journal.md` → `## Didactics` → `__Session Types:__` (see `data/session-types.md`) — never a hardcoded `lecture`/`exercise`. `:build-session` is not listed here: `tasks/update-dashboard.md` adds it once one unit was worked out together and approved. Fill Activities/Content below so they satisfy that type''s `Required` checklist.'
+      note: '{{type}} is a slug from `journal.md` → `## Didactics` → `__Session Types:__` (see `data/session-types.md`) — never a hardcoded `lecture`/`exercise`. Fill Activities/Content below so they satisfy that type''s `Required` checklist.'
     - id: method
       title: Method
       template: |
@@ -101,6 +91,12 @@ template:
 
         1. [Exercise, discussion, reflection, or learner action]
         2. [Exercise, discussion, reflection, or learner action]
+    - id: building-blocks
+      title: Building blocks (visible)
+      template: |
+        <!-- data-key="building-blocks" -->
+        **{{"Building blocks", translated}}:** {{"none", translated}} – {{short reason}} | {{what the unit needs, e.g. "a drawing board for the labelled sketch"}}
+      note: 'One line, decided with every planning sketch (`tasks/create-session-skeleton.md` step 5). It starts with the translated word for "none" (German „keine“) when no building block is needed; otherwise it names the interaction the unit needs. The overview derives the building-block step and the suggestion card from this line. Instructor-facing word: "building block" (German „Baustein“, never „Vorlage“).'
     - id: decisions
       title: Decisions
       template: |

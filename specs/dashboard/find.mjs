@@ -2,7 +2,8 @@
 // `file:line: text`. Never writes anything and reads only inside the current folder.
 // Run from the course project root:
 //   node specs/dashboard/find.mjs [-i] <pattern> [file|folder ...]
-// <pattern> is a JavaScript regular expression; -i (first argument) ignores case.
+// <pattern> is a JavaScript regular expression (an invalid one is searched as plain text); -i ignores case,
+// -F searches plain text, -n is accepted and changes nothing.
 // Default file: journal.md. A folder is searched recursively (.md, .yaml, .json, .mjs;
 // node_modules and .git are skipped, symbolic links inside a folder are not followed).
 // At most 200 hits. Exit code 0: hits found, 1: no hit, 2: invalid call or refused path.
@@ -21,15 +22,24 @@ function fail(message) {
 }
 
 const args = process.argv.slice(2);
-const ignoreCase = args[0] === "-i";
-if (ignoreCase) args.shift();
+// Options before the pattern, in any order: -i ignores case, -F takes the pattern as plain text, -n is accepted
+// for habit's sake (line numbers are always printed) – SK57.
+let ignoreCase = false, fixed = false;
+while (/^-[inF]$/.test(args[0] ?? "")) {
+  const flag = args.shift();
+  if (flag === "-i") ignoreCase = true;
+  if (flag === "-F") fixed = true;
+}
 const [pattern, ...targets] = args;
-if (!pattern) fail("Usage: node specs/dashboard/find.mjs [-i] <pattern> [file|folder ...]");
+if (!pattern) fail("Usage: node specs/dashboard/find.mjs [-i] [-F] <pattern> [file|folder ...]");
+const literal = text => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 let regex;
 try {
-  regex = new RegExp(pattern, ignoreCase ? "i" : "");
+  regex = new RegExp(fixed ? literal(pattern) : pattern, ignoreCase ? "i" : "");
 } catch (error) {
-  fail(`Invalid pattern: ${error.message}`);
+  // An unbalanced bracket ("Frage 4 (quer") is meant as text: search it literally and say so.
+  regex = new RegExp(literal(pattern), ignoreCase ? "i" : "");
+  console.error(`Note: "${pattern}" is no valid pattern (${error.message}) – searched as plain text.`);
 }
 
 const root = realpathSync(process.cwd());

@@ -38,7 +38,7 @@ agent_coordination:
 
   suggest_back_to_teaching_when:
     - "After :create-visuals and :create-logo are done → 'Visual identity complete. Back to the Teaching-Agent for the next step' — :create-agenda if an agenda is planned and not saved yet, otherwise the next open step from the dashboard"
-    - "After a unit's image step, once no image entry of the unit is open → back to the Teaching-Agent for the unit's check (`:validate-course {n}`, the Dashboard's next)"
+    - "After a unit's image step, once no image entry of the unit is open or only own photos the instructor still brings → back to the Teaching-Agent for the unit's check: offer its direct link `agent:teaching/validate-course?number={n}` with the overview's button word (the Dashboard's next) – the click switches and starts the check in one step"
     - "When content or pedagogical questions arise that are outside visual design"
     - "When the instructor asks about session structure, learning objectives, or didactics"
 

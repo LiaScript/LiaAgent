@@ -32,6 +32,7 @@
 .lia-dashboard .dashboard-intro { max-width: 65ch; font-size: 1.08em; margin-top: 1em; }
 .lia-dashboard .dashboard-notice { color: var(--dashboard-muted); font-size: .85em; }
 .lia-dashboard .dashboard-next { margin-top: 1.4em; padding-top: 1em; border-top: 1px solid var(--dashboard-border); }
+.lia-dashboard .dashboard-alongside { margin: .8em 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; }
 .lia-dashboard .dashboard-why { max-width: 70ch; color: var(--dashboard-muted); }
 .lia-dashboard .dashboard-action-link { display: flex; flex-wrap: wrap; align-items: center; gap: .7em; margin-top: .9em; }
 .lia-dashboard .dashboard-button { display: inline-flex; align-items: center; justify-content: space-between; gap: 1em; border: 1px solid var(--dashboard-accent); border-radius: 7px; padding: .6em 1em; color: var(--dashboard-accent); background: var(--dashboard-bg); text-decoration: none; font-weight: 650; }
@@ -93,6 +94,7 @@
 .lia-dashboard .dashboard-process-summary { margin: .6em 0 0; font-size: .9em; }
 .lia-dashboard .dashboard-explore { border-top: 1px solid var(--dashboard-border); padding: 0 1.5em; }
 .lia-dashboard .dashboard-explore summary { padding: 1em 0; cursor: pointer; font-weight: 650; }
+.lia-dashboard .dashboard-button-label { overflow-wrap: normal; word-break: normal; hyphens: auto; }
 .lia-dashboard .dashboard-explore-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1em; padding-bottom: 1em; }
 .lia-dashboard .dashboard-action { padding: 1em; background: var(--dashboard-soft); border-radius: 8px; }
 .lia-dashboard .dashboard-action p { font-size: .85em; color: var(--dashboard-muted); }

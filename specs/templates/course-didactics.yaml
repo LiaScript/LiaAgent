@@ -24,7 +24,7 @@ template:
        * `difficulty` — in teacher words
        * `voice-sample` — as a quote ("voice sample", translated)
        Short paragraphs or lists, at most about 3 sentences per item.
-    3. `<details><summary>{"Settings for the assistant – nothing to read here", translated}</summary>` with the machine fields
+    3. `<details><summary>{"Technical settings (for the assistant only)", translated}</summary>` with the machine fields
        (`Teaching Style`, `Course Type` copied from Course Context, `Didactic Framework`, `Default Session Method`,
        `Session Types` with slugs, `Difficulty Level`), then `</details>`.
     Session Type slugs: lowercase ASCII words in the course language, unique; they appear only in technical

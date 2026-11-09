@@ -15,8 +15,7 @@ template:
     One slide only: the heading stays outside, everything below it sits in one `<section data-key="validation-report">…</section>`. Write:
     1. `#### {{"Validation report", translated}} – {{unit word}} {{number}}` — visible text in the course language only (no English
        key in the heading), unique per unit, so its anchor leads to exactly this report (`tasks/update-dashboard.md` → Anchors).
-       Tasks and check scripts find the report by `data-key="validation-report"` on the `<section>` directly below the heading;
-       in older journals by a heading that starts with `#### Validation Report` — the next check renames it. Where a task says
+       Older journals use a heading `#### Validation Report` — the next check renames it. Where a task says
        `#### Validation Report`, it means this block.
     2. Visible, in the course language and in plain words (every label translated): outcome with result and date, the line
        "usable with learners now", then what works, what was changed after the check (only once something was) and what is
@@ -30,27 +29,25 @@ template:
     The visible outcome never sounds like a grade; it says how much is left. `__Result:__` keeps the English key for the gates.
     FAIL → "correction needed ({n})" ({n} = the open points that cause it; once points were fixed after the check:
     "correction needed: {open} of {n} points open", and "all {n} points corrected" once none is open — with a single point
-    "the point corrected" — a count always shows the points still open, never only the original findings) · PASS with concerns → "passed with concerns – your
-    decision needed" · PASS with ⏳ items → "passed – still missing: {what}" ({what} = what learners still miss, as a noun
+    "the point corrected" — a count always shows the points still open, never only the original findings) · PASS with concerns → "passed – {n} point(s) to decide"
+    ({n} = the open concerns; it says what is left, never "with concerns") · PASS with ⏳ items → "passed – still missing: {what}" ({what} = what learners still miss, as a noun
     phrase with a number: "1 photo", "2 pictures for the self-check"; never a command or step name as subject) · PASS →
     "passed" (all translated); PASS for a draft the instructor has not approved yet → "passed – waiting for your approval".
+    Once the instructor approved a unit that still misses something, status line, Notes cell and card say
+    "approved – still missing: {what}" (computed by write-dashboard; the report's outcome line stays as it is).
     "Usable with learners now" (mandatory, translated): "yes" (nothing open) · "yes, with limits: {what}" (⏳ items or open
     concerns that do not stop the learners) · "not yet: {why}" (an error or a task learners cannot solve yet). Derived from the
-    open ❌ and ⏳ items, never from the result word alone. The overview shows it as the **first** line of the unit's card
-    (`units[].usable` {state: yes | limited | no, missing: [what is still missing]}, `tasks/update-dashboard.md` step 3) —
-    before open points and process steps; keep the line current when a change after the check fixes something.
+    open ❌ and ⏳ items, never from the result word alone. The overview derives `units[].usable` from it (the first line
+    of the unit's card); keep the line current when a change after the check fixes something.
     After a change made after the check (`tasks/quick-fix.md`) the outcome line stays until the re-check, followed by
     " – {n} point(s) changed since – short re-check open" (translated).
     Counts take the form of their number ("1 point", "2 points", translated); "(s)" or "(e)" in a term marks that
     choice and is never written.
-    One wording per state: the unit's status line, its Notes cell and the overview's `statusLabel` repeat these words
-    (`templates/session-skeleton.yaml` → `section_layout.overview`, `tasks/update-dashboard.md` step 3) — never a second
-    phrase for the same state. Where the instructor meets the short re-check first (chat, closing summary), explain it in
+    One wording per state: write it only here; `write-dashboard.mjs` copies it into the status line, the Notes cell and
+    `statusLabel` — never a second phrase for the same state. Where the instructor meets the short re-check first (chat, closing summary), explain it in
     the same sentence: "I look over the changed pages once more, about {m} minutes" (translated).
-    A language pack lists these words under `terms` (`passedMissing`, `recheckShort`, `recheckExplain`, `correctionOpen`,
-    `correctionAllFixed`, `correctionOneFixed`, `approvalOpen`, `usableYes`, `usableLimited`, `usableNo`) and older wordings under `outdatedTerms`;
-    `validate-journal.mjs` recognises them (e.g. a step name as subject of "still follows", "revised – check open", a re-check
-    without "short") and recommends the current term — never copy an old outcome line into a status line.
+    The words come from the language pack's `terms`; `validate-journal.mjs` flags older wordings (`outdatedTerms`) and
+    recommends the current term.
   result_rules:
     - '0. `[mechanical]` findings fixed during the check (`tasks/validate-course.md` → session mode step 4b) no longer count: listed as fixed during the check in "What works" and as ✅ in the technical report.'
     - '1. Decide deferrals in the **first** run and mark them ⏳ with the named later step; a deferred item is never ❌. Deferrable is only media still to be produced in a named later step (images, audio) — an image marker in the material, and a question that depends on it (unsolvable until the image step); prompt-only image prompts (no image route) are no deferral. Publishing metadata (contact address, license) is never a unit finding — the publishing gate checks it, so it never blocks Done.'

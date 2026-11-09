@@ -135,9 +135,10 @@ export function analyseMaterial(source) {
   const raw = source.split("\n");
   const slideOf = [];
   const slides = [];
+  let titlePages = 0;
   masked.forEach((line, index) => {
-    const heading = line.match(/^#{1,6}\s+(.+?)\s*#*\s*$/);
-    if (heading) slides.push(heading[1]);
+    const heading = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/);
+    if (heading) { slides.push(heading[2]); if (heading[1] === "#") titlePages++; }
     slideOf[index] = slides.at(-1) ?? "";
   });
   const markerAt = new Set(masked.map((line, index) => isImageMarker(line) ? index : -1).filter(index => index >= 0));
@@ -210,6 +211,16 @@ export function analyseMaterial(source) {
   const header = source.match(/^\s*<!--([\s\S]*?)-->/)?.[1] ?? "";
   const silent = hintLines.filter(item => !/\{\|>[^{}]*\}\{/.test(item.line));
   const hints = { total: hintLines.length, silent: silent.length };
+  // SK40: courses read aloud (narrator) are for learners who need it – there a matrix quiz marks every row red
+  // after a wrong check, and the player's default feedback lines are not in their words.
+  if (/^\s*narrator\s*:\s*\S/m.test(header)) {
+    const matrixRow = /^\s*[-*+]\s+\[\s*(\(\s*[Xx]?\s*\)|\[\s*[Xx]?\s*\])(\s*(\(\s*[Xx]?\s*\)|\[\s*[Xx]?\s*\]))+\s*\]/;
+    const matrices = [...new Set(masked.map((line, index) => matrixRow.test(line) ? slideOf[index] : null).filter(Boolean))];
+    matrices.forEach(slide => warnings.push(`matrix quiz on slide "${slide}": after a wrong check every row turns red, the learner cannot see which one is wrong – use one single-choice question per row (data/liascript-cheat-sheet.md → Quizzes for young learners)`));
+    const attributes = start => { let above = start - 1; while (above >= 0 && !raw[above].trim()) above--; return /<!--[\s\S]*-->/.test(raw[above] ?? "") ? raw[above] : ""; };
+    const plain = quizzes.filter(item => !/data-text-failed\s*=/.test(attributes(item.start)));
+    if (plain.length) warnings.push(`${plain.length} of ${quizzes.length} quiz${quizzes.length === 1 ? "" : "zes"} show the player's default feedback lines – set data-text-failed (and data-text-solved) from header macros in the learners' words (data/liascript-cheat-sheet.md → Quizzes for young learners)`);
+  }
   if (/^\s*narrator\s*:\s*\S/m.test(header) && silent.length) {
     const on = [...new Set(silent.map(item => slideOf[item.index]))];
     warnings.push(`narrator is set, but ${silent.length} of ${hintLines.length} quiz hint${hintLines.length === 1 ? "" : "s"} ([[?]]) ${silent.length === 1 ? "is" : "are"} not read aloud (slide${on.length === 1 ? "" : "s"}: ${on.slice(0, 4).join(" · ")}${on.length > 4 ? " …" : ""}) – write - [[?]] {|>}{hint text}`);
@@ -217,7 +228,7 @@ export function analyseMaterial(source) {
   const patterns = answerPatterns({ masked, raw, slideOf, quizzes, language: header.match(/^\s*language\s*:\s*([A-Za-z]{2})/m)?.[1].toLowerCase() });
   warnings.push(...patterns.warnings);
   delete patterns.warnings;
-  return { slides, quizzes: quizzes.length, markers, readAloud, hints, patterns, problems, warnings };
+  return { slides, titlePages, quizzes: quizzes.length, markers, readAloud, hints, patterns, problems, warnings };
 }
 
 // ---------------------------------------------------------------------------
@@ -403,9 +414,17 @@ export function describeFit(fit, size) {
   const lowTop = fit.imageMax.top != null && !helps(fit.imageMax.top);
   const hopeless = lowTop ? ` – even without images the text needs nearly the whole screen: no image size helps; split the slide`
     : lowOpen ? ` – at open the question starts too far down: no image size helps there; split the slide or accept scrolling` : "";
-  const images = (room.length && fit.images ? ` – images at most ${room.join(", ")} (now up to ${fit.images} px)` : "") + hopeless;
+  const first = [fit.imageMax.open, fit.imageMax.top].find(helps);
+  const images = (room.length && fit.images ? ` – images at most ${room.join(", ")} (now up to ${fit.images} px; in words: ${shareWords(first / fit.images)})` : "") + hopeless;
   if (fit.top.fits) return `${name}: ${scrolled} (${openPart}; ${top}: fits)${images}`;
   return `${name}: ${notFit} (${openPart ? `${openPart}; ` : ""}${top}: ${fit.top.visible} of ${fit.total} options visible, needs ${fit.height} px, has ${fit.available} px)${images}`;
+}
+// An image height as a share of the present one, in the words the chat uses (data/chat-checks.md → Plain words):
+// computed once here, so every message repeats the same words.
+export function shareWords(ratio) {
+  const steps = [[0.9, "slightly smaller than now"], [0.7, "about three quarters as high as now"], [0.6, "about two thirds as high as now"],
+    [0.45, "about half as high as now"], [0.3, "about a third as high as now"], [0.2, "about a quarter as high as now"]];
+  return steps.find(([min]) => ratio >= min)?.[1] ?? "less than a quarter as high as now";
 }
 // The smallest image height that still shows something; below it the advice is to split the slide.
 export const minImage = 60;
@@ -523,13 +542,16 @@ function reportFit(fit, sizes) {
   return misfits;
 }
 
+// "12 slides" includes the course's title page: name it, so a chat that counts the unit's pages (11) agrees.
+export const pagesNote = (total, titlePages = 0) => titlePages ? ` – ${titlePages} title page${titlePages === 1 ? "" : "s"} + ${total - titlePages} content page${total - titlePages === 1 ? "" : "s"}` : "";
+
 function report(file, analysis, rendered, reason) {
   const { readAloud, markers, problems, warnings } = analysis;
   const failure = rendered ? null : reportFailure(reason);
   console.log(`Material: ${file}`);
   if (rendered) {
     const { titles, counts, missing } = rendered;
-    console.log(`Slides: ${titles.length} (${titles.slice(0, 12).join(" · ")}${titles.length > 12 ? " …" : ""})`);
+    console.log(`Slides: ${titles.length}${pagesNote(titles.length, analysis.titlePages)} (${titles.slice(0, 12).join(" · ")}${titles.length > 12 ? " …" : ""})`);
     console.log(`Quizzes: ${counts.quizzes} · Read-aloud buttons: ${counts.blocks} blocks, ${counts.inline} inline${readAloud.inHints ? ` (plus ${readAloud.inHints} in hints, marked in the source – shown only once a hint is opened, not counted here)` : ""}`);
     // Hints are rendered only when opened: compare without their read-aloud texts.
     if (counts.blocks + counts.inline < readAloud.blocks + readAloud.inline - readAloud.inHints) warnings.push(`outside the hints the source marks ${readAloud.blocks} blocks and ${readAloud.inline - readAloud.inHints} inline texts for reading aloud, the rendered page shows fewer buttons (${counts.blocks} blocks, ${counts.inline} inline) – check the narrator: line and the markup`);
@@ -541,7 +563,7 @@ function report(file, analysis, rendered, reason) {
       if (windows.length) warnings.push(`slide "${quiz.slide}"${quiz.question ? ` ("${short(quiz.question)}")` : ""}: ${what} do not fit one screen at ${windows.join(", ")} – see "Fit on screen"; ${split ? "no image size helps there – split the slide" : "limit the images to the height named there"}`);
     }
   } else {
-    console.log(`Slides: ${analysis.slides.length} (from the headings)`);
+    console.log(`Slides: ${analysis.slides.length}${pagesNote(analysis.slides.length, analysis.titlePages)} (from the headings)`);
     console.log(`Quizzes with options: ${analysis.quizzes} · Read-aloud in the source: ${readAloud.blocks} blocks, ${readAloud.inline} inline`);
     console.log("Fit on screen: not measured (needs the rendered check)");
   }

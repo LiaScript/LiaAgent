@@ -20,7 +20,7 @@ template:
        * the units table, preceded by `<!-- data-type="none" -->`, at most 5 columns in this order:
          No. · Title (mandatory/optional) · Time · Kind (display name from Session Types) · Objectives;
          No. as plain digits (`| 1 |`, never `1.` or `1\.`), the same in the technical table
-    3. `<details><summary>{"Settings for the assistant – nothing to read here", translated}</summary>` with a technical
+    3. `<details><summary>{"Technical settings (for the assistant only)", translated}</summary>` with a technical
        table (No. · type slug · method slug · material path), then `</details>`. Omit the method column
        when every unit uses the default method; say so in one sentence instead.
     Use only keys defined below; do not invent new keys.
