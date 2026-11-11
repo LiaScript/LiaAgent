@@ -30,7 +30,8 @@ template:
 
     - id: track
       title: Track
-      # Read by the dashboard scripts (journal-model.mjs). A missing block means `full` (older journals).
+      # Read by the dashboard scripts (journal-model.mjs). A missing block means `full` (older journals); new
+      # journals always write it (init-course step 8, the mini save M4, scaffold Phase 2 step 2: `Track: full`).
       # mini: the short frame of a mini course (tasks/init-course.md → Mini Track); convert and template follow
       # in a later stage. The track's sections marked when needed: tasks/init-course.md → When-Needed Markers.
       template: |

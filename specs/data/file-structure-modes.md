@@ -13,7 +13,7 @@ The entire course is one LiaScript document.
 - Assets: `/assets/images/`, `/assets/videos/`, etc. — project root, shared across the whole course.
 - No `materials/` folder is created.
 - Typical for: `single-lesson` (older journals), or any course the instructor explicitly wants as one file.
-- **Light tracks:** a mini course (track `mini`) — and, in a later stage, a converted course (track `convert`) — is always `single-file` with **exactly one unit, unit 1**: the root `README.md` is that unit's material, listed as unit 1 in `## Sessions`, and the whole file is unit 1: the course title as the only `#` heading with the title slide, then its slides as `##` headings — no unit chapter (`tasks/create-mini-course.md`). A second unit is a switch to the full track (`tasks/activate-section.md` → Track switch), never a second unit inside the light track.
+- **Light tracks:** a mini course (track `mini`) — and, in a later stage, a converted course (track `convert`) — is always `single-file` with **exactly one unit, unit 1**: the root `README.md` is that unit's material, listed as unit 1 in `## Sessions`, and the whole file is unit 1: the course title as the only `#` heading with the title slide, then its slides as `##` headings — no unit chapter (`tasks/create-mini-course.md`). A second unit is a switch to the full track (`tasks/activate-section.md` → Track switch, which restructures `README.md` so its slides become the `##` chapter of unit 1), never a second unit inside the light track.
 
 ## multi-file
 
@@ -53,7 +53,7 @@ The same rules apply to every task that creates a session's material document �
 
 | Task | single-file target | multi-file target |
 |---|---|---|
-| `:promote-session`, `:coauthor-materials`, `:quick-fix`, `:validate-course` (session mode) | the `##` chapter matching this session inside root `/README.md` | `materials/{number}-{slug}/README.md` |
+| `:promote-session`, `:coauthor-materials`, `:quick-fix`, `:validate-course` (session mode) | the `##` chapter matching this session inside root `/README.md` (light track: the whole `README.md` is unit 1) | `materials/{number}-{slug}/README.md` |
 | `:create-image` / `:generate-image` asset path | `assets/images/{image-slug}.png` (or `/videos/`) | `materials/{number}-{slug}/assets/images/{image-slug}.png` (or `/videos/`) |
 | `:create-project` / `:update-project` | **not applicable** — see "Publishing" below | generates `project.yaml` with one `collection:` entry per `materials/{number}-{slug}/README.md` |
 | `:analyze-existing` scan | root `README.md` with multiple `##` chapters, no `materials/` folder | `materials/*/README.md` folders |

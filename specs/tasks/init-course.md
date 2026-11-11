@@ -28,7 +28,7 @@ The track decides how much of the journal the course needs: the full track (a co
 
 ## Steps
 
-1. Welcome the instructor in one or two sentences, together with the track question of step 2a. Once the track is known, say how many question rounds follow — count them from steps 3, 4, 6 (only when it asks) and 7 in the full track, from steps M1 and M3 (only when it asks) in the mini track, never an estimate; use the same number wherever you announce it. Do not repeat a workflow explanation the instructor already received in this chat.
+1. Welcome the instructor in one or two sentences, together with the track question of step 2a (only when it is asked). Once the track is known, say how many question rounds follow — count them from steps 3, 4, 6 (only when it asks) and 7 in the full track, from steps M1 and M3 (only when it asks) in the mini track, never an estimate; use the same number wherever you announce it. Do not repeat a workflow explanation the instructor already received in this chat.
    - **Reuse what is known.** Before asking, collect everything the instructor already said in this chat (`read_chat` when the preview is connected, otherwise this conversation) or in `journal.md` (topic, audience, number and length of lessons, how learners work, devices). Do not ask for it again; show it as a prefilled assumption ("Noted so far: … Correct?") and let the instructor correct it.
    - **No unfounded recommendations.** Mark an option as recommended only if the instructor's own statements support it, and name that reason in one line. Otherwise give no recommendation.
    - **Language.** Ask in the language the instructor writes in. Until the save (step 9, in the mini track step M4), that language is the course language for all chat messages and option labels (see `data/chat-language.md` → Language before the frame).
@@ -37,13 +37,13 @@ The track decides how much of the journal the course needs: the full track (a co
    - Unfilled sections show only their one-line note ("still empty – …"); each task writes its section from its template in `templates/`. This task only fills `## Course Context` (in the mini track also a short `## Outline` and the when-needed markers), the course title, the header's `language:` (course language code, step 7), and `## Dashboard` (via `tasks/update-dashboard.md`).
    - This copy — and the language switch of `data/chat-language.md` → Language before the frame — are the only writes allowed before the save confirmation in step 9 (in the mini track step M4; `data/agent-links.md` → confirmation tiers): they contain nothing the instructor said. Every content change waits for that save.
    - If `journal.md` already exists, leave it untouched and only work on the sections below.
-2a. 🎛️ **Track — "What are you planning?"** (form title, translated; single choice). Ask it first, before any other question, in the instructor's own terms — never show the track slugs:
+2a. 🎛️ **Track — "What are you planning?"** (form title, translated; single choice). **Only while `## Course Context` is still empty** (a new course): ask it first, before any other question, in the instructor's own terms — never show the track slugs:
    1. "Plan a course — several lessons, with learning objectives, didactics and material" → track `full` (steps 3–13)
    2. "Something small — one page with an overview, a few slides and quizzes" → track `mini` (Mini Track below, then steps 11–13)
    3. "Improve an existing LiaScript course" → track `full` with course type `improve-existing`: skip step 3, then steps 4–13
    - **Propose instead of asking** when the chat already makes the answer clear (step 1 → Reuse what is known, e.g. "just a short quiz page on …"): show the form with that option preselected and one line "Sounds like {option} — correct?" (translated).
    - **Later stage:** two more tracks are added in a later stage – not offered yet: turning existing material (PDF, slides, web page) into an interactive course (track `convert`), and building or adapting a template (track `template`). They never appear in the form. If the instructor asks for one, say in one line that this is not available yet and offer options 1 and 2.
-   - A journal that already has a `__Track:__` block with another track: a change of track is a track switch — follow `tasks/activate-section.md` → Track switch instead of this task.
+   - **Course Context already filled** (e.g. "Revise course frame"): the track is the journal's — its `__Track:__` block, `full` when the block is missing — and is **not asked**; revise in that track (full: steps 3–13, mini: M1–M4). Any wish for another track is a track switch — follow `tasks/activate-section.md` → Track switch instead of this task. The mini save (M4) never overwrites a filled section of the full track (e.g. a full outline): on a revise in the mini track it changes only its own short frame and short outline.
 3. 🎛️ **Order:** ask step 4 (free text) before this form unless its answers are already known, so the options below fit the setting the instructor named. Ask for the course type as **two short questions in the instructor's own terms** (one form, skip what is already known from step 1 or 4). Show only plain labels in the course language, never the type slugs. Phrase the options for the instructor's setting (school, university, adult education) — e.g. "lesson" vs. "session", "pupils" vs. "participants":
 
    **3a. Scope** (single choice; full track only — something small is the mini track and improving existing material is option 3 of step 2a, so neither is offered here):
@@ -154,8 +154,9 @@ M4. **Before saving** — the single write confirmation of this track: show the 
    - the language pack first, exactly as step 9 says;
    - `## Course Context` per `templates/course-context.yaml` → `layout`, short: Course Type (`Type: single-lesson` — internal, never shown as an option; Working Title; Target Group), Terminology (`sessions-called`: the word for one lesson in the course language and setting), Course Profile as for one lesson (`Persona type: tutor`, `Agenda required: no`, `Pacing: n/a`, `Assessment defaults: self-check quizzes`, `Units: 1 × {length}`, `Delivery` from M3), File Structure (`Mode: single-file`, `Session folder naming: n/a`), Conventions, Additional Notes, and the Track block (`Track: mini`, `Convert mode: n/a`, `Source: n/a`);
    - a short `## Outline` per `templates/course-outline.yaml` → `layout`: only Title, Target Audience, Learning Objectives (the 1–3 objectives, no level sub-lists needed) and Session Overview (label "Slides", translated: the slide list, one sentence each);
-   - the when-needed markers of the mini track (below).
-   Write the Course Context, the outline and the markers in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13; the overview run of step 11 replaces `process.steps` with the steps of the mini track (`tasks/update-dashboard.md` → Rules → Process steps per track).
+   - the when-needed markers of the mini track (below);
+   - under `## Sessions`, the one-line note of the empty template ("No units yet – they are created after the didactics …") is replaced by the mini note `_{miniSessionsNote}_` — the language pack's `terms.miniSessionsNote` ("The material is written in one go with “Write the course”."), without a pack translated; the unit-word map of step 11 then leaves that line out.
+   Write the Course Context, the outline, the markers and the note in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13; the overview run of step 11 replaces `process.steps` with the steps of the mini track (`tasks/update-dashboard.md` → Rules → Process steps per track).
 
 ## When-Needed Markers
 
@@ -185,7 +186,7 @@ _{laterNote}_
 - `{laterNote}` is the language pack's `terms.laterNote` ("When needed – not needed for this course yet."), `{label}` its `actions.activate-section.label` ("Add"); without a pack, translate both into the course language.
 - `{slug}` is the section key in lower case with hyphens (`visual-identity`, `learner-personas`, `analysis-status`).
 - `### Learner Personas` under `## Agents` gets its own marker in place of its note; the agent subsections under `## Agents` keep their content, and so does every other `###` subsection that holds entries.
-- The overview lists the marked sections by itself (`process.later`, computed by `write-dashboard.mjs`) — never write that list by hand.
+- The overview lists the marked sections by itself (`process.later`, computed by `write-dashboard.mjs`; Analysis Status stays marked but is not listed) — never write that list by hand.
 
 ## Notes
 

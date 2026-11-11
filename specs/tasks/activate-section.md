@@ -10,7 +10,7 @@ A marked section is not forgotten, only not needed yet (`tasks/init-course.md` �
 
 `:activate-section {section}` — `section` is the section's slug: the key in lower case with hyphens (`outline`, `didactics`, `visual-identity`, `templates`, `agenda`, `sessions`, `learner-personas`, `validation`, `analysis-status`). The marker's own action line carries it (`agent:teaching/activate-section?section={slug}`).
 
-Tier: **confirm in chat** (it writes only `journal.md`); with the MCP gate closed, the same confirmation in the terminal.
+Tier: **confirm in chat** (it writes only `journal.md`, and from mini to full also `README.md`); with the MCP gate closed, the same confirmation in the terminal.
 
 ## Inputs
 
@@ -19,14 +19,14 @@ Tier: **confirm in chat** (it writes only `journal.md`); with the MCP gate close
 - `journal.md` → `## Course Context` → `__Track:__` (track, convert mode) and Conventions → Language
 - `templates/journal.md` → the same section of the empty template: its default content
 - `templates/i18n/{code}.json` → `replace` when the course language has a language pack: the translated lines of that default content
-- Track switch only: `tasks/init-course.md` → When-Needed Markers (the lists per track) and, from mini to full, its step 3
+- Track switch only: `tasks/init-course.md` → When-Needed Markers (the lists per track) and, from mini to full, its step 3 and the root `README.md` (its headings)
 - `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/journal-links.md`
 
 ## Output
 
 - `journal.md` → the activated section: its default content in place of the marker block, heading unchanged
-- Track switch: `## Course Context` → `__Track:__` and the markers of the new track, in the same write
+- Track switch: `## Course Context` → `__Track:__` and the markers of the new track, in the same write; from mini to full also the restructured `README.md` (unit 1 becomes its `##` chapter)
 - `journal.md` → `## Dashboard` and the action lines, through `tasks/update-dashboard.md`
 
 ## Steps
@@ -60,13 +60,14 @@ Tier: **confirm in chat** (it writes only `journal.md`); with the MCP gate close
 
 When the instructor wants another track — on request ("make it a full course", "I need a second lesson") or after accepting the growth offer below:
 
+0. **Stage 1: only full ↔ mini.** Converting existing material (track `convert`) and building a template (track `template`) come in a later stage: if the instructor asks for one, say in one line that this is not available yet and offer the full or the mini track (as `tasks/init-course.md` step 2a does). Never write `Track: convert` or `Track: template`.
 1. **Show and confirm in one form** (tier "confirm in chat"; the single write confirmation of the switch):
    - the new track in teacher words (never the slug) and its `__Track:__` values;
    - the markers that go: sections the new track needs (`tasks/init-course.md` → When-Needed Markers) — they get their default content as in step 3;
    - the markers that come: sections the new track does not need, **only if they are still empty** — a section with content keeps it and stays active;
-   - from mini to full: `Type` is `single-lesson` (the mini track's internal type); ask the two course-type questions of `tasks/init-course.md` step 3 in the same form, replace the type with the answer and set the Course Profile from its step 6 (`Agenda required` included). `__File Structure:__` stays as it is: the root `README.md` stays unit 1 (`data/file-structure-modes.md` → Changing mode later, if the instructor wants one file per unit);
+   - from mini to full: `Type` is `single-lesson` (the mini track's internal type); ask the two course-type questions of `tasks/init-course.md` step 3 in the same form, replace the type with the answer and set the Course Profile from its step 6 (`Agenda required` included). `__File Structure:__` stays `single-file` and the root `README.md` stays unit 1 — but in the full track each unit is a `##` chapter titled with its unit title, so `README.md` is **restructured in place** (named in the form as one line, e.g. "Your slides become the first lesson of the course", translated): the `#` course title and its title slide stay; `## {unit 1 title}` (the title of `### 1.` in `## Sessions`, also when it equals the course title — then with the prefix `data/file-structure-modes.md` → single-file gives, e.g. "Lesson: {title}", so the two anchors differ) is inserted right before the first former `##` slide; every former `##` slide becomes `###` and every deeper heading moves one level down as well (`###` → `####` …; headings inside code blocks stay). Another file per unit is a later mode change (`data/file-structure-modes.md` → Changing mode later);
    - one line on what comes next in the new track (the overview's next step).
-2. **One write** for all of it: the `__Track:__` lines (and the Course Profile lines a new course type brings), every marker that goes, every marker that comes (form: `tasks/init-course.md` → When-Needed Markers). Never delete content: material, units, reports and notes stay.
+2. **One write** for all of it: the `__Track:__` lines (and the Course Profile lines a new course type brings), every marker that goes, every marker that comes (form: `tasks/init-course.md` → When-Needed Markers). Never delete content: material, units, reports and notes stay. From mini to full the restructured `README.md` is one material write under the same confirmation, right after the journal write; then run `node specs/dashboard/check-material.mjs README.md`.
 3. Steps 4 and 5 as above; the overview's step list follows the new track (`tasks/update-dashboard.md` → Rules → Process steps per track), with a `note`.
 
 ## Growth offer
