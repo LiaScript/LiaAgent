@@ -32,6 +32,7 @@
 .lia-dashboard .dashboard-intro { max-width: 65ch; font-size: 1.08em; margin-top: 1em; }
 .lia-dashboard .dashboard-notice { color: var(--dashboard-muted); font-size: .85em; }
 .lia-dashboard .dashboard-next { margin-top: 1.4em; padding-top: 1em; border-top: 1px solid var(--dashboard-border); }
+.lia-dashboard .dashboard-running .dashboard-why { opacity: .85; }
 .lia-dashboard .dashboard-alongside { margin: .8em 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; }
 .lia-dashboard .dashboard-why { max-width: 70ch; color: var(--dashboard-muted); }
 .lia-dashboard .dashboard-action-link { display: flex; flex-wrap: wrap; align-items: center; gap: .7em; margin-top: .9em; }

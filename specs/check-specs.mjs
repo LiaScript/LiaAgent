@@ -40,7 +40,7 @@ const required = {
   "tasks/update-dashboard.md": ["only for units whose check passed without an open ⏳ item (Done ✅) and that are approved", "6. the one-line note under `## Sessions`", "`review-{unit}-{n}`", "starts with `published` (an English key, never translated)", "The last step, publishing", "This task writes only:", "the start of every heading stays unchanged", "punctuation kept", "#3.-why-do-leaves-fall?", "write-dashboard.mjs", "**Computed by `write-dashboard.mjs`**", "do not work these out by hand", "**Words stay yours, button words come from the pack.**", "only you can judge that", "a wrong state word is fixed in the report", "Sign of life first", "Exactly one definition of \"finished\"", "**`next` names one step.**", "Link only headings outside HTML blocks", "**and the current state**", "never the unit heading", "`labels.decide` and `labels.prepare`", "**Fresh cache:**", "never this check", "**One ranking of the three measures:**", "never `plan`", "a review with fixes alone is no approval", "**Template step:**", "key `template-brief-{id}`", "the definition of \"finished\" in the note stays as it is", "German \"{n} bereit zum Ausprobieren\"", "the agenda step keeps the state it has"],
   "tasks/quick-fix.md": ["brings this form at once (one click on \"Approve\") — never a silent entry", "The change path after a check (\"Changed after the check\", the outcome suffix) does not apply there", "Every change after a check makes the unit \"short re-check open\"", "2a. **Show and confirm:**", "**Called from `:validate-course`** (fix during the check", "without one, say so in the dated line", "does not reopen a check", "Change path after a check", "**One journal write per fix:**", "Changed after the check", "never leave a done to-do standing", "Called from `:build-session`", "**Find them first:**", "**The Notes cell states the state, not a list of changes:**", "offer both variants in the same form", "short re-check open", "Change a task's type", "is searched in every unit", "**Approval after a review:**", "\"correction needed: {open} of {n} points open\""],
   "tasks/generate-image.md": ["or `prompt-only` now that a route exists", "move every downloaded `{slug}.png`", "never send the instructor back to `:create-image` for it", "add the image `![{alt text}]({path})` below the prompt", "replace the marker", "never by its name", "Only once the file exists"],
-  "tasks/build-session.md": ["**before the run starts**, right after the start confirmation", "(no looked-at candidate for a spot: insert nothing there", "where neither names one, ask it in the start confirmation", "`create-image` (Free photos) skips its \"go\" per batch", "go to step 4, which runs in every case", "names the number in its runs line", "**`free-photo` and `own`: record the spot first**", "is not blocking: the image step resolves it", "do not refresh the dashboard themselves", "prompt-only mode", "every factual statement that could not be verified", "one that makes the unit unusable for that persona", "only the named `#### Persona:` entry", "Repeat c–d", "never 1a or 1b", "ask **once in the terminal**", "**read completely when its step starts**", "**Open decisions first:**", "a hint, never a reason to decline the run", "**Image source per spot:**", "**Check the sketch before the start:**", "**Overview patch in the same save:**", "in parts of at most about a minute of generation each", "**Never a \"mechanical\" fix:**", "write the report **once per iteration, after the fixes of step d", "insert the best looked-at candidate **before step c**", "**One write per file for all images of the run:**", "**Runs line**", "## Writes per run", "try-as-learner?number={number}", "**Usable first:**", "**Approval stays with the instructor:**"],
+  "tasks/build-session.md": ["**before the run starts**, right after the start confirmation", "(no looked-at candidate for a spot: insert nothing there", "where neither names one, ask it in the start confirmation", "`create-image` (Free photos) skips its \"go\" per batch", "go to step 4, which runs in every case", "names the number in its runs line", "**`free-photo` and `own`: record the spot first**", "is not blocking: the image step resolves it", "do not refresh the dashboard themselves", "prompt-only mode", "every factual statement that could not be verified", "one that makes the unit unusable for that persona", "only the named `#### Persona:` entry", "Repeat c–d", "never 1a or 1b", "ask **once in the terminal**", "**read completely when its step starts**, **together with every file its own Inputs name**", "never copy a finding, a `Required` list or a \"(from …)\" line from another unit's report", "**Open decisions first:**", "a hint, never a reason to decline the run", "**Image source per spot:**", "**Check the sketch before the start:**", "**Overview patch in the same save:**", "in parts of at most about a minute of generation each", "**Never a \"mechanical\" fix:**", "write the report **once per iteration, after the fixes of step d", "insert the best looked-at candidate **before step c**", "**One write per file for all images of the run:**", "**Runs line**", "## Writes per run", "try-as-learner?number={number}", "**Usable first:**", "**Approval stays with the instructor:**"],
   "tasks/create-project.md": ["never the assistant's own files", "1b. Only once the gate is open", "the contact address was not saved either", "never `.cache/`", "**Version:**", "**Contact address:**", "Read the repository before anything changes", "Show the plan, then confirm in the terminal", "`templates.local.json` are committed with the course content"],
   "tasks/update-project.md": ["Show the plan, then confirm in the terminal", "**Template files in the commit list:**"],
   "tasks/configure-agent.md": ["Nothing is written before it", "the entry is theirs from then on"],
@@ -108,10 +108,10 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 });
 
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
-// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup).
+// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b, measured durations and agreements after R12c).
 const budgets = {
-  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 3808, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
-  "data/chat-checks.md": 637, "tasks/build-session.md": 3269, "tasks/validate-course.md": 4077, "tasks/quick-fix.md": 1613,
+  "tasks/update-dashboard.md": 3005, "data/agent-links.md": 3875, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1191,
+  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4198, "tasks/quick-fix.md": 1613,
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
   assert.match(read("data/chat-wording.md"), /\*\*Commands stay off the chat:\*\*[^\n]*\n[^\n]*also not after a link/);
@@ -130,6 +130,26 @@ test("start: the first command after liadev init creates the empty journal, open
   assert.match(yaml, /on_activation:\n\s+- "If the instructor's first message is only `start`/, "start is the first activation rule");
   assert.match(read("data/agent-links.md"), /\| \*\*run\*\* \|[^\n]*`start`/);
   assert.match(read("data/agent-links.md"), /`liadev init` in an empty folder/);
+});
+
+test("build-session reads what its check step needs: every file the Inputs of validate-course name (R12-SP101)", () => {
+  const inputs = read("tasks/validate-course.md").split("## Inputs")[1].split("\n## ")[0];
+  const files = [...inputs.matchAll(/^- `((?:checklists|templates|data|tasks)\/[^`]+)`/gm)].map(match => match[1])
+    .filter(file => !["tasks/update-dashboard.md", "templates/project-dashboard.yaml"].includes(file));
+  assert.ok(files.length >= 6, `validate-course names its inputs (${files.join(", ")})`);
+  const build = read("tasks/build-session.md");
+  const stepC = build.split(/^c\. /m)[1]?.split(/^d\. /m)[0] ?? "";
+  const known = build.split("## Inputs")[1].split("\n## ")[0] + stepC;
+  assert.deepEqual(files.filter(file => !known.includes(file)), [], "build-session does not name these inputs of its check step");
+  assert.match(stepC, /\*\*Read first, completely\*\*/);
+});
+
+test("validate-course marks the files of the check as read completely, so the re-read rule covers them (R12b-SP111)", () => {
+  const inputs = read("tasks/validate-course.md").split("## Inputs")[1].split("\n## ")[0].split("\n");
+  for (const file of ["checklists/course-quality-checklist.md", "tasks/validate-syntax.md", "data/duration-heuristic.md", "data/didactic-methods.md", "templates/session-validation.yaml"]) {
+    const line = inputs.find(item => item.startsWith(`- \`${file}\``)) ?? "";
+    assert.match(line, /read completely/, `${file} is not marked "read completely" in the Inputs of validate-course`);
+  }
 });
 
 test("rule sheets and the main tasks stay within their word budget", () => {

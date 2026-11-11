@@ -414,6 +414,10 @@ const staleNote = notes.find(line => /after the didactics|nach der Didaktik/i.te
 if (agendaRows && staleNote) problems.push(`## Sessions still shows the empty-state note "${staleNote.trim().slice(0, 80)}" although ## Agenda plans ${agendaRows} units – the note says instead that the units are planned in the agenda and are created one after another, starting with the first`);
 // Warnings: likely contradictions the instructor reads, printed without changing the exit code.
 const warnings = [...stepsWarnings];
+// An agreement with the instructor ("wishes … next time") is theirs to see: a prepare item, never internal (R12c-SP121).
+const agreementWords = /\b(vereinbart|wünscht|nächste[sn]? Mal|beim nächsten|möchte|zugesagt|agreed|wishes|wants|next time|promised)\b/i;
+model.decisions.filter(item => item.kind === "internal" && agreementWords.test(`${item.title ?? ""} ${item.why ?? ""} ${item.how ?? ""}`)).forEach(item =>
+  warnings.push(`internal note "${short(String(item.title), 70)}" records an agreement with the instructor – make it a prepare item in their words (tasks/update-dashboard.md step 6)`));
 // Wrong forms the course language's pack lists (`wrongForms`: [pattern, right form]), e.g. a plural-only word made
 // singular (German "eine Bedenke" → "ein Punkt"), in the visible journal and the overview texts.
 for (const [pattern, right] of coursePack?.wrongForms ?? []) {
@@ -462,7 +466,8 @@ if (openStep) {
   const lower = text => String(text ?? "").toLowerCase();
   if (model.next.title && !lower(model.next.title).includes(lower(openStep.title))) warnings.push(`next.title "${model.next.title}" is not the current step of unit ${nextUnit.id} ("${openStep.title}") – the next step of a unit is titled with that step; the course step shows in the process bar`);
   const words = lower(openStep.title).split(/[^\p{L}\d]+/u).filter(word => word.length >= 4);
-  if (model.next.label && words.length && !words.some(word => lower(model.next.label).includes(word.slice(0, 5)))) warnings.push(`next.label "${model.next.label}" does not name the step "${openStep.title}" – the label is that step as an action; other work in the unit gets its own step`);
+  // A running "let it be prepared" (next.running) is named by its state word, not by the step (R12-SK77).
+  if (model.next.label && !model.next.running && words.length && !words.some(word => lower(model.next.label).includes(word.slice(0, 5)))) warnings.push(`next.label "${model.next.label}" does not name the step "${openStep.title}" – the label is that step as an action; other work in the unit gets its own step`);
 }
 // "Finished/ready" is reserved for a unit whose check passed (tasks/update-dashboard.md).
 const finishedWord = /(?<!\b(?:nicht|noch nicht|not|not yet|kein|keine)\s)\b(finished|ready|completed?|done|fertig(?:gestellt)?|abgeschlossen|erledigt)\b/i;

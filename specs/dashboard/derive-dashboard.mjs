@@ -150,7 +150,9 @@ export function derive(journal, input, { date, previous } = {}) {
     // Only own photos still missing: the step waits for the instructor ("planned") – it becomes current again
     // when it is the next action (after the check, SK41).
     const { total, placed, open, waiting = 0 } = facts.images;
-    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material ? "current" : "planned") : open ? "planned" : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
+    // When the next action inserts this unit's photo, the step stays current – no flip between two rules (R12c).
+    const photoNext = expected?.key === "insert-images" && String(expected.params.number) === String(facts.n);
+    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material ? "current" : "planned") : open ? (photoNext ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
     // Only own photos missing: the step says it waits for them, with the count (SK60).
     const waitingWord = String(terms.imagesWaiting ?? englishTerms.imagesWaiting);
     const waitingLabel = imageStep && total && open && open === waiting ? waitingWord.replace("{n}", placed).replace("{m}", total) : undefined;
@@ -178,6 +180,15 @@ export function derive(journal, input, { date, previous } = {}) {
     // The material step is done once the material exists and a check ran or the instructor approved it –
     // also after "let it be prepared", where no one approves the draft before the check (SK60).
     const materialStep = unitStepOf({ key: "work-out" }, steps);
+    // While "let it be prepared" runs, the material step does not promise the joint way (R12-SK76): the pack's
+    // default why of that step is replaced; a why of the agent's own stays.
+    const defaultWhy = (journal.pack?.unitSteps ?? englishUnitSteps)[1]?.why;
+    const runningWhy = terms.buildRunningStep ?? englishTerms.buildRunningStep;
+    // Also after the run: the material was prepared on its own (R12b-SK88).
+    if (materialStep && facts.buildRequested && materialStep.why === defaultWhy) set(materialStep, "why", runningWhy, `${path} step "${materialStep.title}".why`, "prepared on its own");
+    // The step being worked on is running, not "up next" for the instructor (R12b-SK87).
+    const running = facts.buildRequested && !facts.report?.result;
+    if (materialStep) set(materialStep, "running", running ? true : undefined, `${path} step "${materialStep.title}".running`, running ? "let it be prepared is running" : "not running");
     if (materialStep && materialStep !== checkStep && facts.material && (facts.report?.result || facts.approved)) {
       set(materialStep, "state", "done", `${path} step "${materialStep.title}".state`, facts.approved ? "material approved" : "material written and checked");
     }
@@ -284,6 +295,9 @@ export function derive(journal, input, { date, previous } = {}) {
         "next", `next action by the journal: ${expected.command}`);
     }
   }
+
+  // A running "let it be prepared" is a state, not a button (R12-SK75): the view shows it without a link.
+  if (data.next) set(data.next, "running", expected?.key === "build-running" ? true : undefined, "next.running", expected?.key === "build-running" ? "let it be prepared is running" : "nothing runs");
 
   // The step `next` advances is the one in progress – in the course and in its unit: a planned (or optional)
   // one becomes current; another current course step contradicts `next` and is the agent's to rewrite.

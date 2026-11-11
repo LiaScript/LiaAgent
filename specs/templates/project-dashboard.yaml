@@ -62,6 +62,7 @@ template:
       label: 'Understandable action label'
       href: 'Allowed `agent:` link or section anchor'
       command: 'Readable command; required for `agent:` links'
+      running: '(computed) true while "let it be prepared" runs – the view shows the state without a button'
     decisions: 'Open points: list of {key, kind: decide|prepare|internal, title, why?, how (required unless internal), href?, command?, label?, icon?, source?}; `source: {check: n, date?}` marks a point that comes from the check of unit n (its `href` then links that report heading, `validate-journal.mjs` checks both); `label` is required when `href` is set and names the destination (e.g. "See outline"), never the question; a section anchor (`#…`) is shown as a plain text link, only an `agent:` link becomes a button'
     plan: 'Provisional planning {title?, note, rows: [{label, text}]} — only while no agenda exists'
     explore: 'Optional action cards with icon/title/description/label/href/command; optional actions use ➕ or their agent''s icon, never the icon of `next` (`validate-journal.mjs` checks it)'

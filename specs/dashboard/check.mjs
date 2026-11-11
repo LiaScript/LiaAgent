@@ -437,6 +437,13 @@ test("validate-journal warns about a wrong form the language pack lists (wrongFo
   assert.doesNotMatch(right.output, /wrong form/);
 });
 
+test("validate-journal warns when an internal note records an agreement with the instructor (R12c-SP121)", () => {
+  const agreed = validate({ title: "Kurs", next, decisions: [{ key: "images-later", kind: "internal", title: "Frau K. wünscht beim nächsten Mal zuerst die Bildfragen auszubessern" }] });
+  assert.match(agreed.output, /internal note "Frau K\. wünscht.*records an agreement with the instructor – make it a prepare item/);
+  const own = validate({ title: "Kurs", next, decisions: [{ key: "slug", kind: "internal", title: "Doppelter Kurzname aufräumen" }] });
+  assert.doesNotMatch(own.output, /records an agreement/);
+});
+
 test("validate-journal reports an open point whose link has no label", () => {
   const result = validate({ title: "Kurs", next, decisions: [{ key: "a", title: "Frage?", how: "B", href: "#outline" }] });
   assert.equal(result.status, 2);
@@ -1736,7 +1743,7 @@ test("the empty journal has the template step after the didactics and the select
 });
 
 // ── derive-dashboard.mjs: the fields that follow from the journal are computed, not written by hand ──
-import { readJournal, usableState as reportUsable } from "./journal-model.mjs";
+import { readJournal, usableState as reportUsable, englishUnitSteps } from "./journal-model.mjs";
 import { derive, unitState, missingText, patchJournal } from "./derive-dashboard.mjs";
 
 // A journal with an agenda of three units: unit 1 checked (FAIL, one point changed since, images 1 of 2),
@@ -2062,7 +2069,7 @@ test("write-dashboard writes the status lines and Notes cells in the same write 
 });
 
 // ── Next action and action lines: the command follows the journal, the words stay the agent's while it is right ──
-import { courseNext, unitAction, patchUnitActions, accepts } from "./actions.mjs";
+import { courseNext, unitAction, patchUnitActions, accepts, courseStepOf } from "./actions.mjs";
 
 const facts = (n, more = {}) => ({ n: String(n), heading: null, material: false, done: false, approved: false, report: null, images: { total: 0, placed: 0, open: 0 }, ...more });
 const course = (more = {}) => ({
@@ -2476,4 +2483,76 @@ test("a new unit without its status line gets one, in number order", () => {
   const none = source.replace(/^1\. Halves and quarters – .*\n/m, "");
   const j2 = readJournal(none);
   assert.match(patchJournal(none, j2, derive(j2, deriveData())).source, /^1\. Halves and quarters – .*\n2\. Comparing fractions – .*\n\n<details>/m, "without any status line: above the technical overview");
+});
+
+test("check-material: a companion greeting that reads as if the learner greeted the companion is a warning (R12-SK81)", () => {
+  const { warnings } = analyseMaterial("# Blüten\n\n    --{{0}}--\nHallo, da bin ich wieder, Mira! Komm mit!\n\n# Zweite\n\nHallo, Kinder! Ich bin Mira.\n");
+  const hits = warnings.filter(warning => /reads as if the learner greeted/.test(warning));
+  assert.equal(hits.length, 1, warnings.join("\n"));
+  assert.match(hits[0], /slide "Blüten": "Hallo, da bin ich wieder, Mira!"/);
+  assert.equal(analyseMaterial("# A\n\nHello, here I am again, Max!\n").warnings.filter(warning => /reads as if/.test(warning)).length, 1, "English as well");
+  assert.equal(analyseMaterial("# A\n\nIch bin es wieder, Mira! Schau mal.\n").warnings.filter(warning => /reads as if/.test(warning)).length, 1, "also without a greeting word (R12b-SK89)");
+  assert.equal(analyseMaterial("# A\n\nIch bin Mira. Schön, dass du da bist, Lea!\n").warnings.filter(warning => /reads as if/.test(warning)).length, 0, "addressing a learner is fine");
+});
+
+test("check-material: a project rule 'without scrolling' turns every window it names that needs scrolling into a warning (R12-SK78)", () => {
+  const { noScrollRule, noScrollMisfits } = materialChecks;
+  const journal = "## Agents\n\n### Coauthor\n\n  11. Bei Fragen mit Bildern sind Frage und alle Bilder auf dem iPad quer ohne Scrollen zu sehen.\n\n### Artist-Agent\n";
+  const rule = noScrollRule(journal);
+  assert.deepEqual({ orientations: rule.orientations }, { orientations: ["landscape"] });
+  assert.match(rule.text, /quer ohne Scrollen/);
+  assert.equal(noScrollRule("## Agents\n\n### Coauthor\n\nKurze Sätze.\n"), null, "no rule, no check");
+  const fit = [{ slide: "Was kommt zuerst?", question: "Was kommt zuerst?", windows: ["810×1080 portrait: fits only once scrolled (…)", "1024×768 landscape: fits only once scrolled (…)", "1080×810 landscape: fits"] },
+    { slide: "Was kommt zuerst?", question: "Was dann?", windows: ["1024×768 landscape: fits only once scrolled (…)"] },
+    { slide: "Was kommt zuerst?", question: "Und zuletzt?", windows: ["1024×768 landscape: does not fit (…)"] }];
+  const misfits = noScrollMisfits(fit, rule);
+  assert.equal(misfits.length, 2, "the first question of a page counts at open; a later one only when it does not fit one screen\n" + misfits.join("\n"));
+  assert.match(misfits[1], /Und zuletzt/);
+  assert.match(misfits[0], /slide "Was kommt zuerst\?".*1024×768 landscape.*project rule.*quer ohne Scrollen.*not met – a finding/);
+  assert.doesNotMatch(misfits[0], /810×1080/, "portrait windows are not named when the rule says landscape");
+});
+
+test("a running 'let it be prepared' is a state, not a button: next.running, status word and material step say so (R12-SK75–SK77)", () => {
+  const journal = readJournal(deriveJournal({}, { decisions: "- **2026-11-07:** preparation requested" }));
+  assert.equal(journal.units[0].buildRequested, true);
+  const { data } = derive(journal, { title: "Fractions" });
+  assert.equal(data.next.running, true, "the next action is the running preparation");
+  assert.equal(data.units[0].statusLabel, "being prepared – planning sketch ✅", "no 'material open' while it is being written");
+  assert.match(data.units[0].process.steps[1].why, /on its own/, "the material step does not say 'together' during the run");
+  const html = dashboard.renderComponent("View", "r12", { ...data, lang: "en" });
+  const hero = html.split('class="dashboard-hero"')[1].split("</header>")[0];
+  assert.match(hero, /Running now:/);
+  assert.doesNotMatch(hero, /dashboard-button-primary|dashboard-command/, "no big button and no command while it runs");
+  assert.equal(data.units[0].process.steps[1].running, true, "the step being worked on is running, not 'up next'");
+  const card = html.split('data-dashboard-select="1"')[0];
+  assert.doesNotMatch(html.split('class="dashboard-hero"')[1].split("</header>")[0], /Up next/);
+  assert.match(dashboard.renderComponent("View", "r12s", { ...data, lang: "en", selected: "1" }), /Running now/, "the running step's chip");
+  const done = readJournal(deriveJournal({}, { decisions: "- **2026-11-07:** preparation requested", report: failReport }));
+  const after = derive(done, { title: "Fractions" }).data;
+  assert.equal(after.next.running, undefined, "the report ends the run");
+  assert.equal(after.units[0].process.steps[1].running, undefined);
+  // After the run the pack's joint-way text does not come back (R12b-SK88).
+  const back = derive(done, { title: "Fractions", units: [{ id: 1, title: "Halves", state: "draft", process: { steps: englishUnitSteps.map(step => ({ ...step, state: "done" })) } }] }).data;
+  assert.match(back.units[0].process.steps[1].why, /on its own/);
+});
+
+test("a unit number turns the course check into a unit check: next with number=n is not the course action (R12b)", () => {
+  const course = makeAction("check-course", "teaching", "validate-course", {}, "🔍");
+  assert.equal(accepts(course, "agent:teaching/validate-course"), true);
+  assert.equal(accepts(course, "agent:teaching/validate-course?number=4"), false, "number selects one unit – another action");
+  const fix = makeAction("quick-fix", "teaching", "quick-fix", { number: "2" }, "✏️");
+  assert.equal(accepts(fix, "agent:teaching/quick-fix?number=2&description=Typo"), true, "a description still counts as the same action");
+});
+
+test("a course check that failed only on own photos sends next to inserting the photo, not to another course check (R12c-SK93)", () => {
+  const unit = (n, waiting) => ({ n, heading: { title: `U${n}` }, material: true, approved: true, done: !waiting, report: { result: "PASS", changedSince: 0 }, images: { total: 2, placed: 2 - waiting, open: waiting, waiting } });
+  const journal = validation => ({ filled: { "Course Context": true, Outline: true, Didactics: true }, units: [unit("1", 0), unit("2", 1)], templates: { selection: "decided", adopted: [], briefs: [] },
+    hasAgenda: true, agendaRequired: "yes", validation, published: false });
+  const states = new Map([["1", "done"], ["2", "current"]]);
+  assert.equal(courseNext(journal({ mode: null, result: null }), states).key, "check-course", "before the first course check: check the course");
+  const after = courseNext(journal({ mode: "course", result: "FAIL" }), states);
+  assert.equal(after.key, "insert-images", "the course check failed only on the photo");
+  assert.equal(after.href, "agent:artist/create-image?number=2");
+  const steps = ["Frame", "Goals", "Didactics", "Blocks", "Agenda", "Material", "Check", "Publish"].map(title => ({ title }));
+  assert.equal(courseStepOf(after, steps).title, "Check", "the photo finishes the course check: that course step stays in progress");
 });

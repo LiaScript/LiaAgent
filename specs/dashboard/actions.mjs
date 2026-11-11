@@ -138,6 +138,14 @@ export function courseNext(journal, states, selected) {
     const approvedOne = journal.units.some(unit => unit.approved);
     return { ...unitAction(unplanned), also: approvedOne ? [`agent:teaching/build-session?number=${unplanned.n}`] : [] };
   }
+  // A course check that failed only because own photos are still to come: the photo is next, not another
+  // check (R12c-SK93).
+  const waitingMedia = journal.units.filter(awaitsOwnMedia);
+  if (journal.validation.mode === "course" && journal.validation.result === "FAIL" && waitingMedia.length
+    && journal.units.every(unit => awaitsOwnMedia(unit) || states.get(unit.n) === "done")) {
+    // It finishes the course check, so that course step stays the one in progress.
+    return { ...action("insert-images", "artist", "create-image", { number: waitingMedia[0].n }), courseKey: "check-course" };
+  }
   if (journal.units.length && !(journal.validation.mode === "course" && journal.validation.result === "PASS")) return action("check-course", "teaching", "validate-course", {}, "🔍");
   if (journal.validation.mode === "course" && journal.validation.result === "PASS" && !journal.published) return action("publish", "development", "create-project", {}, "🚀");
   return null;
@@ -149,9 +157,13 @@ const parse = href => {
   const [path, query = ""] = String(href ?? "").split("?");
   return { path, params: Object.fromEntries(query.split("&").filter(Boolean).map(pair => pair.split("=").map(decodeURIComponent))) };
 };
+// Extra parameters keep an action (a description for quick-fix), except a unit or file the wanted action does
+// not name: validate-course?number=4 checks one unit, not the course (R12b).
+const scopes = ["number", "file"];
 const covers = (wanted, href) => {
   const [want, have] = [parse(wanted), parse(href)];
-  return want.path === have.path && Object.entries(want.params).every(([name, value]) => have.params[name] === value);
+  return want.path === have.path && Object.entries(want.params).every(([name, value]) => have.params[name] === value)
+    && scopes.every(name => name in want.params || !(name in have.params));
 };
 export const accepts = (expected, href) => Boolean(href) && (covers(expected.href, href)
   || expected.also.some(other => other.endsWith("&") ? String(href).startsWith(other) : covers(other, href)));
@@ -179,7 +191,8 @@ export function unitStepOf(expected, steps = []) {
 
 // The course step an action advances: its own one, or for a unit action the material step.
 export function courseStepOf(expected, steps = []) {
-  if (expected.key in courseStep) return steps[courseStep[expected.key]] ?? null;
+  const key = expected.courseKey ?? expected.key;
+  if (key in courseStep) return steps[courseStep[key]] ?? null;
   return expected.params.number != null || expected.params.file != null ? steps.find(item => /materi/i.test(item.title)) ?? steps[5] ?? null : null;
 }
 

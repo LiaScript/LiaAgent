@@ -350,6 +350,8 @@
  "terms": {
   "skeleton": "Planungsskizze",
   "skeletonOnly": "Planungsskizze ✅ · Material offen",
+  "buildRunning": "wird vorbereitet – Planungsskizze ✅",
+  "buildRunningStep": "Der Assistent schreibt, bebildert und prüft das Material allein; danach sehen Sie es gemeinsam an.",
   "checked": "geprüft ✅",
   "writingRules": "Regeln für das Schreiben des Materials",
   "materialWritten": "Material geschrieben · Prüfung offen",
