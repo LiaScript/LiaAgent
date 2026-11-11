@@ -178,6 +178,11 @@ export function derive(journal, input, { date, previous } = {}) {
     // The material step is done once the material exists and a check ran or the instructor approved it –
     // also after "let it be prepared", where no one approves the draft before the check (SK60).
     const materialStep = unitStepOf({ key: "work-out" }, steps);
+    // While "let it be prepared" runs, the material step does not promise the joint way (R12-SK76): the pack's
+    // default why of that step is replaced; a why of the agent's own stays.
+    const defaultWhy = (journal.pack?.unitSteps ?? englishUnitSteps)[1]?.why;
+    const runningWhy = terms.buildRunningStep ?? englishTerms.buildRunningStep;
+    if (materialStep && facts.buildRequested && !facts.report?.result && materialStep.why === defaultWhy) set(materialStep, "why", runningWhy, `${path} step "${materialStep.title}".why`, "let it be prepared is running");
     if (materialStep && materialStep !== checkStep && facts.material && (facts.report?.result || facts.approved)) {
       set(materialStep, "state", "done", `${path} step "${materialStep.title}".state`, facts.approved ? "material approved" : "material written and checked");
     }
@@ -284,6 +289,9 @@ export function derive(journal, input, { date, previous } = {}) {
         "next", `next action by the journal: ${expected.command}`);
     }
   }
+
+  // A running "let it be prepared" is a state, not a button (R12-SK75): the view shows it without a link.
+  if (data.next) set(data.next, "running", expected?.key === "build-running" ? true : undefined, "next.running", expected?.key === "build-running" ? "let it be prepared is running" : "nothing runs");
 
   // The step `next` advances is the one in progress – in the course and in its unit: a planned (or optional)
   // one becomes current; another current course step contradicts `next` and is the agent's to rewrite.

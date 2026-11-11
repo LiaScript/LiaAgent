@@ -46,7 +46,7 @@ export const englishTerms = {
   approvalOpen: "passed – waiting for your approval",
   imagesWaiting: "waiting for your photo – images {n} of {m}",
   approvedMissing: "approved – still missing: {what}",
-  buildRequested: "preparation requested",
+  buildRunning: "being prepared – planning sketch ✅", buildRunningStep: "The assistant writes, illustrates and checks the material on its own; then you look at it together.", buildRequested: "preparation requested",
   recheckDone: "re-checked",
   recheckShort: "{n} point(s) changed since – short re-check open",
   correctionOpen: "correction needed: {open} of {n} points open",
@@ -295,6 +295,8 @@ const tail = term => String(term).split(" · ").slice(1).join(" · ") || String(
 // source (without its date), "check: " before a FAIL, open images after " – "; Done ✅ → "checked ✅".
 export function statusText(unit, terms) {
   if (!unit.heading && !unit.material) return null;
+  // "Let it be prepared" is running until its check report exists: no "material open" meanwhile (R12-SK76).
+  if (unit.buildRequested && !unit.report?.result) return terms.buildRunning ?? englishTerms.buildRunning;
   if (!unit.material) return terms.skeletonOnly;
   const { total, placed, open } = unit.images;
   const report = unit.report;

@@ -2477,3 +2477,43 @@ test("a new unit without its status line gets one, in number order", () => {
   const j2 = readJournal(none);
   assert.match(patchJournal(none, j2, derive(j2, deriveData())).source, /^1\. Halves and quarters – .*\n2\. Comparing fractions – .*\n\n<details>/m, "without any status line: above the technical overview");
 });
+
+test("check-material: a companion greeting that reads as if the learner greeted the companion is a warning (R12-SK81)", () => {
+  const { warnings } = analyseMaterial("# Blüten\n\n    --{{0}}--\nHallo, da bin ich wieder, Mira! Komm mit!\n\n# Zweite\n\nHallo, Kinder! Ich bin Mira.\n");
+  const hits = warnings.filter(warning => /reads as if the learner greeted/.test(warning));
+  assert.equal(hits.length, 1, warnings.join("\n"));
+  assert.match(hits[0], /slide "Blüten": "Hallo, da bin ich wieder, Mira!"/);
+  assert.equal(analyseMaterial("# A\n\nHello, here I am again, Max!\n").warnings.filter(warning => /reads as if/.test(warning)).length, 1, "English as well");
+});
+
+test("check-material: a project rule 'without scrolling' turns every window it names that needs scrolling into a warning (R12-SK78)", () => {
+  const { noScrollRule, noScrollMisfits } = materialChecks;
+  const journal = "## Agents\n\n### Coauthor\n\n  11. Bei Fragen mit Bildern sind Frage und alle Bilder auf dem iPad quer ohne Scrollen zu sehen.\n\n### Artist-Agent\n";
+  const rule = noScrollRule(journal);
+  assert.deepEqual({ orientations: rule.orientations }, { orientations: ["landscape"] });
+  assert.match(rule.text, /quer ohne Scrollen/);
+  assert.equal(noScrollRule("## Agents\n\n### Coauthor\n\nKurze Sätze.\n"), null, "no rule, no check");
+  const fit = [{ slide: "Was kommt zuerst?", question: "Was kommt zuerst?", windows: ["810×1080 portrait: fits only once scrolled (…)", "1024×768 landscape: fits only once scrolled (…)", "1080×810 landscape: fits"] },
+    { slide: "Was kommt zuerst?", question: "Was dann?", windows: ["1024×768 landscape: fits only once scrolled (…)"] },
+    { slide: "Was kommt zuerst?", question: "Und zuletzt?", windows: ["1024×768 landscape: does not fit (…)"] }];
+  const misfits = noScrollMisfits(fit, rule);
+  assert.equal(misfits.length, 2, "the first question of a page counts at open; a later one only when it does not fit one screen\n" + misfits.join("\n"));
+  assert.match(misfits[1], /Und zuletzt/);
+  assert.match(misfits[0], /slide "Was kommt zuerst\?".*1024×768 landscape.*project rule.*quer ohne Scrollen.*not met – a finding/);
+  assert.doesNotMatch(misfits[0], /810×1080/, "portrait windows are not named when the rule says landscape");
+});
+
+test("a running 'let it be prepared' is a state, not a button: next.running, status word and material step say so (R12-SK75–SK77)", () => {
+  const journal = readJournal(deriveJournal({}, { decisions: "- **2026-11-07:** preparation requested" }));
+  assert.equal(journal.units[0].buildRequested, true);
+  const { data } = derive(journal, { title: "Fractions" });
+  assert.equal(data.next.running, true, "the next action is the running preparation");
+  assert.equal(data.units[0].statusLabel, "being prepared – planning sketch ✅", "no 'material open' while it is being written");
+  assert.match(data.units[0].process.steps[1].why, /on its own/, "the material step does not say 'together' during the run");
+  const html = dashboard.renderComponent("View", "r12", { ...data, lang: "en" });
+  const hero = html.split('class="dashboard-hero"')[1].split("</header>")[0];
+  assert.match(hero, /Running now:/);
+  assert.doesNotMatch(hero, /dashboard-button-primary|dashboard-command/, "no big button and no command while it runs");
+  const done = readJournal(deriveJournal({}, { decisions: "- **2026-11-07:** preparation requested", report: failReport }));
+  assert.equal(derive(done, { title: "Fractions" }).data.next.running, undefined, "the report ends the run");
+});

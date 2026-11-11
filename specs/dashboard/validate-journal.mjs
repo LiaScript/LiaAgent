@@ -462,7 +462,8 @@ if (openStep) {
   const lower = text => String(text ?? "").toLowerCase();
   if (model.next.title && !lower(model.next.title).includes(lower(openStep.title))) warnings.push(`next.title "${model.next.title}" is not the current step of unit ${nextUnit.id} ("${openStep.title}") – the next step of a unit is titled with that step; the course step shows in the process bar`);
   const words = lower(openStep.title).split(/[^\p{L}\d]+/u).filter(word => word.length >= 4);
-  if (model.next.label && words.length && !words.some(word => lower(model.next.label).includes(word.slice(0, 5)))) warnings.push(`next.label "${model.next.label}" does not name the step "${openStep.title}" – the label is that step as an action; other work in the unit gets its own step`);
+  // A running "let it be prepared" (next.running) is named by its state word, not by the step (R12-SK77).
+  if (model.next.label && !model.next.running && words.length && !words.some(word => lower(model.next.label).includes(word.slice(0, 5)))) warnings.push(`next.label "${model.next.label}" does not name the step "${openStep.title}" – the label is that step as an action; other work in the unit gets its own step`);
 }
 // "Finished/ready" is reserved for a unit whose check passed (tasks/update-dashboard.md).
 const finishedWord = /(?<!\b(?:nicht|noch nicht|not|not yet|kein|keine)\s)\b(finished|ready|completed?|done|fertig(?:gestellt)?|abgeschlossen|erledigt)\b/i;

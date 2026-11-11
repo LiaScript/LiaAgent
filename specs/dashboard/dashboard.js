@@ -17,7 +17,7 @@
       unitNext: step => `Als Nächstes: ${step}`,
       // Derived as well: a check step ("review") behind an earlier required step that is still open.
       "state.waiting": step => `Wartet auf: ${step}`,
-      view: "Ansehen", eyebrow: "Kursplan", next: "Als Nächstes:", why: "Warum?",
+      view: "Ansehen", eyebrow: "Kursplan", next: "Als Nächstes:", running: "Gerade läuft:", why: "Warum?",
       // Names its subject: unitsTitle is the nominative plural ("Fertige Lerneinheiten"); unitLabel.many may be dative.
       progress: (unitsTitle = "Einheiten") => `Fertige ${unitsTitle}`,
       progressEmpty: (units = "Einheiten") => `Der Fortschritt wird sichtbar, sobald ${units} angelegt sind.`,
@@ -60,7 +60,7 @@
       "state.review": "In review", "state.revision": "Correction needed", "state.done": "Done", "state.optional": "Optional",
       "state.started": "Started", "state.waiting": step => `Waiting for: ${step}`,
       "state.next": "Up next", "state.later": "Later", unitNext: step => `Up next: ${step}`,
-      view: "Open", eyebrow: "Course plan", next: "Next:", why: "Why?",
+      view: "Open", eyebrow: "Course plan", next: "Next:", running: "Running now:", why: "Why?",
       progress: (unitsTitle = "units") => `${unitsTitle.charAt(0).toUpperCase()}${unitsTitle.slice(1)} finished`,
       progressEmpty: (units = "units") => `Progress appears as soon as ${units.toLowerCase()} exist.`,
       progressPlan: (units = "units") => `The ${units.toLowerCase()} are only provisionally planned. Progress appears once the plan is settled.`,
@@ -337,7 +337,8 @@
       ${input.context ? `<p class="dashboard-context">${escape(input.context)}</p>` : ""}
       ${input.subtitle ? `<p class="dashboard-intro">${escape(input.subtitle)}</p>` : ""}
       ${input.notice ? `<p class="dashboard-notice">${escape(input.notice)}</p>` : ""}
-      ${next ? `<div class="dashboard-next"><p><strong>${escape(t("next"))}</strong> ${escape(next.title || next.label)}</p>${next.why ? `<p class="dashboard-why"><strong>${escape(t("why"))}</strong> ${escape(next.why)}</p>` : ""}${actionLink(next, viewId, true)}${alongside(input.explore, viewId)}</div>` : ""}
+      ${next?.running ? `<div class="dashboard-next dashboard-running"><p><strong>${escape(t("running"))}</strong> ${next.icon ? `${escape(next.icon)} ` : ""}${escape(next.label || next.title)}</p>${next.why ? `<p class="dashboard-why">${escape(next.why)}</p>` : ""}</div>`
+        : next ? `<div class="dashboard-next"><p><strong>${escape(t("next"))}</strong> ${escape(next.title || next.label)}</p>${next.why ? `<p class="dashboard-why"><strong>${escape(t("why"))}</strong> ${escape(next.why)}</p>` : ""}${actionLink(next, viewId, true)}${alongside(input.explore, viewId)}</div>` : ""}
     </header>`;
   }
 

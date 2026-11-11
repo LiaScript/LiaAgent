@@ -225,6 +225,13 @@ export function analyseMaterial(source) {
     const on = [...new Set(silent.map(item => slideOf[item.index]))];
     warnings.push(`narrator is set, but ${silent.length} of ${hintLines.length} quiz hint${hintLines.length === 1 ? "" : "s"} ([[?]]) ${silent.length === 1 ? "is" : "are"} not read aloud (slide${on.length === 1 ? "" : "s"}: ${on.slice(0, 4).join(" · ")}${on.length > 4 ? " …" : ""}) – write - [[?]] {|>}{hint text}`);
   }
+  // A guide character that greets with its own name at the end reads as if the learner greeted it
+  // ("Hallo, da bin ich wieder, Mira!") – checklist: a guide character names itself in a sentence of its own.
+  const selfGreeting = /\b(?:Hallo|Hi|Hey|Huhu|Hello)\b[^.!?\n]*\b(?:bin ich|ich bin|I am|I'm)\b[^.!?\n]*,\s*(\p{Lu}[\p{L}-]*)!/u;
+  masked.forEach((line, index) => {
+    const hit = line.match(selfGreeting);
+    if (hit) warnings.push(`slide "${slideOf[index] || "(before the first heading)"}": "${hit[0]}" reads as if the learner greeted the guide character – let it name itself in a sentence of its own ("I am ${hit[1]}.", translated)`);
+  });
   const patterns = answerPatterns({ masked, raw, slideOf, quizzes, language: header.match(/^\s*language\s*:\s*([A-Za-z]{2})/m)?.[1].toLowerCase() });
   warnings.push(...patterns.warnings);
   delete patterns.warnings;
@@ -542,6 +549,31 @@ function reportFit(fit, sizes) {
   return misfits;
 }
 
+// A project rule "without scrolling" in journal.md → ### Coauthor (the rules for writing the material): the
+// windows it names (landscape, portrait or both) must show question and options without scrolling. Returns
+// {text, orientations} or null.
+export function noScrollRule(journal) {
+  const coauthor = String(journal ?? "").split(/^### Coauthor\b.*$/m)[1]?.split(/^#{2,3} /m)[0] ?? "";
+  const line = coauthor.split("\n").find(item => /ohne (?:zu )?scrollen|without scrolling|no scrolling/i.test(item));
+  if (!line) return null;
+  const landscape = /\b(quer|landscape|sideways)\b/i.test(line);
+  const portrait = /\b(hochkant|hochformat|portrait|upright)\b/i.test(line);
+  const orientations = landscape === portrait ? ["landscape", "portrait"] : landscape ? ["landscape"] : ["portrait"];
+  return { text: short(line.trim().replace(/^\d+\.\s*/, ""), 120), orientations };
+}
+// In every window of that orientation each question fits one screen with its pictures, and the first question of
+// a page also when the page opens (checklist: "without scrolling"). A break is a finding, never a pass.
+export function noScrollMisfits(fit, rule) {
+  if (!rule) return [];
+  const named = window => rule.orientations.some(orientation => window.includes(` ${orientation}`)) || !/ (landscape|portrait):/.test(window);
+  return fit.flatMap((quiz, index) => {
+    const first = index === 0 || fit[index - 1].slide !== quiz.slide;
+    const breaks = window => notFitText.test(window) || (first && !fitsText.test(window));
+    const windows = quiz.windows.filter(window => breaks(window) && named(window)).map(window => window.split(":")[0]);
+    return windows.length ? [`slide "${quiz.slide}"${quiz.question ? ` ("${short(quiz.question)}")` : ""}: needs scrolling at ${windows.join(", ")} – the project rule "${rule.text}" (journal.md → ### Coauthor) is not met – a finding (❌), not a pass: smaller images, split the slide, or ask the instructor`] : [];
+  });
+}
+
 // "12 slides" includes the course's title page: name it, so a chat that counts the unit's pages (11) agrees.
 export const pagesNote = (total, titlePages = 0) => titlePages ? ` – ${titlePages} title page${titlePages === 1 ? "" : "s"} + ${total - titlePages} content page${total - titlePages === 1 ? "" : "s"}` : "";
 
@@ -556,6 +588,7 @@ function report(file, analysis, rendered, reason) {
     // Hints are rendered only when opened: compare without their read-aloud texts.
     if (counts.blocks + counts.inline < readAloud.blocks + readAloud.inline - readAloud.inHints) warnings.push(`outside the hints the source marks ${readAloud.blocks} blocks and ${readAloud.inline - readAloud.inHints} inline texts for reading aloud, the rendered page shows fewer buttons (${counts.blocks} blocks, ${counts.inline} inline) – check the narrator: line and the markup`);
     // A quiz that fits once scrolled is information; one that does not fit at all is a warning.
+    warnings.push(...noScrollMisfits(rendered.fit, analysis.noScroll));
     for (const quiz of reportFit(rendered.fit, rendered.sizes)) {
       const windows = quiz.windows.filter(item => notFitText.test(item)).map(item => item.split(":")[0]);
       const what = quiz.windows.some(item => /image and question/.test(item)) ? "the image above the question, the question and its options" : "question and options";
@@ -631,6 +664,8 @@ async function main() {
   }
   if (!existsSync(resolve(root, file))) { console.error(`Not found: ${file}`); console.log("Exit code: 2"); return 2; }
   const analysis = analyseMaterial(readFileSync(resolve(root, file), "utf8"));
+  // The project's own rules for writing the material (journal.md → ### Coauthor), e.g. "without scrolling".
+  analysis.noScroll = existsSync(resolve(root, "journal.md")) ? noScrollRule(readFileSync(resolve(root, "journal.md"), "utf8")) : null;
 
   let chromium;
   try { ({ chromium } = await playwright(root)); } catch (error) { return report(file, analysis, null, error.message); }
