@@ -2585,3 +2585,45 @@ test("isLater: first non-empty line decides", () => {
   assert.equal(isLater(`\n\n${laterMarker}\ntext`), true);
   assert.equal(isLater(`text\n${laterMarker}`), false);
 });
+
+// ── Light tracks: next and course step per track ──
+test("full track unchanged: the fixture journal keeps its next and course step", () => {
+  const journal = readJournal(readFileSync(new URL("./fixtures/journal-84484ae.md", import.meta.url), "utf8"));
+  const states = new Map(journal.units.map(unit => [unit.n, unitState(unit).state]));
+  const plain = courseNext(journal, states);
+  const explicit = courseNext({ ...journal, track: "full" }, states);
+  assert.equal(journal.track, "full");
+  assert.equal(explicit?.href, plain?.href);
+  const steps = Array.from({ length: 8 }, (_, i) => ({ title: `S${i}` }));
+  if (plain) assert.equal(courseStepOf(explicit, steps, { track: "full" })?.title, courseStepOf(plain, steps)?.title);
+  assert.equal(courseStepOf(makeAction("create-agenda", "teaching", "create-agenda"), steps, { track: "full" }).title, "S4");
+});
+test("mini track: frame → outline → write → unit actions → publish only when delivery needs it", () => {
+  const base = { track: "mini", filled: { "Course Context": true, Outline: true }, units: [], templates: { selection: "open", adopted: [], briefs: [] }, validation: {}, published: false, delivery: null };
+  assert.equal(courseNext({ ...base, filled: { "Course Context": false } }, new Map()).key, "init-course");
+  assert.equal(courseNext(base, new Map()).key, "write-mini-course");
+  const unit = facts(1, { heading: { title: "A" }, material: true, done: true, approved: true, report: { result: "PASS", changedSince: 0 } });
+  assert.equal(courseNext({ ...base, units: [unit] }, new Map([["1", "done"]])), null);
+  assert.equal(courseNext({ ...base, units: [unit], delivery: "link" }, new Map([["1", "done"]])).key, "publish");
+  const open = facts(1, { heading: { title: "A" }, material: true });
+  assert.equal(courseNext({ ...base, units: [open] }, new Map([["1", "current"]])).key, "check-unit");
+});
+test("convert track: outline only when rebuilding; the run is next before material exists", () => {
+  const base = { track: "convert", filled: { "Course Context": true, Outline: false }, units: [], templates: { selection: "open", adopted: [], briefs: [] }, validation: {}, published: false };
+  assert.equal(courseNext({ ...base, convertMode: "transfer" }, new Map()).key, "convert-course");
+  assert.equal(courseNext({ ...base, convertMode: "rebuild" }, new Map()).key, "create-outline");
+});
+test("template track: start → develop (also when ready to test) → publish after approval → nothing once published", () => {
+  const t = (briefs, published = false) => ({ track: "template", filled: { "Course Context": true }, units: [], templates: { selection: "open", adopted: [], briefs }, validation: {}, published });
+  assert.equal(courseNext(t([]), new Map()).key, "start-template");
+  assert.equal(courseNext(t([{ id: "map", state: "ready to test" }]), new Map()).href, "agent:development/develop-template?id=map");
+  assert.equal(courseNext(t([{ id: "map", state: "approved" }]), new Map()).href, "agent:development/publish-template?id=map");
+  assert.equal(courseNext(t([{ id: "map", state: "approved" }], true), new Map()), null);
+});
+test("courseStepOf follows the track's step list", () => {
+  const steps = ["Brief", "Build", "Try", "Publish"].map(title => ({ title }));
+  assert.equal(courseStepOf(makeAction("develop-template", "development", "develop-template", { id: "x" }), steps, { track: "template" }).title, "Build");
+  const mini = ["Frame", "Material", "Check", "Publish"].map(title => ({ title }));
+  assert.equal(courseStepOf(makeAction("write-mini-course", "teaching", "create-mini-course"), mini, { track: "mini" }).title, "Material");
+  assert.ok("activate-section" in englishActions && englishActions["activate-section"].label === "Add");
+});

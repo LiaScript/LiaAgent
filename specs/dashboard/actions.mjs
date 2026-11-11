@@ -1,5 +1,6 @@
 // Module for derive-dashboard.mjs (no command of its own).
 import { sessionsOverview } from "./journal-model.mjs";
+import { stepsOf } from "./tracks.mjs";
 // Which action comes next: the main action of each unit (data/journal-links.md → the `### {n}. {title}` row)
 // and the course's `next` (tasks/update-dashboard.md step 2 and Rules). It decides the command; the words
 // for it come from the agent (kept while the command is right) or from the language pack's `actions`
@@ -29,6 +30,12 @@ export const englishActions = {
   "view-unit": { label: "How learners see it", why: "The checked material as the learners see it." },
   "check-course": { title: "Check and revise", label: "Check the course", why: "The course check comes before publishing." },
   publish: { title: "Publish", label: "Publish course", why: "The checked course gets a link to share." },
+  // The light tracks (mini course, conversion, building block).
+  "write-mini-course": { title: "Write the material", label: "Write the course", why: "The short course is written in one go from the frame, without outline and didactics." },
+  "convert-course": { title: "Write the material", label: "Start converting", why: "The existing material is carried over into a LiaScript course." },
+  "start-template": { title: "Request and brief", label: "Start the building block", why: "Describe what the building block should do; the brief is the basis for building it." },
+  "publish-template": { title: "Publish", label: "Publish the building block {id}", why: "The building block is approved; publishing makes it available to others." },
+  "activate-section": { label: "Add" },
   // Action lines of the sections and the cards under "More options".
   "revise-context": { label: "Revise course frame" },
   "revise-outline": { label: "Revise outline" },
@@ -115,6 +122,8 @@ function names(usedIn, n) {
 // The course's next action (tasks/update-dashboard.md step 2, Rules → Template step, first unit).
 // `states`: unit number → derived state; `selected`: the recommended unit of the overview.
 export function courseNext(journal, states, selected) {
+  if (journal.track === "mini" || journal.track === "convert") return lightNext(journal, states);
+  if (journal.track === "template") return templateNext(journal);
   if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");
   if (!journal.filled.Outline) return action("create-outline", "teaching", "create-outline");
   if (!journal.filled.Didactics) return action("create-didactics", "teaching", "create-didactics");
@@ -149,6 +158,28 @@ export function courseNext(journal, states, selected) {
   if (journal.units.length && !(journal.validation.mode === "course" && journal.validation.result === "PASS")) return action("check-course", "teaching", "validate-course", {}, "🔍");
   if (journal.validation.mode === "course" && journal.validation.result === "PASS" && !journal.published) return action("publish", "development", "create-project", {}, "🚀");
   return null;
+}
+
+// The light tracks. mini and convert: frame, (outline), the one unit, publish only where the delivery needs a link.
+function lightNext(journal, states) {
+  if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");
+  const mini = journal.track === "mini";
+  if (!journal.filled.Outline && (mini || journal.convertMode === "rebuild")) return action("create-outline", "teaching", "create-outline");
+  const unit = journal.units.find(item => item.n === "1");
+  if (!unit?.material) return mini ? action("write-mini-course", "teaching", "create-mini-course") : action("convert-course", "teaching", "convert-course");
+  if (states.get("1") !== "done" && !awaitsOwnMedia(unit)) return unitAction(unit);
+  if (["link", "platform"].includes(journal.delivery) && !journal.published) return action("publish", "development", "create-project", {}, "🚀");
+  return null;
+}
+
+// The building-block track: request and brief, build with the instructor, publish.
+function templateNext(journal) {
+  if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");
+  const brief = journal.templates.briefs[0];
+  if (!brief) return action("start-template", "development", "start-template");
+  if (journal.published) return null;
+  if (brief.state === "approved") return action("publish-template", "development", "publish-template", { id: brief.id });
+  return action("develop-template", "development", "develop-template", { id: brief.id });
 }
 
 // Is an existing href right for this action: the same command with at least the same parameters (the agent
@@ -189,11 +220,23 @@ export function unitStepOf(expected, steps = []) {
     ? steps.find(item => /prüf|check|review|revis/i.test(item.title)) ?? steps.at(-1) : null);
 }
 
+// The step key (tracks.mjs) of a course action, by track; null for actions without a course step of their own.
+const stepKeys = { "init-course": "frame", "create-outline": "outline", "create-didactics": "didactics", "suggest-templates": "blocks", "adopt-template": "blocks",
+  "develop-template": "blocks", "create-agenda": "agenda", "check-course": "check", publish: "publish", "publish-template": "publish",
+  "start-template": "brief", "write-mini-course": "material", "convert-course": "material" };
+
 // The course step an action advances: its own one, or for a unit action the material step.
-export function courseStepOf(expected, steps = []) {
+export function courseStepOf(expected, steps = [], { track = "full", convertMode = null } = {}) {
   const key = expected.courseKey ?? expected.key;
-  if (key in courseStep) return steps[courseStep[key]] ?? null;
-  return expected.params.number != null || expected.params.file != null ? steps.find(item => /materi/i.test(item.title)) ?? steps[5] ?? null : null;
+  if (track === "full" || !track) {
+    if (key in courseStep) return steps[courseStep[key]] ?? null;
+    return expected.params.number != null || expected.params.file != null ? steps.find(item => /materi/i.test(item.title)) ?? steps[5] ?? null : null;
+  }
+  const list = stepsOf(track, convertMode);
+  let stepKey = key === "init-course" && track === "template" ? "brief" : key === "develop-template" && track === "template" ? "build" : stepKeys[key];
+  if (!stepKey && (expected.params.number != null || expected.params.file != null)) stepKey = "material";
+  const index = stepKey ? list.indexOf(stepKey) : -1;
+  return index >= 0 ? steps[index] ?? null : null;
 }
 
 // The title of `next`: the step it advances, as the process panel shows it (Rules → "next names one step").
