@@ -13,8 +13,8 @@
       // Derived, not a state of the data: a unit still "planned" with at least one required step done.
       "state.started": "Angefangen",
       // Derived as well: the current step without a result yet is the one that comes next, nobody works on it.
-      "state.later": "Später", "state.next": "Als Nächstes",
-      unitNext: step => `Als Nächstes: ${step}`,
+      "state.later": "Später", "state.next": "Als Nächstes", "state.running": "Läuft gerade",
+      unitNext: step => `Als Nächstes: ${step}`, unitRunning: step => `Läuft gerade: ${step}`,
       // Derived as well: a check step ("review") behind an earlier required step that is still open.
       "state.waiting": step => `Wartet auf: ${step}`,
       view: "Ansehen", eyebrow: "Kursplan", next: "Als Nächstes:", running: "Gerade läuft:", why: "Warum?",
@@ -59,7 +59,7 @@
       "state.planned": "Not started", "state.current": "In progress", "state.draft": "Draft ready",
       "state.review": "In review", "state.revision": "Correction needed", "state.done": "Done", "state.optional": "Optional",
       "state.started": "Started", "state.waiting": step => `Waiting for: ${step}`,
-      "state.next": "Up next", "state.later": "Later", unitNext: step => `Up next: ${step}`,
+      "state.next": "Up next", "state.later": "Later", "state.running": "Running now", unitNext: step => `Up next: ${step}`, unitRunning: step => `Running now: ${step}`,
       view: "Open", eyebrow: "Course plan", next: "Next:", running: "Running now:", why: "Why?",
       progress: (unitsTitle = "units") => `${unitsTitle.charAt(0).toUpperCase()}${unitsTitle.slice(1)} finished`,
       progressEmpty: (units = "units") => `Progress appears as soon as ${units.toLowerCase()} exist.`,
@@ -407,6 +407,7 @@
   // ("review") behind an earlier required step that is still open, else the state text.
   function stepStatusLabel(step, steps) {
     if (step.statusLabel) return step.statusLabel;
+    if (step.running) return t("state.running");
     if (step.state === "current" && !step.result) return t("state.next");
     // A required step after the current one is not "not started" work of the instructor: it comes later (SK71).
     if (step.state === "planned" && steps.slice(0, steps.indexOf(step)).some(item => item.state === "current")) return t("state.later");
@@ -441,7 +442,7 @@
     // The step that comes next instead of a count: the total grows when an optional step becomes required.
     const upNext = steps.find(step => step.state === "current");
     // A unit not begun shows no count: "0 of 3" says nothing and differs from begun units with more steps (SK44).
-    const stepText = upNext ? `<span class="dashboard-unit-steps">${escape(t("unitNext", upNext.title))}</span>`
+    const stepText = upNext ? `<span class="dashboard-unit-steps">${escape(t(upNext.running ? "unitRunning" : "unitNext", upNext.title))}</span>`
       // An approved unit shows no count either: "3 of 4 steps" beside "approved – still missing: 1 photo" reads as
       // unfinished work of the assistant (SK70); what is missing stands in its label.
       : input.approved ? ""

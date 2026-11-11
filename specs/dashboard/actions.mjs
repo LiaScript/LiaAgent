@@ -149,9 +149,13 @@ const parse = href => {
   const [path, query = ""] = String(href ?? "").split("?");
   return { path, params: Object.fromEntries(query.split("&").filter(Boolean).map(pair => pair.split("=").map(decodeURIComponent))) };
 };
+// Extra parameters keep an action (a description for quick-fix), except a unit or file the wanted action does
+// not name: validate-course?number=4 checks one unit, not the course (R12b).
+const scopes = ["number", "file"];
 const covers = (wanted, href) => {
   const [want, have] = [parse(wanted), parse(href)];
-  return want.path === have.path && Object.entries(want.params).every(([name, value]) => have.params[name] === value);
+  return want.path === have.path && Object.entries(want.params).every(([name, value]) => have.params[name] === value)
+    && scopes.every(name => name in want.params || !(name in have.params));
 };
 export const accepts = (expected, href) => Boolean(href) && (covers(expected.href, href)
   || expected.also.some(other => other.endsWith("&") ? String(href).startsWith(other) : covers(other, href)));

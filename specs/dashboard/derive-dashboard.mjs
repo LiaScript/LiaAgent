@@ -182,7 +182,11 @@ export function derive(journal, input, { date, previous } = {}) {
     // default why of that step is replaced; a why of the agent's own stays.
     const defaultWhy = (journal.pack?.unitSteps ?? englishUnitSteps)[1]?.why;
     const runningWhy = terms.buildRunningStep ?? englishTerms.buildRunningStep;
-    if (materialStep && facts.buildRequested && !facts.report?.result && materialStep.why === defaultWhy) set(materialStep, "why", runningWhy, `${path} step "${materialStep.title}".why`, "let it be prepared is running");
+    // Also after the run: the material was prepared on its own (R12b-SK88).
+    if (materialStep && facts.buildRequested && materialStep.why === defaultWhy) set(materialStep, "why", runningWhy, `${path} step "${materialStep.title}".why`, "prepared on its own");
+    // The step being worked on is running, not "up next" for the instructor (R12b-SK87).
+    const running = facts.buildRequested && !facts.report?.result;
+    if (materialStep) set(materialStep, "running", running ? true : undefined, `${path} step "${materialStep.title}".running`, running ? "let it be prepared is running" : "not running");
     if (materialStep && materialStep !== checkStep && facts.material && (facts.report?.result || facts.approved)) {
       set(materialStep, "state", "done", `${path} step "${materialStep.title}".state`, facts.approved ? "material approved" : "material written and checked");
     }

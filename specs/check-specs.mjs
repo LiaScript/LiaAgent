@@ -108,10 +108,10 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 });
 
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
-// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session after R12).
+// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b).
 const budgets = {
-  "tasks/update-dashboard.md": 2980, "data/agent-links.md": 3845, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
-  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4077, "tasks/quick-fix.md": 1613,
+  "tasks/update-dashboard.md": 3005, "data/agent-links.md": 3845, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
+  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4126, "tasks/quick-fix.md": 1613,
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
   assert.match(read("data/chat-wording.md"), /\*\*Commands stay off the chat:\*\*[^\n]*\n[^\n]*also not after a link/);
@@ -142,6 +142,14 @@ test("build-session reads what its check step needs: every file the Inputs of va
   const known = build.split("## Inputs")[1].split("\n## ")[0] + stepC;
   assert.deepEqual(files.filter(file => !known.includes(file)), [], "build-session does not name these inputs of its check step");
   assert.match(stepC, /\*\*Read first, completely\*\*/);
+});
+
+test("validate-course marks the files of the check as read completely, so the re-read rule covers them (R12b-SP111)", () => {
+  const inputs = read("tasks/validate-course.md").split("## Inputs")[1].split("\n## ")[0].split("\n");
+  for (const file of ["checklists/course-quality-checklist.md", "tasks/validate-syntax.md", "data/duration-heuristic.md", "data/didactic-methods.md", "templates/session-validation.yaml"]) {
+    const line = inputs.find(item => item.startsWith(`- \`${file}\``)) ?? "";
+    assert.match(line, /read completely/, `${file} is not marked "read completely" in the Inputs of validate-course`);
+  }
 });
 
 test("rule sheets and the main tasks stay within their word budget", () => {

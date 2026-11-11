@@ -12,11 +12,11 @@ Can be run in two modes:
 
 - `journal.md` → `## Course Context` — course type and conventions
 - `journal.md` → `## Templates` — LiaScript template imports, macros, and examples (if present)
-- `checklists/course-quality-checklist.md` — structured checklist
-- `tasks/validate-syntax.md` — full LiaScript syntax check, called as a sub-procedure (single source of truth for syntax rules)
-- `data/duration-heuristic.md` — reading time + activity time estimate, compared against the declared duration
-- `data/didactic-methods.md` — Session Method `Required` checklists, if a session method is in use
-- `templates/session-validation.yaml` — template for each stored session validation report (heading, outcome words, layout)
+- `checklists/course-quality-checklist.md` — structured checklist, read completely: every item is judged against this unit's material
+- `tasks/validate-syntax.md` — full LiaScript syntax check, called as a sub-procedure (single source of truth for syntax rules), read completely
+- `data/duration-heuristic.md` — reading time + activity time estimate, compared against the declared duration, read completely
+- `data/didactic-methods.md` — Session Method `Required` checklists, read completely if a session method is in use
+- `templates/session-validation.yaml` — template for each stored session validation report (heading, outcome words, layout), read completely
 - `templates/session-skeleton.yaml` — read completely: status words of the overview and `section_layout.entry_order` (where the report goes)
 - `data/session-types.md` — read completely: objectives and duration of a session, resolving its type (step 2)
 - `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written (step 6)
@@ -107,7 +107,7 @@ Rules:
    Update the overview table in `## Sessions`: set **Done ✅** only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item; otherwise set Done ❌ — also when it was ✅ before. The status line follows the report (computed).
    Right after this write send "✅ Saved: …" with the outcome and the line "usable with learners now" as two paragraphs (a blank line between them — a single line break becomes a space in the chat), plus the anchor link to the report — never hold the result back until the overview is written. Details follow in step 7.
    Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
-7. **Chat summary:** name every ❌, every ⏳ with its step, every `[pedagogical]` finding (also those you consider minor) and every `[advisory]` hint in plain words. Never write "everything else is fine" while the report lists open points; a checklist item is never downgraded to a "hint".
+7. **Chat summary:** name every ❌, every ⏳ with its step, every `[pedagogical]` finding (also those you consider minor) and every `[advisory]` hint in plain words. Never write "everything else is fine" while the report lists open points; a checklist item is never downgraded to a "hint". A `check-material` warning about another unit (an older unit that breaks a project rule) is named here once, with the offer to fix it (`:quick-fix`) — never only in the terminal.
    If no issues found: confirm "Session {number} ({type}) — ✅ Syntax and content verified." with the anchor link to the report heading, and offer `:try-as-learner {number}` once (only when the MCP gate is open).
    **Only own photos left** (PASS, the only ⏳ items are pictures the instructor supplies): the approval does not wait for them. After the result, ask once in a form "Do you approve {unit} {n} – your photo can follow later?" (translated) with "Approve", "Look at it first" (👁 the learners' view) and "Later". "Approve" records `- **{date}:** material approved` (translated) in the session's decisions list — one write, then `write-dashboard`.
 8. If issues found: confirm the report was saved, list the blockers briefly, and offer the fix: when every open point is one `:quick-fix` covers (one change each, no content decision), offer ✏️ `:quick-fix {number}` with its description; otherwise `:coauthor-materials {number}` (`data/journal-links.md` → Action lines).

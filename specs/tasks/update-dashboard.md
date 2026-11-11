@@ -102,6 +102,8 @@ Run this task automatically after any task that changes project state:
    - `prepare` — the instructor must do or get something before using the material; `how` says how.
    - `internal` — cleanup the agent does itself at the next suitable write. No `how`; rendered collapsed.
      Resolve it at the next write and mention it in that task's completion message.
+   Something the instructor agreed to do or to have done next time (e.g. fix older units) is a `prepare`
+   item in the instructor's words, with `how` saying what and when — never `internal`.
    Empty list if there is nothing open.
 7. Produce the JSON following `templates/project-dashboard.yaml`. No HTML, CSS,
    JavaScript, progress percentages or duplicated totals. Always include the global

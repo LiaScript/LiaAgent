@@ -1736,7 +1736,7 @@ test("the empty journal has the template step after the didactics and the select
 });
 
 // ── derive-dashboard.mjs: the fields that follow from the journal are computed, not written by hand ──
-import { readJournal, usableState as reportUsable } from "./journal-model.mjs";
+import { readJournal, usableState as reportUsable, englishUnitSteps } from "./journal-model.mjs";
 import { derive, unitState, missingText, patchJournal } from "./derive-dashboard.mjs";
 
 // A journal with an agenda of three units: unit 1 checked (FAIL, one point changed since, images 1 of 2),
@@ -2484,6 +2484,8 @@ test("check-material: a companion greeting that reads as if the learner greeted 
   assert.equal(hits.length, 1, warnings.join("\n"));
   assert.match(hits[0], /slide "Blüten": "Hallo, da bin ich wieder, Mira!"/);
   assert.equal(analyseMaterial("# A\n\nHello, here I am again, Max!\n").warnings.filter(warning => /reads as if/.test(warning)).length, 1, "English as well");
+  assert.equal(analyseMaterial("# A\n\nIch bin es wieder, Mira! Schau mal.\n").warnings.filter(warning => /reads as if/.test(warning)).length, 1, "also without a greeting word (R12b-SK89)");
+  assert.equal(analyseMaterial("# A\n\nIch bin Mira. Schön, dass du da bist, Lea!\n").warnings.filter(warning => /reads as if/.test(warning)).length, 0, "addressing a learner is fine");
 });
 
 test("check-material: a project rule 'without scrolling' turns every window it names that needs scrolling into a warning (R12-SK78)", () => {
@@ -2514,6 +2516,23 @@ test("a running 'let it be prepared' is a state, not a button: next.running, sta
   const hero = html.split('class="dashboard-hero"')[1].split("</header>")[0];
   assert.match(hero, /Running now:/);
   assert.doesNotMatch(hero, /dashboard-button-primary|dashboard-command/, "no big button and no command while it runs");
+  assert.equal(data.units[0].process.steps[1].running, true, "the step being worked on is running, not 'up next'");
+  const card = html.split('data-dashboard-select="1"')[0];
+  assert.doesNotMatch(html.split('class="dashboard-hero"')[1].split("</header>")[0], /Up next/);
+  assert.match(dashboard.renderComponent("View", "r12s", { ...data, lang: "en", selected: "1" }), /Running now/, "the running step's chip");
   const done = readJournal(deriveJournal({}, { decisions: "- **2026-11-07:** preparation requested", report: failReport }));
-  assert.equal(derive(done, { title: "Fractions" }).data.next.running, undefined, "the report ends the run");
+  const after = derive(done, { title: "Fractions" }).data;
+  assert.equal(after.next.running, undefined, "the report ends the run");
+  assert.equal(after.units[0].process.steps[1].running, undefined);
+  // After the run the pack's joint-way text does not come back (R12b-SK88).
+  const back = derive(done, { title: "Fractions", units: [{ id: 1, title: "Halves", state: "draft", process: { steps: englishUnitSteps.map(step => ({ ...step, state: "done" })) } }] }).data;
+  assert.match(back.units[0].process.steps[1].why, /on its own/);
+});
+
+test("a unit number turns the course check into a unit check: next with number=n is not the course action (R12b)", () => {
+  const course = makeAction("check-course", "teaching", "validate-course", {}, "🔍");
+  assert.equal(accepts(course, "agent:teaching/validate-course"), true);
+  assert.equal(accepts(course, "agent:teaching/validate-course?number=4"), false, "number selects one unit – another action");
+  const fix = makeAction("quick-fix", "teaching", "quick-fix", { number: "2" }, "✏️");
+  assert.equal(accepts(fix, "agent:teaching/quick-fix?number=2&description=Typo"), true, "a description still counts as the same action");
 });

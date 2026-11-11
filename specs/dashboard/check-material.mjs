@@ -227,10 +227,11 @@ export function analyseMaterial(source) {
   }
   // A guide character that greets with its own name at the end reads as if the learner greeted it
   // ("Hallo, da bin ich wieder, Mira!") – checklist: a guide character names itself in a sentence of its own.
-  const selfGreeting = /\b(?:Hallo|Hi|Hey|Huhu|Hello)\b[^.!?\n]*\b(?:bin ich|ich bin|I am|I'm)\b[^.!?\n]*,\s*(\p{Lu}[\p{L}-]*)!/u;
+  // The whole sentence: a self-reference ("da bin ich wieder", "Ich bin es", "here I am") and ", Name!" at its end.
+  const selfGreeting = /(?:^|[.!?]\s+)([^.!?\n]*\b(?:bin ich|ich bin|bin es|bin's|I am|I'm|it's me|it is me)\b[^.!?\n]*,\s*(\p{Lu}[\p{L}-]*)!)/iu;
   masked.forEach((line, index) => {
     const hit = line.match(selfGreeting);
-    if (hit) warnings.push(`slide "${slideOf[index] || "(before the first heading)"}": "${hit[0]}" reads as if the learner greeted the guide character – let it name itself in a sentence of its own ("I am ${hit[1]}.", translated)`);
+    if (hit) warnings.push(`slide "${slideOf[index] || "(before the first heading)"}": "${hit[1].trim()}" reads as if the learner greeted the guide character – let it name itself in a sentence of its own ("I am ${hit[2]}.", translated)`);
   });
   const patterns = answerPatterns({ masked, raw, slideOf, quizzes, language: header.match(/^\s*language\s*:\s*([A-Za-z]{2})/m)?.[1].toLowerCase() });
   warnings.push(...patterns.warnings);
