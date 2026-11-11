@@ -150,7 +150,9 @@ export function derive(journal, input, { date, previous } = {}) {
     // Only own photos still missing: the step waits for the instructor ("planned") – it becomes current again
     // when it is the next action (after the check, SK41).
     const { total, placed, open, waiting = 0 } = facts.images;
-    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material ? "current" : "planned") : open ? "planned" : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
+    // When the next action inserts this unit's photo, the step stays current – no flip between two rules (R12c).
+    const photoNext = expected?.key === "insert-images" && String(expected.params.number) === String(facts.n);
+    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material ? "current" : "planned") : open ? (photoNext ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
     // Only own photos missing: the step says it waits for them, with the count (SK60).
     const waitingWord = String(terms.imagesWaiting ?? englishTerms.imagesWaiting);
     const waitingLabel = imageStep && total && open && open === waiting ? waitingWord.replace("{n}", placed).replace("{m}", total) : undefined;
