@@ -263,7 +263,7 @@ export function derive(journal, input, { date, previous } = {}) {
   if (data.process) {
     const later = (journal.later ?? []).map(key => {
       const heading = journal.headings.find(item => item.key === key);
-      return { label: heading?.suffix ?? key, href: `agent:teaching/activate-section?section=${sectionSlug(key)}` };
+      return { label: heading?.suffix ?? key, href: `agent:teaching/activate-section?section=${sectionSlug(key)}`, command: `:activate-section ${sectionSlug(key)}` };
     });
     set(data.process, "later", later.length ? later : undefined, "process.later", "sections marked when needed");
   }

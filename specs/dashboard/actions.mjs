@@ -243,7 +243,7 @@ export function courseStepOf(expected, steps = [], { track = "full", convertMode
 export function nextTitle(expected, data, unitWord, { track = "full", convertMode = null } = {}) {
   if (track && track !== "full" && expected.params.number == null && expected.params.file == null) {
     const light = courseStepOf(expected, data.process?.steps ?? [], { track, convertMode });
-    if (light) return light.title ?? null;
+    return light?.title ?? null;
   }
   if (expected.key in courseStep) return data.process?.steps?.[courseStep[expected.key]]?.title ?? null;
   const n = expected.params.number ?? expected.params.file;

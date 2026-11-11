@@ -488,9 +488,9 @@
 
   // Sections marked "when needed": one collapsed line below the steps, not counted as steps.
   function laterBlock(items) {
-    const list = Array.isArray(items) ? items.filter(item => item?.label && item.href) : [];
+    const list = Array.isArray(items) ? items.filter(item => item?.label && item.href && item.command) : [];
     if (!list.length) return "";
-    return `<details class="dashboard-later"><summary>${escape(t("process.later"))} (${list.length})</summary><ul>${list.map(item => `<li>${actionLink({ label: item.label, href: item.href, icon: "➕", command: item.command ?? `:activate-section ${item.href.split("section=")[1] ?? ""}`.trim() })}</li>`).join("")}</ul></details>`;
+    return `<details class="dashboard-later"><summary>${escape(t("process.later"))} (${list.length})</summary><ul>${list.map(item => `<li>${actionLink({ label: item.label, href: item.href, icon: "➕", command: item.command })}</li>`).join("")}</ul></details>`;
   }
 
   function process(input, unit = null, course = false) {

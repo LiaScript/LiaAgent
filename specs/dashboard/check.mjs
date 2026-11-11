@@ -2640,6 +2640,7 @@ test("derive: when-needed sections become process.later with activate links; the
   const data = derive(readJournal(marked), { ...deriveData(), process }).data;
   assert.deepEqual(data.process.later.map(item => item.href), ["agent:teaching/activate-section?section=didactics", "agent:teaching/activate-section?section=agenda"]);
   assert.deepEqual(data.process.later.map(item => item.label), ["Methods", "Schedule"]);
+  assert.deepEqual(data.process.later.map(item => item.command), [":activate-section didactics", ":activate-section agenda"]);
   assert.equal(derive(readJournal(miniSource()), { ...deriveData(), process }).data.process.later, undefined);
   assert.equal(derive(readJournal(deriveJournal({})), { ...deriveData(), process }).data.process.later, undefined);
 });
@@ -2658,7 +2659,7 @@ test("nextTitle: on a light track the course-level title comes from the track's 
   assert.equal(nextTitle(expected, { process: { steps } }, "Lesson", { track: "mini" }), "Write the course");
 });
 test("view: process.later shows as one collapsed 'When needed' line and is not counted", () => {
-  const input = { title: "T", process: { steps: [{ title: "A", state: "done" }, { title: "B", state: "planned" }], later: [{ label: "Didaktik", href: "agent:teaching/activate-section?section=didactics" }] } };
+  const input = { title: "T", process: { steps: [{ title: "A", state: "done" }, { title: "B", state: "planned" }], later: [{ label: "Didaktik", href: "agent:teaching/activate-section?section=didactics", command: ":activate-section didactics" }] } };
   const model = dashboard.buildModel(input);
   assert.equal(model.process.steps.length, 2);
   const html = dashboard.renderComponent("View", "later-view", { lang: "en", selected: "", ...input, units: [{ id: "1", title: "U", state: "planned" }] });
@@ -2667,8 +2668,12 @@ test("view: process.later shows as one collapsed 'When needed' line and is not c
   assert.match(html, /1 of 2 planning step/);
 });
 test("view: German state words – optional is 'Optional', later is 'Bei Bedarf'", () => {
-  const html = dashboard.renderComponent("View", "later-de", { lang: "de", selected: "", title: "T", process: { steps: [{ title: "A", state: "optional" }], later: [{ label: "X", href: "agent:teaching/activate-section?section=agenda" }] }, units: [{ id: "1", title: "U", state: "planned" }] });
+  const html = dashboard.renderComponent("View", "later-de", { lang: "de", selected: "", title: "T", process: { steps: [{ title: "A", state: "optional" }], later: [{ label: "X", href: "agent:teaching/activate-section?section=agenda", command: ":activate-section agenda" }] }, units: [{ id: "1", title: "U", state: "planned" }] });
   assert.match(html, /<summary>Bei Bedarf \(1\)/);
   assert.match(html, /Optional/);
   assert.doesNotMatch(html, />Bei Bedarf</);
+});
+test("nextTitle: on a light track without a matching step there is no title (no fall-through to the full-track index)", () => {
+  const steps = ["Frame", "Write", "Check", "Publish"].map(title => ({ title }));
+  assert.equal(nextTitle(makeAction("create-agenda", "teaching", "create-agenda"), { process: { steps } }, "Lesson", { track: "mini" }), null);
 });
