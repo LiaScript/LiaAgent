@@ -42,7 +42,8 @@ Rules:
 - If the session already has a validation report, replace it completely (also its heading and position).
 - Every link that names a check report — a decision's `href`, an action, a chat message — targets that report's heading anchor (`tasks/update-dashboard.md` → Anchors), never the unit heading; the completion message of a check links it.
 - Do not keep historical session validation reports.
-- Session mode does not update `journal.md` → `## Validation`.
+- Session mode does not update `journal.md` → `## Validation` — except with one unit (next rule).
+- **One unit, one run:** when the journal has exactly one unit and `__Track:__` is `mini` or `convert`, `:validate-course 1` also runs the course-level checks (course mode steps 4–6 and 8) and replaces `### Latest Validation Summary` (course mode step 9, `Mode: course`) in the same write as the report — one run covers both; `:validate-course` without a number does the same. The whole `README.md` is unit 1 (every `check-material` finding counts), and the light-track exceptions of `checklists/course-quality-checklist.md` → Usage note apply.
 - Full course validation replaces `journal.md` → `## Validation` → `### Latest Validation Summary` for publishing decisions.
 - For publishing decisions, use `### Latest Validation Summary` as the authoritative course-level gate state.
 - Publishing requires `Mode: course` and `Result: PASS`; a passing session-mode validation never unlocks publishing by itself.

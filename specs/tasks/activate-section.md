@@ -67,7 +67,7 @@ When the instructor wants another track — on request ("make it a full course",
    - from mini to full: `Type` is `single-lesson` (the mini track's internal type); ask the two course-type questions of `tasks/init-course.md` step 3 in the same form, replace the type with the answer and set the Course Profile from its step 6 (`Agenda required` included). `__File Structure:__` stays as it is: the root `README.md` stays unit 1 (`data/file-structure-modes.md` → Changing mode later, if the instructor wants one file per unit);
    - one line on what comes next in the new track (the overview's next step).
 2. **One write** for all of it: the `__Track:__` lines (and the Course Profile lines a new course type brings), every marker that goes, every marker that comes (form: `tasks/init-course.md` → When-Needed Markers). Never delete content: material, units, reports and notes stay.
-3. Steps 4 and 5 as above; the overview's step list follows the new track (computed).
+3. Steps 4 and 5 as above; the overview's step list follows the new track (`tasks/update-dashboard.md` → Rules → Process steps per track), with a `note`.
 
 ## Growth offer
 

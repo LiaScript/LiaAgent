@@ -7,7 +7,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
 import { readJournal, loadPacks } from "./journal-model.mjs";
-import { trackIds, sectionSlug } from "./tracks.mjs";
+import { trackIds, sectionSlug, stepsOf } from "./tracks.mjs";
 import { unencodedUrls, describeUrl, analyseMaterial } from "./check-material.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -279,10 +279,12 @@ const header = sessions.match(/^\|\s*#\s*\|(.*)\|\s*$/m)?.[1].split("|").map(cel
 const column = (name, fromEnd) => header.indexOf(name) >= 0 ? header.indexOf(name) : header.length - fromEnd;
 const projectDir = dirname(resolve(file));
 const fileMode = section("Course Context").match(/Mode:\s*(single-file|multi-file)/)?.[1];
-// single-file: the unit is a ## chapter of README.md whose heading contains the unit title
+// single-file: the unit is a ## chapter of README.md whose heading contains the unit title; on a light track
+// (mini, convert) the whole README.md is unit 1 (data/file-structure-modes.md → Light tracks).
 const readme = () => existsSync(join(projectDir, "README.md")) ? readFileSync(join(projectDir, "README.md"), "utf8") : "";
+const lightTrack = /^\s*\d+\.\s*Track:\s*(mini|convert)\b/m.test(section("Course Context"));
 const materialExists = (number, title) => fileMode === "single-file"
-  ? readme().split("\n").some(line => line.startsWith("## ") && (!title || line.toLowerCase().includes(title.toLowerCase())))
+  ? (lightTrack && number === "1" ? readme().trim() !== "" : readme().split("\n").some(line => line.startsWith("## ") && (!title || line.toLowerCase().includes(title.toLowerCase()))))
   : existsSync(join(projectDir, "materials")) && readdirSync(join(projectDir, "materials")).some(name => name.startsWith(`${number}-`) && existsSync(join(projectDir, "materials", name, "README.md")));
 const doneRows = new Set();
 const materialRows = new Set();
@@ -383,6 +385,11 @@ for (const link of agentCommands ? agentLinks : []) {
   }
   const trackValue = section("Course Context").match(/^\s*\d+\.\s*Track:\s*([^\n]*?)\s*$/m)?.[1].replace(/[`*_]/g, "");
   if (trackValue && !trackIds.includes(trackValue)) problems.push(`Track: "${trackValue}" is not one of ${trackIds.join(", ")}`);
+  // A light track has exactly the steps of its track (tasks/update-dashboard.md → Rules → Process steps per track);
+  // the full track may drop its agenda step with a note, so only the light tracks are counted.
+  const ownSteps = stepsOf(journal.track, journal.convertMode);
+  const shownSteps = JSON.parse(match[1]).process?.steps ?? [];
+  if (journal.track !== "full" && shownSteps.length !== ownSteps.length) problems.push(`process.steps has ${shownSteps.length} steps, the ${journal.track} track has ${ownSteps.length} (${ownSteps.join(", ")}) – replace them with the steps of the track (tasks/update-dashboard.md → Process steps per track)`);
   const shownLater = (JSON.parse(match[1]).process?.later ?? []).map(item => String(item?.href ?? "").match(/[?&]section=([\w-]+)/)?.[1] ?? "").sort().join(",");
   const markedLater = journal.later.map(sectionSlug).sort().join(",");
   if (shownLater !== markedLater) problems.push(`process.later does not match the sections marked when needed (overview: ${shownLater || "none"}; journal: ${markedLater || "none"}) – run \`node specs/dashboard/derive-dashboard.mjs --write\``);

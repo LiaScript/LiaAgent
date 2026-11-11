@@ -2730,6 +2730,8 @@ for (const track of ["mini"]) test(`${track}-track journal with markers on all l
   const file = join(dir, "journal.md");
   let text = readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8");
   text = text.replace(', "next": "Click “Start course” and answer the questions."', "");
+  // The first Dashboard write of a light track has the steps of its track (tasks/update-dashboard.md, T7).
+  text = text.replace(/("steps": \[\n)[\s\S]*?(\n    \],)/, (_, open, close) => `${open}${stepsOf(track).map(key => `      {"title": "${key}", "state": "planned"}`).join(",\n")}${close}`);
   text = text.replace(/(## Course Context\n)/, `$1\n* __Track:__\n  1. Track: ${track}\n  2. Convert mode: n/a\n  3. Source: n/a\n`);
   for (const key of laterOf(track)) {
     const block = laterBlock(key);
@@ -2748,4 +2750,93 @@ for (const track of ["mini"]) test(`${track}-track journal with markers on all l
     assert.doesNotMatch(run.stderr, /when needed/);
     assert.match(readFileSync(file, "utf8"), /## Templates[\s\S]*?### Dashboard\s+\* __Import:__/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- The mini course end to end (leichte Straenge T7): the init-course save, then :create-mini-course ----
+
+// What the mini save of tasks/init-course.md writes into the empty journal: the short frame with the Track
+// block, the short outline, the when-needed markers and – with the first update-dashboard run – the steps of
+// the mini track (tasks/update-dashboard.md → Rules → Process steps per track).
+function miniInitJournal({ steps = stepsOf("mini") } = {}) {
+  let text = readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8");
+  const section = (key, body) => {
+    const pattern = new RegExp(`(## ${key}[^\\n]*\\n)[\\s\\S]*?(?=\\n---\\n\\n## )`);
+    assert.match(text, pattern, key);
+    text = text.replace(pattern, (_, head) => `${head}\n${body}`);
+  };
+  section("Course Context", `<!-- class="journal-actions" -->\n[▶️ Start course](agent:teaching/init-course) \`:init-course\`\n\n**Course frame:** confirmed on 2026-11-12.\n\n<!-- data-type="none" -->\n| Item | Decided |\n|---|---|\n| Topic | Reading a timetable |\n| Open the material | by link |\n\n<details><summary>Technical settings for the assistant</summary>\n\n* __Course Type:__\n  1. Type: single-lesson\n  2. Working Title: Reading a timetable\n  3. Target Group: adult learners\n\n* __Track:__\n  1. Track: mini\n  2. Convert mode: n/a\n  3. Source: n/a\n\n* __Terminology:__\n  1. sessions-called: lesson\n\n* __Course Profile:__\n  1. Persona type: tutor\n  2. Agenda required: no\n  3. Pacing: n/a\n  4. Assessment defaults: self-check quizzes\n  5. Units: 1 × 20 min\n  6. Delivery: link\n\n* __File Structure:__\n  1. Mode: single-file\n  2. Session folder naming: n/a\n\n* __Conventions & Standards:__\n  1. Language: en\n  2. Tone: informal\n  3. Person: you\n  4. Instructor Address: you\n  5. Author: A. Teacher\n\n</details>\n`);
+  section("Outline", `<!-- class="journal-actions" -->\n[▶️ Create outline](agent:teaching/create-outline) \`:create-outline\`\n\n<!-- data-key="title" -->\n* __Title:__\n  Reading a timetable\n\n<!-- data-key="target-audience" -->\n* __Target Audience:__\n  Adult learners\n\n<!-- data-key="learning-goals" -->\n* __Learning Objectives:__\n  1. Learners can find the departure time of a line at a stop.\n  2. Learners can tell how long a trip between two stops takes.\n\n<!-- data-key="session-overview" -->\n* __Slides:__\n  1. What a timetable shows – rows, columns and stops.\n  2. Finding a departure – quiz on objective 1.\n  3. How long it takes – quiz on objective 2.\n`);
+  for (const key of laterOf("mini")) {
+    if (key === "Learner Personas") text = text.replace(/(### Learner Personas[^\n]*\n)[\s\S]*?(?=\n---)/, (_, head) => `${head}\n${laterBlock(key)}`);
+    else section(key, laterBlock(key));
+  }
+  const titles = { frame: "Frame and learning objectives", material: "Write the material", check: "Check", publish: "Publish" };
+  const data = JSON.parse(text.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
+  data.process.steps = steps.map(key => ({ title: titles[key] ?? key, state: { frame: "done", material: "current", publish: "optional" }[key] ?? "planned", why: "Why." }));
+  data.process.note = "A lesson counts as finished once its check has passed and you have approved it.";
+  data.next = { title: "Write the material", why: "The short course is written in one go.", label: "Write the course", href: "agent:teaching/create-mini-course", command: ":create-mini-course", icon: "▶️" };
+  return text.replace(/```json @Dashboard\.View\n[\s\S]*?\n```/, dashJson(data));
+}
+
+// What :create-mini-course saves: unit 1 (heading, goal, table row with Material ✅) and the root README.md.
+const miniUnitSave = text => text
+  .replace(/\n_No units yet[^\n]*\n/, "\n")
+  .replace(/(\| # \| Title \| Type \| Skeleton \| Material \| Done \| Notes \|\n\|[-|]+\|\n)/, "$1| 1 | Reading a timetable | n/a | ✅ | ✅ | ❌ | |\n")
+  .replace(/(<\/details>\n)(\n---\n\n## Agents)/, `$1\n### 1. Reading a timetable\n\n<!-- data-key="summary" -->\n**Summary:**\n\nLearners find a departure time and tell how long a trip takes.\n$2`);
+const miniReadme = "<!--\nauthor: A. Teacher\nversion: 0.1.0\nlanguage: en\nnarrator: UK English Female\n-->\n\n# Reading a timetable\n\nWhat a timetable tells you, and how to read it.\n\n## What a timetable shows\n\nRows, columns and stops.\n\n## Finding a departure\n\nWhen does line 4 leave?\n\n[[10:15]]\n";
+
+function inMiniProject(text, files, run) {
+  const dir = mkdtempSync(join(tmpdir(), "dashboard-mini-course-"));
+  const file = join(dir, "journal.md");
+  writeFileSync(file, text);
+  for (const [name, content] of Object.entries(files)) writeFileSync(join(dir, name), content);
+  const script = name => spawnSync(process.execPath, [fileURLToPath(new URL(`./${name}`, import.meta.url)), ...(name === "derive-dashboard.mjs" ? ["--write"] : []), file], { encoding: "utf8" });
+  try { return run({ file, derive: () => script("derive-dashboard.mjs"), validate: () => script("validate-journal.mjs"), read: () => readFileSync(file, "utf8") }); }
+  finally { rmSync(dir, { recursive: true, force: true }); }
+}
+const dashboardOf = text => JSON.parse(text.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
+const actionLineOf = (text, heading) => text.split(heading)[1]?.split('<!-- class="journal-actions" -->')[1]?.trimStart().split("\n")[0] ?? "";
+
+test("mini course end to end: the init-course save leaves a Dashboard that derive --write and validate-journal accept", () => {
+  inMiniProject(miniInitJournal(), {}, ({ derive, validate, read }) => {
+    const derived = derive();
+    assert.equal(derived.status, 0, derived.stdout + derived.stderr);
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    const data = dashboardOf(read());
+    assert.equal(data.process.steps.length, stepsOf("mini").length);
+    assert.equal(data.next.command, ":create-mini-course");
+    assert.deepEqual(data.process.later.map(item => item.command).sort(), laterOf("mini").map(key => `:activate-section ${sectionSlug(key)}`).sort());
+    // ## Sessions offers writing the mini course, never the didactics a mini course marks when needed.
+    assert.match(actionLineOf(read(), "\n## Sessions"), /agent:teaching\/create-mini-course/);
+  });
+});
+
+test("mini course end to end: after :create-mini-course the whole README.md is unit 1 and its check is next", () => {
+  inMiniProject(miniUnitSave(miniInitJournal()), { "README.md": miniReadme }, ({ derive, validate, read }) => {
+    const derived = derive();
+    assert.equal(derived.status, 0, derived.stdout + derived.stderr);
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    const text = read();
+    assert.equal(dashboardOf(text).next.command, ":validate-course 1");
+    assert.match(text, /^1\. Reading a timetable – material written · check open$/m);
+    assert.match(actionLineOf(text, "\n### 1. Reading a timetable"), /agent:teaching\/validate-course\?number=1/);
+    assert.doesNotMatch(actionLineOf(text, "\n## Sessions"), /create-didactics|create-session|create-mini-course/);
+  });
+  // Without README.md the material of unit 1 is missing.
+  inMiniProject(miniUnitSave(miniInitJournal()), {}, ({ derive, validate }) => {
+    derive();
+    const run = validate();
+    assert.match(run.stdout + run.stderr, /unit 1: "Material ✅" but the material document is missing \(README\.md\)/);
+  });
+});
+
+test("validate-journal: a light track's Dashboard has exactly the steps of its track", () => {
+  inMiniProject(miniInitJournal({ steps: stepsOf("full") }), {}, ({ derive, validate }) => {
+    derive();
+    const run = validate();
+    assert.equal(run.status, 2, run.stdout + run.stderr);
+    assert.match(run.stdout + run.stderr, /process\.steps has 8 steps, the mini track has 4 \(frame, material, check, publish\)/);
+  });
 });

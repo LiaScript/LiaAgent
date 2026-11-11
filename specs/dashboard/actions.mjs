@@ -294,7 +294,13 @@ export function patchUnitActions(source, journal, wordsFor) {
 // empty, ✏️ revise once it is saved. `extras`: further links the table allows there (kept when present).
 function sectionLines(journal, nextUnplanned, approvedOne) {
   const revise = (key, create, cmd, filled) => filled ? action(`revise-${key}`, "teaching", cmd, {}, "✏️") : action(create, "teaching", cmd);
-  const sessions = !journal.filled.Didactics ? [action("didactics-first", "teaching", "create-didactics")]
+  // Light tracks (mini, convert): exactly unit 1 – written by the track's own task, then checked; a second unit
+  // is a track switch (tasks/activate-section.md), so no create-session here.
+  const light = journal.track === "mini" || journal.track === "convert";
+  const firstWritten = journal.units.some(unit => unit.n === "1" && unit.material);
+  const sessions = light ? (firstWritten ? [action("check-units", "teaching", "validate-course", {}, "🔍")]
+      : [journal.track === "mini" ? action("write-mini-course", "teaching", "create-mini-course") : action("convert-course", "teaching", "convert-course")])
+    : !journal.filled.Didactics ? [action("didactics-first", "teaching", "create-didactics")]
     : journal.agendaRequired === "yes" && !journal.hasAgenda ? [action("agenda-first", "teaching", "create-agenda")]
     : [action("create-unit", "teaching", "create-session"),
       ...(nextUnplanned && approvedOne ? [action("build-unit", "teaching", "build-session", { number: nextUnplanned.n })] : []),

@@ -155,7 +155,7 @@ M4. **Before saving** — the single write confirmation of this track: show the 
    - `## Course Context` per `templates/course-context.yaml` → `layout`, short: Course Type (`Type: single-lesson` — internal, never shown as an option; Working Title; Target Group), Terminology (`sessions-called`: the word for one lesson in the course language and setting), Course Profile as for one lesson (`Persona type: tutor`, `Agenda required: no`, `Pacing: n/a`, `Assessment defaults: self-check quizzes`, `Units: 1 × {length}`, `Delivery` from M3), File Structure (`Mode: single-file`, `Session folder naming: n/a`), Conventions, Additional Notes, and the Track block (`Track: mini`, `Convert mode: n/a`, `Source: n/a`);
    - a short `## Outline` per `templates/course-outline.yaml` → `layout`: only Title, Target Audience, Learning Objectives (the 1–3 objectives, no level sub-lists needed) and Session Overview (label "Slides", translated: the slide list, one sentence each);
    - the when-needed markers of the mini track (below).
-   Write the Course Context, the outline and the markers in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13.
+   Write the Course Context, the outline and the markers in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13; the overview run of step 11 replaces `process.steps` with the steps of the mini track (`tasks/update-dashboard.md` → Rules → Process steps per track).
 
 ## When-Needed Markers
 

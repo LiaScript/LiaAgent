@@ -2,6 +2,8 @@
 
 > **Usage note:** Read `journal.md` → `## Course Context` first. Skip any check marked `[condition]` if the condition does not apply to this course type.
 >
+> **Light tracks** (`__Track:__` `mini` or `convert`, exactly one unit): a section marked when needed (`<!-- state: later -->`) is skipped — no finding; the short outline of a mini course needs only title, target audience and 1–3 learning objectives (time commitment, abstract and 3–5 objectives do not apply); unit 1 needs only its title and goal — the whole root `README.md` is its material, and the type, content, activities and references fields as well as the Type and Method checks do not apply (`tasks/create-mini-course.md`).
+>
 > **Tags:** `[mechanical]` = verifiable from structure/presence/syntax, no content judgment needed — safe for the automated loop in `tasks/validate-course.md` → "Iteration (mechanical checks only)". `[pedagogical]` = needs content/didactic judgment — always escalated to the instructor, never auto-fixed in a loop. `[advisory]` = computed mechanically, but only a hint for a human judgment — recorded in the report, never ❌, never part of the automated loop and never a reason for FAIL or "PASS with concerns".
 
 ## Context

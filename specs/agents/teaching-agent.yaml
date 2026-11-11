@@ -301,6 +301,7 @@ dependencies:
   tasks:
     - init-course.md
     - activate-section.md
+    - create-mini-course.md
     - analyze-existing.md
     - scaffold-course.md
     - configure-agent.md
