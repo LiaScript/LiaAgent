@@ -5,15 +5,13 @@ The saved chat (`.chats/*.json`) survives a restart of the agent or the DevServe
 
 ## The save marker
 
-Every chat message that confirms a save ends with `<!-- saved: {what} -->`, `{what}` being the section(s) or
-file(s) written, e.g. `<!-- saved: Course Context, Outline -->`. A message that ends with <!-- saved: {what} -->
-is the proof that its content is in the journal. Never put it in a message without a save (never in a message without a save).
+The ✅ message of every save ends with `<!-- saved: {what} -->` (format and rule: `data/chat-dialog.md` → Report the save first). It proves that its content is in the journal.
 
 ## Picking up
 
 On start and after a gap, `read_chat` with its default (omit `last`: the last 50 entries), then:
 
-1. **Saved or not:** the newest entry with <!-- saved: --> separates what is saved from what is not. What lies
+1. **Saved or not:** the newest entry with a `<!-- saved: … -->` marker separates what is saved from what is not. What lies
    after it is the unsaved state: decisions and answers that no journal section holds yet. Without any marker
    in those entries nothing counts as saved; only the journal counts.
 2. **Make a picture** for yourself: topic, saved, unsaved, open question.

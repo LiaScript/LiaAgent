@@ -22,7 +22,7 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   changes; a change of meaning (a step becomes required, a point disappears) is a question, not an update.
   When a chat answer admits that an overview text is wrong, say it will be corrected at the next overview
   write. A yes/no decision gets buttons (`chat` with `inputs`), never "just tell me whether I should".
-- **Report the save first:** right after the write send "✅ Saved: …" (marker: `data/chat-memory.md`), what the instructor may do now ("You
+- **Report the save first:** right after the write send "✅ Saved: …", ending with the marker `<!-- saved: {what} -->` ({what} = section(s) or file(s), e.g. `<!-- saved: Course Context, Outline -->`; never in a message without a save, `data/chat-memory.md` reads it), what the instructor may do now ("You
   can already look at the page", translated) and what still runs ("only the overview is being updated"),
   so the status below does not read "not saved yet"; a second question comes as its own message. After a
   check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
