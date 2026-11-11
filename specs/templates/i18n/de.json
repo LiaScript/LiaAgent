@@ -360,6 +360,7 @@
   "imageStep": "Bilder einfügen",
   "noBlocks": "keine",
   "asOf": "Stand: {date}",
+  "laterNote": "Bei Bedarf – für diesen Kurs noch nicht nötig.",
   "checkCorrection": "Prüfung: Korrektur nötig ({n})",
   "passedMissing": "bestanden – es fehlt noch: {what}",
   "passedConcerns": "bestanden – {n} Punkt(e) zu entscheiden",
@@ -433,6 +434,11 @@
   "build-unit": {"title": "{unit} {n} vorbereiten lassen", "label": "{unit} {n} vorbereiten lassen", "why": "Nach einer kurzen Planungsskizze schreibt und prüft der Assistent das Material allein; danach wird es gemeinsam angesehen."},
   "note-planned": {"label": "_Die {units} sind im Ablaufplan geplant und entstehen nacheinander, beginnend mit {unit} 1._"},
   "note-progress": {"label": "_{n} von {N} {units} angelegt; {unit} {m} folgt, wenn {unit} {k} fertig ist._"},
+  "write-mini-course": {"title": "Material schreiben", "label": "Kurs schreiben", "why": "Der kurze Kurs wird in einem Zug aus dem Rahmen geschrieben, ohne Gliederung und Didaktik."},
+  "convert-course": {"title": "Material schreiben", "label": "Umwandeln starten", "why": "Das vorhandene Material wird in einen LiaScript-Kurs übertragen."},
+  "start-template": {"title": "Wunsch und Steckbrief", "label": "Baustein beginnen", "why": "Beschreibe, was der Baustein können soll; der Steckbrief ist die Grundlage für den Bau."},
+  "publish-template": {"title": "Veröffentlichen", "label": "Baustein {id} veröffentlichen", "why": "Der Baustein ist freigegeben; durch das Veröffentlichen steht er anderen zur Verfügung."},
+  "activate-section": {"label": "hinzunehmen"},
   "note-ready": {"label": "_{n} von {N} {units} angelegt; {unit} {k} ist freigegeben – {unit} {m} kann jetzt beginnen._"}
  }
 }

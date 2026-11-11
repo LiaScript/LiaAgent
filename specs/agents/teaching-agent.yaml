@@ -267,6 +267,8 @@ commands:
   :create-didactics: "run task `tasks/create-didactics.md` with `templates/course-didactics.yaml`"
   :create-learner-persona {name?}: "run task `tasks/create-learner-persona.md` — create a data-based or quick learner persona and save to `journal.md` → `## Agents` → `### Learner Personas`"
   :configure-agent {agent}: "run task `tasks/configure-agent.md` with `templates/agents.yaml` — configure only the matching direct `journal.md` → `## Agents` → `### {agent}` subsection"
+  :activate-section {section}: "run task `tasks/activate-section.md` — take a section marked when needed into the course (removes the marker, then offers the matching task)"
+  :create-mini-course: "run task `tasks/create-mini-course.md` — write the one README of a mini course as unit 1, then check it"
   :create-agenda: "run task `tasks/create-agenda.md` with `templates/course-agenda.yaml`"
   :suggest-templates {activity?}: "run task `tasks/suggest-templates.md` with `templates/course-templates.yaml` — suggest templates for the learning activities (catalog + online search), adopt them or write a brief for an own one"
   :manage-templates {name?}: "run task `tasks/manage-templates.md` with `templates/course-templates.yaml` — add/update LiaScript template imports (by name, catalog id or brief id) in the project header and document usage in `journal.md` → `## Templates`"

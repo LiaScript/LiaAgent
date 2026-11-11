@@ -515,6 +515,8 @@ workflow:
       - :create-learner-persona {name?}
       - :configure-agent {agent}
       - :create-agenda
+      - :activate-section {section}
+      - :create-mini-course
       - :suggest-templates {activity?}
       - :manage-templates {name?}
       - :update-dashboard

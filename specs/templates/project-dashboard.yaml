@@ -53,6 +53,7 @@ template:
               next: 'Optional: what to do next'
               statusLabel: 'Optional: plain-language refinement of the state'
           note: 'Optional: loops back or special cases'
+    process.later: '(computed by `derive-dashboard.mjs`) Optional list of {label, href: "agent:teaching/activate-section?section={slug}", command: ":activate-section {slug}"}, one per section marked `<!-- state: later -->` in `journal.md`; shown collapsed as "When needed", not counted as steps. The steps per track (full, mini, convert, template) are listed in `specs/dashboard/tracks.mjs` → `stepsOf`; `validate-journal.mjs` checks that this list matches the markers.'
     selected: '(computed while next is a unit action; "" keeps the whole-course view) Optional: id of the recommended unit; empty string "" opens the whole-course view'
     process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`)'
     next:

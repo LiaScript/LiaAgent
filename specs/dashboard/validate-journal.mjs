@@ -6,6 +6,8 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
+import { readJournal, loadPacks } from "./journal-model.mjs";
+import { trackIds, sectionSlug } from "./tracks.mjs";
 import { unencodedUrls, describeUrl, analyseMaterial } from "./check-material.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -362,6 +364,28 @@ for (const link of agentCommands ? agentLinks : []) {
   if (!agent) continue;
   if (!agentCommands[agent]) problems.push(`link ${link}: no agent "${agent}" – agent: links name an agent of specs/agents/{agent}-agent.yaml`);
   else if (command !== "switch" && !agentCommands[agent].has(command)) problems.push(`link ${link}: "${command}" is no command of the ${agent} agent – use a key of its commands: map`);
+}
+// Sections marked "when needed" (tracks.mjs → laterMarker) and the track of the course.
+{
+  const journal = readJournal(source, { projectDir: dirname(resolve(file)), packs: loadPacks() });
+  const personas = section("Agents").match(/^### Learner Personas[^\n]*\n([\s\S]*?)(?=^#{1,3} |(?![\s\S]))/m)?.[1] ?? "";
+  for (const key of journal.later) {
+    const body = key === "Learner Personas" ? personas : section(key);
+    // Allowed under the marker: one italic note line, one action line, separators and comments.
+    let note = 0, action = 0;
+    const extra = body.replace(/<!--[\s\S]*?-->/g, "").split("\n").map(line => line.trim()).filter(line => {
+      if (!line || /^(-{3,}|\*{3,})$/.test(line)) return false;
+      if (/^_.*_$/.test(line) && !note++) return false;
+      if (line.includes("](agent:") && !action++) return false;
+      return true;
+    });
+    if (extra.length) problems.push(`## ${key} is marked when needed but has content – remove the marker (\`:activate-section ${sectionSlug(key)}\`) or the content`);
+  }
+  const trackValue = section("Course Context").match(/^\s*\d+\.\s*Track:\s*([^\n]*?)\s*$/m)?.[1].replace(/[`*_]/g, "");
+  if (trackValue && !trackIds.includes(trackValue)) problems.push(`Track: "${trackValue}" is not one of ${trackIds.join(", ")}`);
+  const shownLater = (JSON.parse(match[1]).process?.later ?? []).map(item => String(item?.href ?? "").match(/[?&]section=([\w-]+)/)?.[1] ?? "").sort().join(",");
+  const markedLater = journal.later.map(sectionSlug).sort().join(",");
+  if (shownLater !== markedLater) problems.push(`process.later does not match the sections marked when needed (overview: ${shownLater || "none"}; journal: ${markedLater || "none"}) – run \`node specs/dashboard/derive-dashboard.mjs --write\``);
 }
 // Visible commands must not show raw placeholders like {description}.
 for (const href of hrefs) if (/\{[a-z_-]+\??\}/i.test(href)) problems.push(`link ${href} contains a raw placeholder – pass the value or omit the parameter`);

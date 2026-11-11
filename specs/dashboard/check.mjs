@@ -2677,3 +2677,72 @@ test("nextTitle: on a light track without a matching step there is no title (no 
   const steps = ["Frame", "Write", "Check", "Publish"].map(title => ({ title }));
   assert.equal(nextTitle(makeAction("create-agenda", "teaching", "create-agenda"), { process: { steps } }, "Lesson", { track: "mini" }), null);
 });
+
+// ---- Sections marked "when needed" and the track (Task 4) ----
+
+const validateText = text => {
+  const dir = mkdtempSync(join(tmpdir(), "dashboard-later-"));
+  const file = join(dir, "journal.md");
+  writeFileSync(file, text);
+  const run = spawnSync(process.execPath, [fileURLToPath(new URL("./validate-journal.mjs", import.meta.url)), file], { encoding: "utf8" });
+  rmSync(dir, { recursive: true, force: true });
+  return { status: run.status, output: run.stdout + run.stderr, file };
+};
+const laterBlock = key => `${laterMarker}\n\n_When needed – not needed for this course yet._\n\n[➕ Add](agent:teaching/activate-section?section=${sectionSlug(key)}) \`:activate-section ${sectionSlug(key)}\`\n\n`;
+const laterEntry = key => ({ label: key, href: `agent:teaching/activate-section?section=${sectionSlug(key)}`, command: `:activate-section ${sectionSlug(key)}` });
+const dashJson = data => `\`\`\`json @Dashboard.View\n${JSON.stringify(data, null, 2)}\n\`\`\``;
+const baseNext = { title: "Weiter", why: "W", label: "Weiter", href: "agent:teaching/create-didactics", command: ":create-didactics" };
+const journalWith = ({ track = "", outline = "Text\n\n", later = [], dash = {} } = {}) =>
+  `<!--\nlanguage: en\n-->\n\n# Course\n\n## Course Context\n\n${track ? `* __Track:__\n  1. Track: ${track}\n  2. Convert mode: n/a\n  3. Source: n/a\n\n` : ""}## Outline\n\n${outline}## Didactics\n\n${later.includes("Didactics") ? laterBlock("Didactics") : "Text\n\n"}## Dashboard\n\n${dashJson({ title: "Course", next: baseNext, ...dash })}\n`;
+
+test("validate-journal rejects content under the when-needed marker", () => {
+  const result = validateText(journalWith({ later: ["Didactics"], dash: { process: { steps: [{ title: "A", state: "planned" }], later: [laterEntry("Didactics")] } } }).replace(laterBlock("Didactics"), laterBlock("Didactics") + "Some real didactics text.\n\n"));
+  assert.equal(result.status, 2, result.output);
+  assert.match(result.output, /## Didactics is marked when needed but has content – remove the marker \(`:activate-section didactics`\) or the content/);
+});
+
+test("validate-journal rejects an unknown Track value", () => {
+  const result = validateText(journalWith({ track: "turbo" }));
+  assert.equal(result.status, 2, result.output);
+  assert.match(result.output, /Track: "turbo" is not one of full, mini, convert, template/);
+});
+
+test("validate-journal asks for process.later that matches the marked sections", () => {
+  const missing = validateText(journalWith({ later: ["Didactics"], dash: { process: { steps: [{ title: "A", state: "planned" }] } } }));
+  assert.equal(missing.status, 2, missing.output);
+  assert.match(missing.output, /process\.later does not match the sections marked when needed.*derive-dashboard\.mjs --write/);
+  const extra = validateText(journalWith({ dash: { process: { steps: [{ title: "A", state: "planned" }], later: [laterEntry("Didactics")] } } }));
+  assert.match(extra.output, /process\.later does not match/);
+  const fine = validateText(journalWith({ later: ["Didactics"], dash: { process: { steps: [{ title: "A", state: "planned" }], later: [laterEntry("Didactics")] } } }));
+  assert.equal(fine.status, 0, fine.output);
+});
+
+test("validate-journal: an empty-looking when-needed section is no 'empty' or 'missing' finding", () => {
+  const plain = validateText(journalWith({ outline: laterBlock("Outline"), later: ["Outline", "Didactics"], dash: { process: { steps: [{ title: "A", state: "planned" }], later: [laterEntry("Outline"), laterEntry("Didactics")] } } }));
+  assert.equal(plain.status, 0, plain.output);
+  assert.doesNotMatch(plain.output, /empty|missing/i);
+});
+
+for (const track of ["mini"]) test(`${track}-track journal with markers on all laterOf(${track}) sections validates clean`, () => {
+  const dir = mkdtempSync(join(tmpdir(), "dashboard-mini-"));
+  const file = join(dir, "journal.md");
+  let text = readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8");
+  text = text.replace(', "next": "Click “Start course” and answer the questions."', "");
+  text = text.replace(/(## Course Context\n)/, `$1\n* __Track:__\n  1. Track: ${track}\n  2. Convert mode: n/a\n  3. Source: n/a\n`);
+  for (const key of laterOf(track)) {
+    const block = laterBlock(key);
+    const pattern = key === "Learner Personas"
+      ? /(### Learner Personas[^\n]*\n)[\s\S]*?(?=\n---)/
+      : new RegExp(`(## ${key}[^\\n]*\\n)[\\s\\S]*?(?=\\n---\\n\\n## |(?![\\s\\S]))`);
+    assert.match(text, pattern, key);
+    text = text.replace(pattern, (_, head) => `${head}\n${block}`);
+  }
+  writeFileSync(file, text);
+  try {
+    const derived = spawnSync(process.execPath, [fileURLToPath(new URL("./derive-dashboard.mjs", import.meta.url)), "--write", file], { encoding: "utf8" });
+    assert.equal(derived.status, 0, derived.stdout + derived.stderr);
+    const run = spawnSync(process.execPath, [fileURLToPath(new URL("./validate-journal.mjs", import.meta.url)), file], { encoding: "utf8" });
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.doesNotMatch(run.stderr, /when needed/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

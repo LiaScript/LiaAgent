@@ -38,6 +38,7 @@ export const englishTerms = {
   imageStep: "Insert images",
   noBlocks: "none",
   asOf: "As of {date}",
+  laterNote: "When needed – not needed for this course yet.",
   passedMissing: "passed – still missing: {what}",
   passedConcerns: "passed – {n} point(s) to decide",
   blocksPerUnit: "checked per {unit} – none needed so far ({k} of {N})",
