@@ -154,6 +154,16 @@ test("validate-course marks the files of the check as read completely, so the re
   }
 });
 
+test("chat memory: the chat is picked up after a restart from the last save marker (leichte Straenge T6)", () => {
+  const sheet = read("data/chat-memory.md");
+  for (const phrase of ["the newest entry with <!-- saved:", "offer to save, never write it silently", "the journal wins", "ends with <!-- saved: {what} -->", "never in a message without a save", "nothing counts as saved", "asked again"]) assert.ok(sheet.includes(phrase), `data/chat-memory.md lost: ${phrase}`);
+  assert.match(read("data/agent-links.md"), /data\/chat-memory\.md/);
+  assert.match(read("data/agent-links.md"), /\| `data\/chat-memory\.md` \|/, "the Rule sheets table lists chat-memory.md");
+  assert.match(read("data/chat-dialog.md"), /data\/chat-memory\.md/);
+  for (const task of ["tasks/start.md", "tasks/open-chat.md"]) assert.match(read(task), /data\/chat-memory\.md/, `${task} does not name chat-memory.md`);
+  assert.match(read("agents/teaching-agent.yaml"), /\(5\) `read_chat`:[^"]*data\/chat-memory\.md/);
+});
+
 test("rule sheets and the main tasks stay within their word budget", () => {
   const over = Object.entries(budgets).map(([file, max]) => [file, read(file).split(/\s+/).filter(Boolean).length, max]).filter(([, words, max]) => words > max);
   assert.deepEqual(over.map(([file, words, max]) => `${file}: ${words} words > ${max}`), []);

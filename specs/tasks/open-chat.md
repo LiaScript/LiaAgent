@@ -18,6 +18,7 @@ works in the terminal and wants to move to the browser.
   (read with the file-reading tool).
 - `data/agent-links.md` (core: MCP gate, Agent Roster, Chat Offers) and
   `data/chat-wording.md`, read once per session as the re-read rule says.
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-memory.md`
 
 ## Steps
 
