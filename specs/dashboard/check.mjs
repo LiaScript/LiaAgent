@@ -1745,6 +1745,7 @@ test("the empty journal has the template step after the didactics and the select
 // ── derive-dashboard.mjs: the fields that follow from the journal are computed, not written by hand ──
 import { readJournal, usableState as reportUsable, englishUnitSteps } from "./journal-model.mjs";
 import { derive, unitState, missingText, patchJournal } from "./derive-dashboard.mjs";
+import { stepsOf, laterOf, isLater, laterMarker, sectionSlug } from "./tracks.mjs";
 
 // A journal with an agenda of three units: unit 1 checked (FAIL, one point changed since, images 1 of 2),
 // unit 2 with a planning sketch only, unit 3 only in the agenda.
@@ -2555,4 +2556,32 @@ test("a course check that failed only on own photos sends next to inserting the 
   assert.equal(after.href, "agent:artist/create-image?number=2");
   const steps = ["Frame", "Goals", "Didactics", "Blocks", "Agenda", "Material", "Check", "Publish"].map(title => ({ title }));
   assert.equal(courseStepOf(after, steps).title, "Check", "the photo finishes the course check: that course step stays in progress");
+});
+
+test("tracks: steps and later sections per track", () => {
+  assert.deepEqual(stepsOf("full"), ["frame","outline","didactics","blocks","agenda","material","check","publish"]);
+  assert.deepEqual(stepsOf("convert", "transfer"), ["frame","look","material","check","publish"]);
+  assert.deepEqual(stepsOf("convert", "rebuild"), ["frame","outline","look","material","check","publish"]);
+  assert.deepEqual(laterOf("full"), []);
+  assert.ok(laterOf("template").includes("Sessions"));
+  assert.ok(!laterOf("mini").includes("Sessions"), "the README is unit 1");
+  assert.equal(sectionSlug("Learner Personas"), "learner-personas");
+});
+test("readJournal: track, convert mode, source and later sections (also under a translated heading)", () => {
+  const src = `<!--\nlanguage: de\n-->\n# K\n\n## Course Context – Kurskontext\n\n* __Track:__\n  1. Track: convert\n  2. Convert mode: transfer\n  3. Source: quelle.pdf\n\n## Didactics – Didaktik\n\n${laterMarker}\n_Bei Bedarf – für diesen Kurs noch nicht nötig._ [➕ hinzunehmen](agent:teaching/activate-section?section=didactics) \`:activate-section didactics\`\n\n## Agents\n\n### Learner Personas\n\n${laterMarker}\n_x_\n`;
+  const j = readJournal(src);
+  assert.equal(j.track, "convert");
+  assert.equal(j.convertMode, "transfer");
+  assert.equal(j.source, "quelle.pdf");
+  assert.deepEqual(j.later.sort(), ["Didactics", "Learner Personas"]);
+  assert.equal(j.filled.Didactics, false);
+});
+test("readJournal: a journal without a track field is the full track", () => {
+  const j = readJournal(readFileSync(new URL("./fixtures/journal-84484ae.md", import.meta.url), "utf8"));
+  assert.equal(j.track, "full");
+  assert.deepEqual(j.later, []);
+});
+test("isLater: first non-empty line decides", () => {
+  assert.equal(isLater(`\n\n${laterMarker}\ntext`), true);
+  assert.equal(isLater(`text\n${laterMarker}`), false);
 });

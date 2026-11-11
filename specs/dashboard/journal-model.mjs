@@ -6,6 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isLater, trackIds } from "./tracks.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -83,6 +84,16 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   // How learners open the material (Course Profile → Delivery): link or platform makes publishing required (SK69).
   const delivery = context.match(/Delivery:\s*(link|platform|print|local)\b/i)?.[1].toLowerCase() ?? null;
 
+  // The track (full when the field is missing), its convert mode and source.
+  const track = context.match(/^\s*\d+\.\s*Track:\s*(full|mini|convert|template)\b/m)?.[1] ?? trackIds[0];
+  const convertMode = context.match(/Convert mode:\s*(transfer|rebuild)\b/)?.[1] ?? null;
+  const sourceValue = context.match(/^\s*\d+\.\s*Source:\s*(.+)$/m)?.[1].trim();
+  const source_ = !sourceValue || /^n\/a$/i.test(sourceValue) ? null : sourceValue;
+  // Sections marked "when needed": every ## section and ### Learner Personas under ## Agents.
+  const later = headings.map(heading => heading.key).filter(key => isLater(section(key)));
+  const personas = section("Agents").match(/^### Learner Personas[^\n]*\n([\s\S]*?)(?=^#{1,3} |(?![\s\S]))/m)?.[1] ?? "";
+  if (isLater(personas)) later.push("Learner Personas");
+
   const agenda = agendaUnits(section("Agenda"));
   const sessions = section("Sessions");
   const units = readUnits(sessions, terms);
@@ -97,12 +108,14 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
 
   // A section is filled once it holds more than its one-line note ("_Still empty – …_") and its action line.
   const filled = key => {
+    if (later.includes(key)) return false;
     const lines = stripComments(section(key)).split("\n").map(line => line.trim()).filter(line => line && !/\]\(agent:/.test(line) && !/^(-{3,}|\*{3,})$/.test(line));
     return lines.length > 1 || (lines.length === 1 && !/^_.*_$/.test(lines[0]));
   };
   const validationSummary = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
   return {
     language, terms, pack, headings, terminology, delivery, hasAgenda: agenda.length > 0, units: list, projectDir,
+    track, convertMode, source: source_, later,
     filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
     agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
     templates: readTemplates(section("Templates")),
