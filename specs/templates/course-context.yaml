@@ -20,11 +20,11 @@ template:
   sections:
     - id: course-type
       title: Course Type
-      # New courses never get single-lesson (something small is the mini track); older journals may still say
-      # single-lesson; they stay valid.
+      # single-lesson is no longer offered in the form: the mini track writes it internally
+      # (tasks/init-course.md → Mini Track), and older journals that say single-lesson stay valid.
       template: |
         * __Course Type:__
-          1. Type: [lecture-series | self-paced | workshop | improve-existing | n/a in a light track — the Track says it]
+          1. Type: [lecture-series | self-paced | workshop | single-lesson (mini track only) | improve-existing]
           2. Working Title: [optional working title]
           3. Target Group: [short: who learns, how many, where, special needs (e.g. dyslexia) — details follow in `## Outline`]
 

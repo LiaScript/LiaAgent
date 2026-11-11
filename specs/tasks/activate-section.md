@@ -64,7 +64,7 @@ When the instructor wants another track — on request ("make it a full course",
    - the new track in teacher words (never the slug) and its `__Track:__` values;
    - the markers that go: sections the new track needs (`tasks/init-course.md` → When-Needed Markers) — they get their default content as in step 3;
    - the markers that come: sections the new track does not need, **only if they are still empty** — a section with content keeps it and stays active;
-   - from mini to full: `Type` is `n/a` in a light track, so ask the two questions of `tasks/init-course.md` step 3 in the same form and set the Course Profile from its step 6 (`Agenda required` included). `__File Structure:__` stays as it is: the root `README.md` stays unit 1 (`data/file-structure-modes.md` → Changing mode later, if the instructor wants one file per unit);
+   - from mini to full: `Type` is `single-lesson` (the mini track's internal type); ask the two course-type questions of `tasks/init-course.md` step 3 in the same form, replace the type with the answer and set the Course Profile from its step 6 (`Agenda required` included). `__File Structure:__` stays as it is: the root `README.md` stays unit 1 (`data/file-structure-modes.md` → Changing mode later, if the instructor wants one file per unit);
    - one line on what comes next in the new track (the overview's next step).
 2. **One write** for all of it: the `__Track:__` lines (and the Course Profile lines a new course type brings), every marker that goes, every marker that comes (form: `tasks/init-course.md` → When-Needed Markers). Never delete content: material, units, reports and notes stay.
 3. Steps 4 and 5 as above; the overview's step list follows the new track (computed).

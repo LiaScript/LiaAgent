@@ -46,13 +46,12 @@ The track decides how much of the journal the course needs: the full track (a co
    - A journal that already has a `__Track:__` block with another track: a change of track is a track switch — follow `tasks/activate-section.md` → Track switch instead of this task.
 3. 🎛️ **Order:** ask step 4 (free text) before this form unless its answers are already known, so the options below fit the setting the instructor named. Ask for the course type as **two short questions in the instructor's own terms** (one form, skip what is already known from step 1 or 4). Show only plain labels in the course language, never the type slugs. Phrase the options for the instructor's setting (school, university, adult education) — e.g. "lesson" vs. "session", "pupils" vs. "participants":
 
-   **3a. Scope** (single choice; full track only — something small is the mini track of step 2a, so there is no option "one single lesson"):
+   **3a. Scope** (single choice; full track only — something small is the mini track and improving existing material is option 3 of step 2a, so neither is offered here):
    1. Several lessons / a teaching unit or lecture series
    2. A project day, workshop or block event (1–3 days)
    3. A self-study course without joint lessons
-   4. Improve existing material
 
-   **3b. How do the learners work?** (single choice; skip for 3 and 4):
+   **3b. How do the learners work?** (single choice; skip for 3):
    1. I lead the lessons; the material supports me
    2. The learners work on their own at their own pace (e.g. self-study phases, workshop tasks, online)
    3. Mixed
@@ -65,9 +64,9 @@ The track decides how much of the journal the course needs: the full track (a co
    | 1 | 2 | self-paced | learner-driven within scheduled lessons (note in Additional Notes) |
    | 2 | any | workshop | event-based |
    | 3 | — | self-paced | learner-driven |
-   | 4 | — | improve-existing | (from existing) |
+   | — (step 2a, option 3) | — | improve-existing | (from existing) |
 
-   New courses never get the type `single-lesson`; older journals may still say `single-lesson` — they stay valid, and its rows below still apply to them.
+   The form never offers a single lesson: the type `single-lesson` is written only internally by the mini track (step M4) and stays valid in older journals; its rows below apply to both.
 
 4. 💬 Ask in one free-text question for the **working title, the target group and the time frame** (topic; who the learners are, how many, where they work; how many lessons or meetings, how long, over what period). Give a neutral example that does not echo anything the instructor said. Skip the parts already known (step 1). The time frame fills `Units` (step 8) and decides the file-structure recommendation (step 6).
 5. The Teaching-Agent builds LiaScript courses only — never ask for a platform. If the instructor mentions another one, say in one line that this assistant creates LiaScript material, which can later be exported (e.g. as a SCORM package for a learning platform). Accessibility is not asked: LiaScript brings read-aloud (text to speech), screen-reader labels and keyboard navigation for every course, and the material rules (alt texts, read-aloud for what learners must read, the question as the quiz label) apply to every course. Special needs of the learners (e.g. dyslexia, little German) belong to the target group, where the tasks take them into account.
@@ -78,7 +77,7 @@ The track decides how much of the journal the course needs: the full track (a co
    | lecture-series   | session           | professor       | yes            | scheduled       | quizzes + assignments   |
    | self-paced       | unit              | coach           | optional       | learner-driven  | self-check quizzes      |
    | workshop         | block             | facilitator     | yes            | event-based     | reflection + group work |
-   | single-lesson (older journals) | lesson | tutor     | optional       | n/a             | optional quiz           |
+   | single-lesson (mini track, older journals) | lesson | tutor | optional       | n/a             | optional quiz           |
    | improve-existing | (from existing)   | (from existing) | optional       | (from existing) | (from existing)         |
 
    Also set the **File Structure** default from course type (see `data/file-structure-modes.md`):
@@ -88,7 +87,7 @@ The track decides how much of the journal the course needs: the full track (a co
    | lecture-series | multi-file |
    | self-paced | multi-file |
    | workshop | multi-file |
-   | single-lesson (older journals) | single-file |
+   | single-lesson (mini track, older journals) | single-file |
    | improve-existing | detected in `:analyze-existing` |
 
    For a single lesson do not ask (older journals; the mini track sets it in step M4): it is `single-file` (one link); name it in one line of the summary. For every other course type, ask the file structure as a **teacher question** instead of stating a default (single choice, plain labels):
@@ -153,7 +152,7 @@ M2. **Learning objectives — no mini course without them.** Turn the answer int
 M3. 🎛️ Ask only what is still open, in one form: how the learners are addressed (Person), how they open the material (Delivery: link · learning platform · printed · on this computer), the author name for the material header (optional); language, tone and instructor address as prefilled assumptions (defaults of step 7).
 M4. **Before saving** — the single write confirmation of this track: show the summary of step 9 (Decided table in the instructor's words), below it the objectives and the slide list exactly as they will be saved, and one plain line naming the parts that wait until needed, in teacher words (e.g. "Didactics, look, schedule and learner profiles are not needed for now — you can add them any time."). "Save" / "Change something". Then save, in this order:
    - the language pack first, exactly as step 9 says;
-   - `## Course Context` per `templates/course-context.yaml` → `layout`, short: Course Type (`Type: n/a` — the track says it; Working Title; Target Group), Terminology (`sessions-called`: the word for one lesson in the course language and setting), Course Profile as for one lesson (`Persona type: tutor`, `Agenda required: no`, `Pacing: n/a`, `Assessment defaults: self-check quizzes`, `Units: 1 × {length}`, `Delivery` from M3), File Structure (`Mode: single-file`, `Session folder naming: n/a`), Conventions, Additional Notes, and the Track block (`Track: mini`, `Convert mode: n/a`, `Source: n/a`);
+   - `## Course Context` per `templates/course-context.yaml` → `layout`, short: Course Type (`Type: single-lesson` — internal, never shown as an option; Working Title; Target Group), Terminology (`sessions-called`: the word for one lesson in the course language and setting), Course Profile as for one lesson (`Persona type: tutor`, `Agenda required: no`, `Pacing: n/a`, `Assessment defaults: self-check quizzes`, `Units: 1 × {length}`, `Delivery` from M3), File Structure (`Mode: single-file`, `Session folder naming: n/a`), Conventions, Additional Notes, and the Track block (`Track: mini`, `Convert mode: n/a`, `Source: n/a`);
    - a short `## Outline` per `templates/course-outline.yaml` → `layout`: only Title, Target Audience, Learning Objectives (the 1–3 objectives, no level sub-lists needed) and Session Overview (label "Slides", translated: the slide list, one sentence each);
    - the when-needed markers of the mini track (below).
    Write the Course Context, the outline and the markers in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13.
