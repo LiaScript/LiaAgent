@@ -28,6 +28,10 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
   line between — a single line break becomes a space) and links the report; details follow after the
   overview update.
+- **An agreement is noted in the same turn:** when the instructor agrees to do something before the material is
+  used (look at a page on the device, bring a photo, fix older units next time) — also in a farewell — write it as
+  a `prepare` item in their words (`tasks/update-dashboard.md` step 6) with that turn's overview write, or say that it
+  is not noted.
 - **A new writing rule for all units** (saved in the rules for writing the material): after the save, offer
   once to check the units that already have material against it (one form: each unit with "check briefly"
   – `:quick-fix {n}` – or "leave it"), and name the offer in the save summary.

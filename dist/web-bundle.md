@@ -4382,15 +4382,21 @@ Rules:
    - Learning objectives from `journal.md` → `## Outline` traceable into materials — through `journal.md` → `## Agenda` if there is one
    - Numbering correct and no gaps
 
-9. **Replace `journal.md` → `## Validation` → `### Latest Validation Summary`** — bold labels in the course language with their English `data-key`, never `####` or `#####` headings (each would become its own slide); keep the English key lines `Date:`, `Mode:`, `Result:` that the publishing gate reads, as a list (lines directly below each other would merge into one paragraph):
+9. **Replace `journal.md` → `## Validation` → `### Latest Validation Summary`** — bold labels in the course language with their English `data-key`, never `####` or `#####` headings (each would become its own slide). Visible first: the outcome in the words of `outcome_words` and what is still missing, in plain words — no English labels, no method abbreviations without their name. The English key lines `Date:`, `Mode:`, `Result:` that the publishing gate reads stay as a list inside `<details><summary>{"Technical part", translated}</summary>` (lines directly below each other would merge into one paragraph):
 
    ```
+   **{"Outcome", translated}:** {outcome words} ({date})
+
+   <details><summary>{"Technical part", translated}</summary>
+
    - Date: YYYY-MM-DD
    - Mode: course
    - Result: PASS / FAIL / PASS with concerns
    - Issues found: N
    - Mechanical open: N
    - Sessions checked: N
+
+   </details>
 
    <!-- data-key="course-findings" -->
    **{"Course-level findings", translated}:**
@@ -4409,7 +4415,7 @@ Rules:
 
    **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS.
 10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
-11. After all session validation reports and the latest summary are created: suggest next step.
+11. After all session validation reports and the latest summary are created: suggest next step. The completion message links the summary's own heading (the full anchor of `### Latest Validation Summary…`), never the `## Validation` slide above it. A duration it names is measured (`data/agent-links.md` → Durations).
     - If issues exist: per unit as in session mode step 8 — ✏️ `:quick-fix {number}` when every open point of the unit is one quick-fix change, otherwise `:coauthor-materials {number}` — then rerun `:validate-course`.
     - If no issues: "Course is ready for publishing. Next step: `:agent development` → `:create-project`"
 
@@ -6310,7 +6316,8 @@ Three principles hold every turn; the rules below spell them out.
 **B. A status line is a sign of life; a lasting message is the record.**
 
 - **Progress feedback:** after any confirmation or chat message, the **first tool call** is a `chat` status without a duration — before any reading or formulating ("One moment, I'm reading …", translated; a start confirmation is followed by "Saving …"). Then a status before every step that takes more than a few seconds (also before each check script run, about a minute), at every change of sub-step ("step {i} of {n}: …", translated) and at least every 60 s; right before a draft or generation of more than about 20 s — a material part, a map, the report, the overview data — in the same tool-call block as the last file read, a status that names it and the remaining time. One time per status line: the remaining time of the whole run, not also the part's. Long thinking without a write is no sign of life.
-- **Durations:** the first lasting message names **one** total; later statuses name only the remaining time
+- **Durations:** a duration said after the fact is measured — `now.mjs` at the start and at the end — never the
+  announced estimate; the remaining time comes from the same clock. The first lasting message names **one** total; later statuses name only the remaining time
   ("about 2 minutes left", translated) — never a new total, never larger than total minus time passed, never
   repeated unchanged (when it has run out, say in one line what still takes time). Reference values: a
   planning sketch with its form about 3 minutes; a material part about 2 minutes plus 1–2 for its fact check;
@@ -6644,6 +6651,10 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
   line between — a single line break becomes a space) and links the report; details follow after the
   overview update.
+- **An agreement is noted in the same turn:** when the instructor agrees to do something before the material is
+  used (look at a page on the device, bring a photo, fix older units next time) — also in a farewell — write it as
+  a `prepare` item in their words (`tasks/update-dashboard.md` step 6) with that turn's overview write, or say that it
+  is not noted.
 - **A new writing rule for all units** (saved in the rules for writing the material): after the save, offer
   once to check the units that already have material against it (one form: each unit with "check briefly"
   – `:quick-fix {n}` – or "leave it"), and name the offer in the save summary.

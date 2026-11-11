@@ -108,10 +108,10 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 });
 
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
-// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b).
+// growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b, measured durations and agreements after R12c).
 const budgets = {
-  "tasks/update-dashboard.md": 3005, "data/agent-links.md": 3845, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1125,
-  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4126, "tasks/quick-fix.md": 1613,
+  "tasks/update-dashboard.md": 3005, "data/agent-links.md": 3875, "data/chat-wording.md": 1165, "data/chat-dialog.md": 1191,
+  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4198, "tasks/quick-fix.md": 1613,
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
   assert.match(read("data/chat-wording.md"), /\*\*Commands stay off the chat:\*\*[^\n]*\n[^\n]*also not after a link/);

@@ -154,7 +154,8 @@ Three principles hold every turn; the rules below spell them out.
 **B. A status line is a sign of life; a lasting message is the record.**
 
 - **Progress feedback:** after any confirmation or chat message, the **first tool call** is a `chat` status without a duration — before any reading or formulating ("One moment, I'm reading …", translated; a start confirmation is followed by "Saving …"). Then a status before every step that takes more than a few seconds (also before each check script run, about a minute), at every change of sub-step ("step {i} of {n}: …", translated) and at least every 60 s; right before a draft or generation of more than about 20 s — a material part, a map, the report, the overview data — in the same tool-call block as the last file read, a status that names it and the remaining time. One time per status line: the remaining time of the whole run, not also the part's. Long thinking without a write is no sign of life.
-- **Durations:** the first lasting message names **one** total; later statuses name only the remaining time
+- **Durations:** a duration said after the fact is measured — `now.mjs` at the start and at the end — never the
+  announced estimate; the remaining time comes from the same clock. The first lasting message names **one** total; later statuses name only the remaining time
   ("about 2 minutes left", translated) — never a new total, never larger than total minus time passed, never
   repeated unchanged (when it has run out, say in one line what still takes time). Reference values: a
   planning sketch with its form about 3 minutes; a material part about 2 minutes plus 1–2 for its fact check;

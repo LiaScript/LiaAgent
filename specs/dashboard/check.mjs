@@ -437,6 +437,13 @@ test("validate-journal warns about a wrong form the language pack lists (wrongFo
   assert.doesNotMatch(right.output, /wrong form/);
 });
 
+test("validate-journal warns when an internal note records an agreement with the instructor (R12c-SP121)", () => {
+  const agreed = validate({ title: "Kurs", next, decisions: [{ key: "images-later", kind: "internal", title: "Frau K. wünscht beim nächsten Mal zuerst die Bildfragen auszubessern" }] });
+  assert.match(agreed.output, /internal note "Frau K\. wünscht.*records an agreement with the instructor – make it a prepare item/);
+  const own = validate({ title: "Kurs", next, decisions: [{ key: "slug", kind: "internal", title: "Doppelter Kurzname aufräumen" }] });
+  assert.doesNotMatch(own.output, /records an agreement/);
+});
+
 test("validate-journal reports an open point whose link has no label", () => {
   const result = validate({ title: "Kurs", next, decisions: [{ key: "a", title: "Frage?", how: "B", href: "#outline" }] });
   assert.equal(result.status, 2);
@@ -2062,7 +2069,7 @@ test("write-dashboard writes the status lines and Notes cells in the same write 
 });
 
 // ── Next action and action lines: the command follows the journal, the words stay the agent's while it is right ──
-import { courseNext, unitAction, patchUnitActions, accepts } from "./actions.mjs";
+import { courseNext, unitAction, patchUnitActions, accepts, courseStepOf } from "./actions.mjs";
 
 const facts = (n, more = {}) => ({ n: String(n), heading: null, material: false, done: false, approved: false, report: null, images: { total: 0, placed: 0, open: 0 }, ...more });
 const course = (more = {}) => ({
@@ -2535,4 +2542,17 @@ test("a unit number turns the course check into a unit check: next with number=n
   assert.equal(accepts(course, "agent:teaching/validate-course?number=4"), false, "number selects one unit – another action");
   const fix = makeAction("quick-fix", "teaching", "quick-fix", { number: "2" }, "✏️");
   assert.equal(accepts(fix, "agent:teaching/quick-fix?number=2&description=Typo"), true, "a description still counts as the same action");
+});
+
+test("a course check that failed only on own photos sends next to inserting the photo, not to another course check (R12c-SK93)", () => {
+  const unit = (n, waiting) => ({ n, heading: { title: `U${n}` }, material: true, approved: true, done: !waiting, report: { result: "PASS", changedSince: 0 }, images: { total: 2, placed: 2 - waiting, open: waiting, waiting } });
+  const journal = validation => ({ filled: { "Course Context": true, Outline: true, Didactics: true }, units: [unit("1", 0), unit("2", 1)], templates: { selection: "decided", adopted: [], briefs: [] },
+    hasAgenda: true, agendaRequired: "yes", validation, published: false });
+  const states = new Map([["1", "done"], ["2", "current"]]);
+  assert.equal(courseNext(journal({ mode: null, result: null }), states).key, "check-course", "before the first course check: check the course");
+  const after = courseNext(journal({ mode: "course", result: "FAIL" }), states);
+  assert.equal(after.key, "insert-images", "the course check failed only on the photo");
+  assert.equal(after.href, "agent:artist/create-image?number=2");
+  const steps = ["Frame", "Goals", "Didactics", "Blocks", "Agenda", "Material", "Check", "Publish"].map(title => ({ title }));
+  assert.equal(courseStepOf(after, steps).title, "Check", "the photo finishes the course check: that course step stays in progress");
 });
