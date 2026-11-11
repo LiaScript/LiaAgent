@@ -12,7 +12,8 @@ The entire course is one LiaScript document.
 - If a unit's title equals the course title (typical for a single lesson), give the chapter its own title (e.g. "Lesson: …", translated) — two equal headings share one anchor, and links would jump to the wrong one.
 - Assets: `/assets/images/`, `/assets/videos/`, etc. — project root, shared across the whole course.
 - No `materials/` folder is created.
-- Typical for: `single-lesson`, or any course the instructor explicitly wants as one file.
+- Typical for: `single-lesson` (older journals), or any course the instructor explicitly wants as one file.
+- **Light tracks:** a mini course (track `mini`) — and, in a later stage, a converted course (track `convert`) — is always `single-file` with **exactly one unit, unit 1**: the root `README.md` is that unit's material, listed as unit 1 in `## Sessions`. A second unit is a switch to the full track (`tasks/activate-section.md` → Track switch), never a second unit inside the light track.
 
 ## multi-file
 
@@ -38,7 +39,9 @@ The same rules apply to every task that creates a session's material document �
 
 | Course type | Default mode |
 |---|---|
-| single-lesson | single-file |
+| single-lesson (older journals) | single-file |
+| mini track | single-file, exactly unit 1 (not asked) |
+| convert track (later stage) | single-file, exactly unit 1 (not asked) |
 | lecture-series | multi-file |
 | self-paced | multi-file |
 | workshop | multi-file |

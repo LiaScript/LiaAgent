@@ -56,7 +56,8 @@ workflow:
       notes: |
         First mandatory step for every new course — the regular start (the Dashboard's main button):
         - The page, the chat and the read-aloud voices switch to the instructor's language with the first message (`data/chat-language.md` → Language before the frame)
-        - Course type asked as two teacher questions (scope + how learners work), mapped to lecture-series / self-paced / workshop / single-lesson / improve-existing
+        - Track asked first ("What are you planning?"): a course (full track), something small (mini track: short frame + 1–3 learning objectives + slide list, the other sections marked when needed, one confirmation), or improving an existing course; convert and template follow in a later stage
+        - Full track: course type asked as two teacher questions (scope + how learners work), mapped to lecture-series / self-paced / workshop / improve-existing (older journals may say single-lesson)
         - Reuse what the instructor already said; no unfounded recommendations; file structure asked as a teacher question
         - Set terminology, persona type, pacing, assessment defaults; author name for the material header (contact address becomes a preparation point)
         - The summary shows under "decided" only the instructor's own answers; saved with the readable layout of `templates/course-context.yaml`
@@ -497,7 +498,12 @@ workflow:
       workshop:
         sequence: [":init-course", ":create-outline", ":create-didactics", ":suggest-templates", ":create-agenda", ":create-session", ":coauthor-materials", ":validate-course"]
         publishing: "optional: :create-project when ready to share"
+      mini:
+        sequence: [":init-course", ":create-mini-course", ":validate-course 1"]
+        note: "One README, unit 1; other sections marked when needed — :activate-section {section} takes one in, or switches to the full track"
+        publishing: "only when learners open it by link or platform"
       single-lesson:
+        note_older: "older journals only — new courses take the mini track"
         sequence: [":init-course", ":create-outline", ":create-didactics", ":suggest-templates", ":create-session", ":coauthor-materials", ":validate-course"]
         note: "No agenda needed; one session only"
         publishing: "usually not needed for a single lesson"

@@ -20,11 +20,24 @@ template:
   sections:
     - id: course-type
       title: Course Type
+      # New courses never get single-lesson (something small is the mini track); older journals may still say
+      # single-lesson; they stay valid.
       template: |
         * __Course Type:__
-          1. Type: [lecture-series | self-paced | workshop | single-lesson | improve-existing]
+          1. Type: [lecture-series | self-paced | workshop | improve-existing | n/a in a light track — the Track says it]
           2. Working Title: [optional working title]
           3. Target Group: [short: who learns, how many, where, special needs (e.g. dyslexia) — details follow in `## Outline`]
+
+    - id: track
+      title: Track
+      # Read by the dashboard scripts (journal-model.mjs). A missing block means `full` (older journals).
+      # mini: the short frame of a mini course (tasks/init-course.md → Mini Track); convert and template follow
+      # in a later stage. The track's sections marked when needed: tasks/init-course.md → When-Needed Markers.
+      template: |
+        * __Track:__
+          1. Track: [full | mini | convert | template]
+          2. Convert mode: [transfer | rebuild | n/a]
+          3. Source: [file path in the project or URL | n/a]
 
     - id: profile
       title: Course Profile

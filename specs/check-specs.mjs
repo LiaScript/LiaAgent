@@ -8,6 +8,7 @@ import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { laterOf } from "./dashboard/tracks.mjs";
 
 const specs = dirname(fileURLToPath(import.meta.url));
 const read = path => readFileSync(join(specs, path), "utf8");
@@ -20,7 +21,8 @@ const required = {
   "tasks/develop-template.md": ["liascript-templates", "Loop:", "ready to test", "**Loop:** Repeat steps 3–5 until the instructor confirms the brief's `__Acceptance:__` points in the preview, or after 3 iterations — whichever comes first. On hitting the cap without meeting the condition: stop and report the remaining points to the instructor instead of continuing.", "Installing a Missing Skill", "Offering the Rendered Check", "agent:teaching/switch", "never invent", "This task writes only:", "`import: \"./lia-templates/{id}/README.md\"`", "the entry `{id}` in `templates.local.json` (step 6)"],
   "tasks/publish-template.md": ["confirm in the terminal", "liascript-template", "templates.local.json", "The instructor decides", "raw.githubusercontent.com/{owner}/{repo}/{tag}/README.md", "No submodule, no subtree", "`shared: \"not-offered\"`", "This task writes only:", "in **every** material", "Switch the entry `{id}` in `templates.local.json`", "`checked` = the date of the author's own check", "find.mjs \"raw.githubusercontent.com/{owner}/{repo}/\"", "rm -r .cache/catalog-pr", "the course `.gitignore` gets `.cache/`","re-verify the import, the macros and the demo", "Never `status: \"checked\"` in `templates.local.json`"],
   "tasks/save-notes.md": ["4b. **Before saving:**"],
-  "tasks/init-course.md": ["**Language pack first:**", "also for \"mixed\"", "is not saved", "English stay only keys that tasks read", "For a single lesson do not ask", "Ask this only once the time frame (step 4) is known", "never offer an internal threshold", "what the mapped keys change in the material", "builds LiaScript courses only — never ask for a platform", "Accessibility is not asked", "follow the course language in terminal mode too", "are the only writes allowed before the save confirmation", "Reuse what is known", "No unfounded recommendations", "two short questions in the instructor's own terms", "file structure as a **teacher question**", "Audience override", "only what the instructor answered"],
+  "tasks/activate-section.md": ["never delete content"],
+  "tasks/init-course.md": ["What are you planning?", "one confirmation", "<!-- state: later -->", "**Language pack first:**", "also for \"mixed\"", "is not saved", "English stay only keys that tasks read", "For a single lesson do not ask", "Ask this only once the time frame (step 4) is known", "never offer an internal threshold", "what the mapped keys change in the material", "builds LiaScript courses only — never ask for a platform", "Accessibility is not asked", "follow the course language in terminal mode too", "are the only writes allowed before the save confirmation", "Reuse what is known", "No unfounded recommendations", "two short questions in the instructor's own terms", "file structure as a **teacher question**", "Audience override", "only what the instructor answered"],
   "tasks/scaffold-course.md": ["exactly as confirmed — its self-check ran before the draft", "**Language pack first:**", "planning sketch ✅ · material open", "Teaching style and difficulty level are not asked", "**Checks before the draft is shown,**", "plus \"Self-check before saving\" (`tasks/create-session-skeleton.md` step 7)", "Guiding figure / instructor persona", "No agenda — decided with the course frame", "8b. Set `language:`", "Draft before saving", "never compute a middle value", "grounding question", "step 10 does"],
   "tasks/create-outline.md": ["prefill it from `## Course Context` → Units", "Start from the instructor's goal", "Repeat this time check after every revision"],
   "tasks/create-didactics.md": ["together with its `Required` elements", "in its short form", "do **not** ask the instructor", "`layout` of `templates/course-didactics.yaml`", "merge, never overwrite", "data-from=\"didactics\""],
@@ -70,7 +72,7 @@ const required = {
   "templates/course-didactics.yaml": ["Didactic Framework", "copied from Course Context"],
   "templates/course-context.yaml": ["Target Group"],
   "workflows/course-development.yaml": [":try-as-learner", "offer :try-as-learner once (only with the preview / MCP gate open)", "change path", "One way to start", "write-dashboard.mjs"],
-  "agents/teaching-agent.yaml": ["once per command, before its first Dashboard write", "only if they do not already arrive as `<channel>` tags", "the labels, the first reply and its one action need them", ":try-as-learner", "once (only when the MCP gate is open; it runs in the preview)", "starts with `## Outline`", "read a task file **completely**", "`node specs/dashboard/now.mjs [<timestamp>]`", "`develop-template` changes only `__State:__` and `__Folder:__`"],
+  "agents/teaching-agent.yaml": ["never read a section marked when needed", "once per command, before its first Dashboard write", "only if they do not already arrive as `<channel>` tags", "the labels, the first reply and its one action need them", ":try-as-learner", "once (only when the MCP gate is open; it runs in the preview)", "starts with `## Outline`", "read a task file **completely**", "`node specs/dashboard/now.mjs [<timestamp>]`", "`develop-template` changes only `__State:__` and `__Folder:__`"],
 };
 
 // Phrases match regardless of line breaks and indentation, so rewrapping a paragraph keeps them.
@@ -203,6 +205,18 @@ test("the Development-Agent builds and publishes own templates: commands, tiers,
   assert.ok(read("data/agent-links.md").includes('"Development assistant"'), "agent-links.md: the Development label example");
   assert.equal(JSON.parse(read("templates/i18n/de.json")).labels.development, "Entwicklungsassistent", "de.json: the Development label");
   assert.match(read("catalog/README.md"), /`\.\/lia-templates\/\{id\}\/README\.md`/, "the catalog's data format lacks the local import of own templates");
+});
+
+test("a task that runs only in a light track names no section its track marks when needed in its Inputs", () => {
+  // Task → the tracks (and convert modes) it runs in. Files that do not exist yet are skipped.
+  const tracks = { "tasks/create-mini-course.md": [["mini"]], "tasks/convert-course.md": [["convert", "transfer"], ["convert", "rebuild"]], "tasks/start-template.md": [["template"]] };
+  for (const [file, runs] of Object.entries(tracks)) {
+    if (!existsSync(join(specs, file))) continue;
+    const inputs = read(file).split(/^## Inputs[^\n]*\n/m)[1]?.split(/^## /m)[0] ?? "";
+    for (const [track, mode] of runs) for (const key of laterOf(track, mode)) {
+      assert.doesNotMatch(inputs, new RegExp(`## ${key}\\b`), `${file}: its Inputs name ## ${key}, which the ${track}${mode ? ` (${mode})` : ""} track marks when needed`);
+    }
+  }
 });
 
 test("preview is a navigation command of every agent", () => {
