@@ -19,6 +19,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { stepsOf, sectionSlug } from "./tracks.mjs";
 import { readJournal, englishUnitSteps, englishTerms, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
 import { courseNext, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote } from "./actions.mjs";
 
@@ -225,7 +226,9 @@ export function derive(journal, input, { date, previous } = {}) {
   const fillTerm = (key, values) => String(terms[key] ?? englishTerms[key] ?? "").replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
   const courseSet = (step, field, value, why) => set(step, field, value, `process step "${step.title}".${field}`, why);
   // Building blocks: while no template is chosen or briefed, each planning sketch decides it for its unit.
-  const blocksStep = courseSteps[3];
+  const stepKeys = stepsOf(journal.track, journal.convertMode);
+  const stepFor = key => courseSteps[stepKeys.indexOf(key)];
+  const blocksStep = stepFor("blocks");
   const { selection: blocksSelection, adopted: adoptedTemplates, briefs: templateBriefs } = journal.templates;
   if (blocksStep && journal.filled.Didactics && blocksSelection === "open" && !adoptedTemplates.length && !templateBriefs.length) {
     const none = String(terms.noBlocks ?? "none").toLowerCase();
@@ -243,17 +246,26 @@ export function derive(journal, input, { date, previous } = {}) {
     }
   }
   // Checking the course: after the last unit; meanwhile it names the units already approved.
-  const checkCourseStep = courseSteps[6];
+  const checkCourseStep = stepFor("check");
   const approvedUnits = journal.units.filter(unit => unit.approved && unit.material);
   if (checkCourseStep && ["planned", "optional"].includes(checkCourseStep.state)) {
     const label = approvedUnits.length ? fillTerm("checkCourseLater", { unit: unitWord, units: approvedUnits.map(unit => `${unitWord} ${unit.n}`).join(", ") }) : undefined;
     if (label || String(checkCourseStep.statusLabel ?? "").startsWith(fillTerm("checkCourseLater", { unit: unitWord }).split("{")[0].split(" – ")[0])) courseSet(checkCourseStep, "statusLabel", label, "units approved so far");
   }
   // Publishing: required when learners open the course by link or platform (Course Profile → Delivery).
-  const publishStep = courseSteps[7];
+  const publishStep = stepFor("publish");
   if (publishStep && ["link", "platform"].includes(journal.delivery) && publishStep.state === "optional") {
     courseSet(publishStep, "state", "planned", `learners open the course by ${journal.delivery}`);
     courseSet(publishStep, "statusLabel", fillTerm("publishNeeded", { units: unitsWord }), `learners open the course by ${journal.delivery}`);
+  }
+
+  // Sections marked "when needed" (tracks.mjs → laterMarker): one entry each, in the order of the journal.
+  if (data.process) {
+    const later = (journal.later ?? []).map(key => {
+      const heading = journal.headings.find(item => item.key === key);
+      return { label: heading?.suffix ?? key, href: `agent:teaching/activate-section?section=${sectionSlug(key)}` };
+    });
+    set(data.process, "later", later.length ? later : undefined, "process.later", "sections marked when needed");
   }
 
   // next: the command follows the journal. While it is right, the agent's title and why stay; the button
@@ -287,7 +299,7 @@ export function derive(journal, input, { date, previous } = {}) {
         if (typeof step[field] === "string" && step[field].includes(before)) missing.push({ where: "step", step: step.title, field, old: before, action: expected });
       }
       const words = wordsOf(expected, journal, { unit: unitWord, units: unitsWord, n: nextUnit, id: expected.params.id ?? expected.params.name });
-      const title = nextTitle(expected, data, unitWord) ?? words?.title ?? words?.label;
+      const title = nextTitle(expected, data, unitWord, { track: journal.track, convertMode: journal.convertMode }) ?? words?.title ?? words?.label;
       // A why the agent has just written for the new step (it differs from the one in the journal) stays (SP56).
       const fresh = typeof data.next?.why === "string" && data.next.why.trim() && previous && data.next.why !== previous.next?.why;
       if (!words || !title) missing.push({ where: "next", action: expected, title });
@@ -303,7 +315,7 @@ export function derive(journal, input, { date, previous } = {}) {
   // one becomes current; another current course step contradicts `next` and is the agent's to rewrite.
   if (expected) {
     const steps = data.process?.steps ?? [];
-    const target = courseStepOf(expected, steps);
+    const target = courseStepOf(expected, steps, { track: journal.track, convertMode: journal.convertMode });
     if (target && ["planned", "optional"].includes(target.state)) set(target, "state", "current", `process step "${target.title}".state`, "the step the next action advances");
     if (target) for (const step of steps) {
       if (step !== target && step.state === "current") missing.push({ where: "current", step: step.title, target: target.title, action: expected });

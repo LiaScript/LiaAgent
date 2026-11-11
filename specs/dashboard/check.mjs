@@ -2070,7 +2070,7 @@ test("write-dashboard writes the status lines and Notes cells in the same write 
 });
 
 // ── Next action and action lines: the command follows the journal, the words stay the agent's while it is right ──
-import { courseNext, unitAction, patchUnitActions, accepts, courseStepOf } from "./actions.mjs";
+import { courseNext, unitAction, patchUnitActions, accepts, courseStepOf, nextTitle } from "./actions.mjs";
 
 const facts = (n, more = {}) => ({ n: String(n), heading: null, material: false, done: false, approved: false, report: null, images: { total: 0, placed: 0, open: 0 }, ...more });
 const course = (more = {}) => ({
@@ -2626,4 +2626,49 @@ test("courseStepOf follows the track's step list", () => {
   const mini = ["Frame", "Material", "Check", "Publish"].map(title => ({ title }));
   assert.equal(courseStepOf(makeAction("write-mini-course", "teaching", "create-mini-course"), mini, { track: "mini" }).title, "Material");
   assert.ok("activate-section" in englishActions && englishActions["activate-section"].label === "Add");
+});
+
+// ── Light tracks: overview per track ──
+const miniSource = (extra = "") => deriveJournal({})
+  .replace("* __Terminology:__", `* __Track:__\n  1. Track: mini\n\n* __Terminology:__`)
+  .replace("  1. sessions-called: Lesson", `  1. sessions-called: Lesson${extra}`);
+test("derive: when-needed sections become process.later with activate links; the full track has none", () => {
+  const marked = miniSource()
+    .replace("## Didactics – Methods\n\nText", `## Didactics – Methods\n\n${laterMarker}\nText`)
+    .replace("## Agenda – Schedule\n\n", `## Agenda – Schedule\n\n${laterMarker}\n`);
+  const process = { steps: ["Frame", "Write", "Check", "Publish"].map(title => ({ title, state: "planned" })) };
+  const data = derive(readJournal(marked), { ...deriveData(), process }).data;
+  assert.deepEqual(data.process.later.map(item => item.href), ["agent:teaching/activate-section?section=didactics", "agent:teaching/activate-section?section=agenda"]);
+  assert.deepEqual(data.process.later.map(item => item.label), ["Methods", "Schedule"]);
+  assert.equal(derive(readJournal(miniSource()), { ...deriveData(), process }).data.process.later, undefined);
+  assert.equal(derive(readJournal(deriveJournal({})), { ...deriveData(), process }).data.process.later, undefined);
+});
+test("derive: the index rules (blocks, course check, publish) find their step by key, not by position", () => {
+  const source = miniSource("\n\n* __Course Profile:__\n  6. Delivery: link");
+  const journal = readJournal(source);
+  assert.equal(journal.track, "mini");
+  const process = { steps: [{ title: "Frame", state: "done" }, { title: "Write", state: "current" }, { title: "Check", state: "planned" }, { title: "Publish", state: "optional" }] };
+  const steps = derive(journal, { ...deriveData(), process }).data.process.steps;
+  assert.equal(steps[3].state, "planned");
+  assert.match(steps[3].statusLabel, /^needed/);
+});
+test("nextTitle: on a light track the course-level title comes from the track's step list", () => {
+  const steps = ["Frame", "Write the course", "Check", "Publish"].map(title => ({ title }));
+  const expected = makeAction("write-mini-course", "teaching", "create-mini-course");
+  assert.equal(nextTitle(expected, { process: { steps } }, "Lesson", { track: "mini" }), "Write the course");
+});
+test("view: process.later shows as one collapsed 'When needed' line and is not counted", () => {
+  const input = { title: "T", process: { steps: [{ title: "A", state: "done" }, { title: "B", state: "planned" }], later: [{ label: "Didaktik", href: "agent:teaching/activate-section?section=didactics" }] } };
+  const model = dashboard.buildModel(input);
+  assert.equal(model.process.steps.length, 2);
+  const html = dashboard.renderComponent("View", "later-view", { lang: "en", selected: "", ...input, units: [{ id: "1", title: "U", state: "planned" }] });
+  assert.match(html, /<details class="dashboard-later"><summary>When needed \(1\)<\/summary>/);
+  assert.match(html, /Didaktik/);
+  assert.match(html, /1 of 2 planning step/);
+});
+test("view: German state words – optional is 'Optional', later is 'Bei Bedarf'", () => {
+  const html = dashboard.renderComponent("View", "later-de", { lang: "de", selected: "", title: "T", process: { steps: [{ title: "A", state: "optional" }], later: [{ label: "X", href: "agent:teaching/activate-section?section=agenda" }] }, units: [{ id: "1", title: "U", state: "planned" }] });
+  assert.match(html, /<summary>Bei Bedarf \(1\)/);
+  assert.match(html, /Optional/);
+  assert.doesNotMatch(html, />Bei Bedarf</);
 });

@@ -9,7 +9,7 @@
   const TEXT = {
     de: {
       "state.planned": "Noch offen", "state.current": "In Arbeit", "state.draft": "Entwurf liegt vor",
-      "state.review": "Zur Durchsicht", "state.revision": "Korrektur nötig", "state.done": "Abgeschlossen", "state.optional": "Bei Bedarf",
+      "state.review": "Zur Durchsicht", "state.revision": "Korrektur nötig", "state.done": "Abgeschlossen", "state.optional": "Optional", "process.later": "Bei Bedarf",
       // Derived, not a state of the data: a unit still "planned" with at least one required step done.
       "state.started": "Angefangen",
       // Derived as well: the current step without a result yet is the one that comes next, nobody works on it.
@@ -57,7 +57,7 @@
     },
     en: {
       "state.planned": "Not started", "state.current": "In progress", "state.draft": "Draft ready",
-      "state.review": "In review", "state.revision": "Correction needed", "state.done": "Done", "state.optional": "Optional",
+      "state.review": "In review", "state.revision": "Correction needed", "state.done": "Done", "state.optional": "Optional", "process.later": "When needed",
       "state.started": "Started", "state.waiting": step => `Waiting for: ${step}`,
       "state.next": "Up next", "state.later": "Later", "state.running": "Running now", unitNext: step => `Up next: ${step}`, unitRunning: step => `Running now: ${step}`,
       view: "Open", eyebrow: "Course plan", next: "Next:", running: "Running now:", why: "Why?",
@@ -486,11 +486,18 @@
     return `<div class="dashboard-process-fallback">${status(unit.state, unitStatusLabel(unit))}${unit.summary ? `<p class="dashboard-process-summary">${escape(unit.summary)}</p>` : ""}<p class="dashboard-empty">${escape(t("processEmpty"))}</p></div>`;
   }
 
+  // Sections marked "when needed": one collapsed line below the steps, not counted as steps.
+  function laterBlock(items) {
+    const list = Array.isArray(items) ? items.filter(item => item?.label && item.href) : [];
+    if (!list.length) return "";
+    return `<details class="dashboard-later"><summary>${escape(t("process.later"))} (${list.length})</summary><ul>${list.map(item => `<li>${actionLink({ label: item.label, href: item.href, icon: "➕", command: item.command ?? `:activate-section ${item.href.split("section=")[1] ?? ""}`.trim() })}</li>`).join("")}</ul></details>`;
+  }
+
   function process(input, unit = null, course = false) {
     const data = processData(input);
     const steps = data.steps;
     const usable = unit?.usable ? `<p class="dashboard-process-usable">${usableLine(unit.usable)}</p>` : "";
-    return `<section class="dashboard-process" aria-live="polite"><p class="dashboard-eyebrow">${escape(data.eyebrow || t("processEyebrow"))}</p><h3>${escape(data.title || t("processTitle"))}</h3>${usable}${data.description ? `<p class="dashboard-process-description">${escape(data.description)}</p>` : ""}${data.steps.length ? `<ol class="dashboard-step-list">${data.steps.map(step => `<li class="dashboard-step dashboard-step-${step.state}"${step.state === "current" ? ' aria-current="step"' : ""}><span class="dashboard-step-marker" aria-hidden="true">${states[step.state]}</span><div><div class="dashboard-step-heading"><h4>${escape(step.title)}</h4>${status(step.state, stepStatusLabel(step, steps))}</div>${step.result ? `<p class="dashboard-result"><strong>${escape(t("result"))}</strong> ${escape(step.result)}</p>` : ""}${step.why ? `<p class="dashboard-step-why">${escape(step.why)}</p>` : ""}${step.next ? `<p class="dashboard-step-next"><strong>${escape(t("nextStep"))}</strong> ${escape(step.next)}</p>` : ""}</div></li>`).join("")}</ol>` : emptyProcess(unit, course)}${data.note ? `<p class="dashboard-process-note">${escape(data.note)}</p>` : ""}${input.href || unit?.view ? `<p class="dashboard-process-link">${viewLink(unit)}${input.href ? actionLink({ label: t("plan"), href: input.href }) : ""}</p>` : ""}</section>`;
+    return `<section class="dashboard-process" aria-live="polite"><p class="dashboard-eyebrow">${escape(data.eyebrow || t("processEyebrow"))}</p><h3>${escape(data.title || t("processTitle"))}</h3>${usable}${data.description ? `<p class="dashboard-process-description">${escape(data.description)}</p>` : ""}${data.steps.length ? `<ol class="dashboard-step-list">${data.steps.map(step => `<li class="dashboard-step dashboard-step-${step.state}"${step.state === "current" ? ' aria-current="step"' : ""}><span class="dashboard-step-marker" aria-hidden="true">${states[step.state]}</span><div><div class="dashboard-step-heading"><h4>${escape(step.title)}</h4>${status(step.state, stepStatusLabel(step, steps))}</div>${step.result ? `<p class="dashboard-result"><strong>${escape(t("result"))}</strong> ${escape(step.result)}</p>` : ""}${step.why ? `<p class="dashboard-step-why">${escape(step.why)}</p>` : ""}${step.next ? `<p class="dashboard-step-next"><strong>${escape(t("nextStep"))}</strong> ${escape(step.next)}</p>` : ""}</div></li>`).join("")}</ol>` : emptyProcess(unit, course)}${laterBlock(data.later)}${data.note ? `<p class="dashboard-process-note">${escape(data.note)}</p>` : ""}${input.href || unit?.view ? `<p class="dashboard-process-link">${viewLink(unit)}${input.href ? actionLink({ label: t("plan"), href: input.href }) : ""}</p>` : ""}</section>`;
   }
 
   // Only agent: links start an action and become buttons; any other link just opens a

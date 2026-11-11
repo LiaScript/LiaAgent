@@ -230,3 +230,6 @@ a[href^="agent:"]:not(.dashboard-button) + code {
   margin-right: .6em;
 }
 .journal-actions { margin: .2em 0 .8em; }
+.lia-dashboard .dashboard-later { margin-top: 1em; font-size: .9em; color: var(--dashboard-muted); }
+.lia-dashboard .dashboard-later summary { cursor: pointer; }
+.lia-dashboard .dashboard-later ul { list-style: none; margin: .5em 0 0; padding: 0; display: grid; gap: .4em; }
