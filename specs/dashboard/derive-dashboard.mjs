@@ -19,7 +19,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { stepsOf, sectionSlug } from "./tracks.mjs";
+import { stepsOf, sectionSlug, laterHidden } from "./tracks.mjs";
 import { readJournal, englishUnitSteps, englishTerms, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
 import { courseNext, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote } from "./actions.mjs";
 
@@ -260,10 +260,12 @@ export function derive(journal, input, { date, previous } = {}) {
   }
 
   // Sections marked "when needed" (tracks.mjs → laterMarker): one entry each, in the order of the journal.
+  // Analysis Status stays marked but is no entry: :analyze-existing makes no sense in a new light course.
   if (data.process) {
-    const later = (journal.later ?? []).map(key => {
+    const later = (journal.later ?? []).filter(key => !laterHidden.includes(key)).map(key => {
       const heading = journal.headings.find(item => item.key === key);
-      return { label: heading?.suffix ?? key, href: `agent:teaching/activate-section?section=${sectionSlug(key)}`, command: `:activate-section ${sectionSlug(key)}` };
+      const label = key === "Learner Personas" ? journal.personasSuffix : heading?.suffix;
+      return { label: label ?? key, href: `agent:teaching/activate-section?section=${sectionSlug(key)}`, command: `:activate-section ${sectionSlug(key)}` };
     });
     set(data.process, "later", later.length ? later : undefined, "process.later", "sections marked when needed");
   }

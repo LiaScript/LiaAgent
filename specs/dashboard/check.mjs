@@ -2604,8 +2604,9 @@ test("mini track: frame → outline → write → unit actions → publish only 
   assert.equal(courseNext({ ...base, filled: { "Course Context": false } }, new Map()).key, "init-course");
   assert.equal(courseNext(base, new Map()).key, "write-mini-course");
   const unit = facts(1, { heading: { title: "A" }, material: true, done: true, approved: true, report: { result: "PASS", changedSince: 0 } });
-  assert.equal(courseNext({ ...base, units: [unit] }, new Map([["1", "done"]])), null);
-  assert.equal(courseNext({ ...base, units: [unit], delivery: "link" }, new Map([["1", "done"]])).key, "publish");
+  const passed = { validation: { mode: "course", result: "PASS" } };
+  assert.equal(courseNext({ ...base, ...passed, units: [unit] }, new Map([["1", "done"]])), null);
+  assert.equal(courseNext({ ...base, ...passed, units: [unit], delivery: "link" }, new Map([["1", "done"]])).key, "publish");
   const open = facts(1, { heading: { title: "A" }, material: true });
   assert.equal(courseNext({ ...base, units: [open] }, new Map([["1", "current"]])).key, "check-unit");
 });
@@ -2770,6 +2771,9 @@ function miniInitJournal({ steps = stepsOf("mini") } = {}) {
     if (key === "Learner Personas") text = text.replace(/(### Learner Personas[^\n]*\n)[\s\S]*?(?=\n---)/, (_, head) => `${head}\n${laterBlock(key)}`);
     else section(key, laterBlock(key));
   }
+  // The empty-template note of ## Sessions ("… after the didactics") gives way to the mini note.
+  assert.match(text, /\n_No units yet[^\n]*\n/);
+  text = text.replace(/\n_No units yet[^\n]*\n/, `\n_${englishTerms.miniSessionsNote}_\n`);
   const titles = { frame: "Frame and learning objectives", material: "Write the material", check: "Check", publish: "Publish" };
   const data = JSON.parse(text.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
   data.process.steps = steps.map(key => ({ title: titles[key] ?? key, state: { frame: "done", material: "current", publish: "optional" }[key] ?? "planned", why: "Why." }));
@@ -2780,7 +2784,7 @@ function miniInitJournal({ steps = stepsOf("mini") } = {}) {
 
 // What :create-mini-course saves: unit 1 (heading, goal, table row with Material ✅) and the root README.md.
 const miniUnitSave = text => text
-  .replace(/\n_No units yet[^\n]*\n/, "\n")
+  .replace(`\n_${englishTerms.miniSessionsNote}_\n`, "\n")
   .replace(/(\| # \| Title \| Type \| Skeleton \| Material \| Done \| Notes \|\n\|[-|]+\|\n)/, "$1| 1 | Reading a timetable | n/a | ✅ | ✅ | ❌ | |\n")
   .replace(/(<\/details>\n)(\n---\n\n## Agents)/, `$1\n### 1. Reading a timetable\n\n<!-- data-key="summary" -->\n**Summary:**\n\nLearners find a departure time and tell how long a trip takes.\n$2`);
 const miniReadme = "<!--\nauthor: A. Teacher\nversion: 0.1.0\nlanguage: en\nnarrator: UK English Female\n-->\n\n# Reading a timetable\n\nWhat a timetable tells you, and how to read it.\n\n## What a timetable shows\n\nRows, columns and stops.\n\n## Finding a departure\n\nWhen does line 4 leave?\n\n[[10:15]]\n";
@@ -2806,9 +2810,11 @@ test("mini course end to end: the init-course save leaves a Dashboard that deriv
     const data = dashboardOf(read());
     assert.equal(data.process.steps.length, stepsOf("mini").length);
     assert.equal(data.next.command, ":create-mini-course");
-    assert.deepEqual(data.process.later.map(item => item.command).sort(), laterOf("mini").map(key => `:activate-section ${sectionSlug(key)}`).sort());
+    assert.deepEqual(data.process.later.map(item => item.command).sort(), laterOf("mini").filter(key => key !== "Analysis Status").map(key => `:activate-section ${sectionSlug(key)}`).sort());
     // ## Sessions offers writing the mini course, never the didactics a mini course marks when needed.
     assert.match(actionLineOf(read(), "\n## Sessions"), /agent:teaching\/create-mini-course/);
+    assert.doesNotMatch(read().split("\n## Sessions")[1].split("\n## ")[0], /after the didactics/, "the mini note replaces the empty-template note");
+    assert.ok(read().includes(`_${englishTerms.miniSessionsNote}_`));
   });
 });
 
@@ -2838,5 +2844,99 @@ test("validate-journal: a light track's Dashboard has exactly the steps of its t
     const run = validate();
     assert.equal(run.status, 2, run.stdout + run.stderr);
     assert.match(run.stdout + run.stderr, /process\.steps has 8 steps, the mini track has 4 \(frame, material, check, publish\)/);
+  });
+});
+
+// ---- Final review fixes of stage 1 (leichte Straenge) ----
+
+// The mini → full switch (tasks/activate-section.md → Track switch): the Track line, the markers of the mini track
+// go (each section gets its empty-template content back) – and README.md is restructured in place: the `#` title
+// stays, `## {unit 1 title}` is inserted before the first slide, the former `##` slides become `###`.
+function switchToFull(text) {
+  const template = readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8");
+  let result = text.replace(/^(\s*\d+\.\s*Track:\s*)mini\b/m, "$1full");
+  for (const key of laterOf("mini")) {
+    const pattern = key === "Learner Personas" ? /(### Learner Personas[^\n]*\n)([\s\S]*?)(?=\n---)/ : new RegExp(`(## ${key}[^\\n]*\\n)([\\s\\S]*?)(?=\\n---\\n\\n## |(?![\\s\\S]))`);
+    const body = template.match(pattern)[2];
+    result = result.replace(pattern, (_, head) => `${head}${body}`);
+  }
+  // The overview's step list follows the new track (tasks/update-dashboard.md → Process steps per track).
+  const titles = { frame: "Frame", outline: "Outline and learning objectives", didactics: "Didactics", blocks: "Building blocks", agenda: "Agenda", material: "Material", check: "Check", publish: "Publish" };
+  const states = { frame: "done", outline: "done", didactics: "current", agenda: "optional", publish: "optional" };
+  const data = dashboardOf(result);
+  data.process.steps = stepsOf("full").map(key => ({ title: titles[key], state: states[key] ?? "planned", why: "Why." }));
+  data.next = { title: "Didactics", why: "The course grows into several lessons.", label: "Create didactics", href: "agent:teaching/create-didactics", command: ":create-didactics", icon: "▶️" };
+  return result.replace(/```json @Dashboard\.View\n[\s\S]*?\n```/, dashJson(data));
+}
+const restructureReadme = (readme, unitTitle) => {
+  const shifted = readme.replace(/^(#{2,5}) /gm, "#$1 ");
+  const first = shifted.search(/^### /m);
+  return `${shifted.slice(0, first)}## ${unitTitle}\n\n${shifted.slice(first)}`;
+};
+
+test("mini → full switch: README.md is restructured into the chapter of unit 1, else unit 1's material is missing", () => {
+  inMiniProject(miniUnitSave(miniInitJournal()), { "README.md": miniReadme }, ({ derive, validate }) => {
+    derive();
+    const before = validate();
+    assert.equal(before.status, 0, before.stdout + before.stderr);
+  });
+  // Without restructuring: the full track looks for the `##` chapter of unit 1 and finds only slides.
+  inMiniProject(switchToFull(miniUnitSave(miniInitJournal())), { "README.md": miniReadme }, ({ derive, validate }) => {
+    derive();
+    const run = validate();
+    assert.equal(run.status, 2, run.stdout + run.stderr);
+    assert.match(run.stdout + run.stderr, /unit 1: "Material ✅" but the material document is missing \(README\.md\)/);
+  });
+  // With the restructured README (one confirmed material write in the same confirmation) it is clean again.
+  // The unit title equals the course title here: the chapter keeps it, with the prefix of data/file-structure-modes.md.
+  const restructured = restructureReadme(miniReadme, "Lesson: Reading a timetable");
+  assert.match(restructured, /^# Reading a timetable\n[\s\S]*^## Lesson: Reading a timetable\n\n### What a timetable shows\n[\s\S]*^### Finding a departure$/m);
+  inMiniProject(switchToFull(miniUnitSave(miniInitJournal())), { "README.md": restructured }, ({ derive, validate, read }) => {
+    const derived = derive();
+    assert.equal(derived.status, 0, derived.stdout + derived.stderr);
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    const data = dashboardOf(read());
+    assert.equal(data.process.later, undefined, "the full track marks nothing");
+  });
+});
+
+test("validate-journal warns when a journal is on a track whose command is not available yet (stage 1: convert, template)", () => {
+  inMiniProject(miniInitJournal().replace(/^(\s*\d+\.\s*Track:\s*)mini\b/m, "$1convert"), {}, ({ validate }) => {
+    const run = validate();
+    assert.match(run.stdout, /Warnings:[\s\S]*Track: convert[^\n]*not available yet[^\n]*:convert-course/);
+  });
+  inMiniProject(miniInitJournal(), {}, ({ validate }) => assert.doesNotMatch(validate().stdout, /not available yet/));
+});
+
+test("light track: a done unit needs a passed course check before publishing (one unit, one run)", () => {
+  const base = { track: "mini", filled: { "Course Context": true, Outline: true }, templates: { selection: "open", adopted: [], briefs: [] }, published: false };
+  const unit = facts(1, { heading: { title: "A" }, material: true, done: true, approved: true, report: { result: "PASS", changedSince: 0 } });
+  const done = new Map([["1", "done"]]);
+  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "FAIL" }, delivery: "link" }, done).key, "check-course");
+  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: null, result: null }, delivery: null }, done).key, "check-course");
+  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "PASS" }, delivery: "link" }, done).key, "publish");
+  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "PASS" }, delivery: null }, done), null);
+});
+
+test("derive: the Learner Personas entry of process.later carries the translated suffix of its ### heading", () => {
+  const source = miniSource().replace("## Agenda – Schedule\n\n", `## Agents – Agenten\n\n### Learner Personas – Lernendenprofile\n\n${laterMarker}\n_x_\n\n## Agenda – Schedule\n\n`);
+  const process = { steps: ["Frame", "Write", "Check", "Publish"].map(title => ({ title, state: "planned" })) };
+  const journal = readJournal(source);
+  assert.deepEqual(journal.later, ["Learner Personas"]);
+  assert.deepEqual(derive(journal, { ...deriveData(), process }).data.process.later.map(item => item.label), ["Lernendenprofile"]);
+});
+
+test("Analysis Status stays marked on a light track but is no entry of process.later, and validate-journal accepts that", () => {
+  const source = miniSource().replace("## Agenda – Schedule\n\n", `## Analysis Status – Analyse\n\n${laterMarker}\n_x_\n\n## Agenda – Schedule\n\n${laterMarker}\n`);
+  const journal = readJournal(source);
+  assert.ok(journal.later.includes("Analysis Status"));
+  const process = { steps: ["Frame", "Write", "Check", "Publish"].map(title => ({ title, state: "planned" })) };
+  assert.deepEqual(derive(journal, { ...deriveData(), process }).data.process.later.map(item => item.command), [":activate-section agenda"]);
+  inMiniProject(miniInitJournal(), {}, ({ derive: write, validate, read }) => {
+    write();
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.ok(!dashboardOf(read()).process.later.some(item => item.command === ":activate-section analysis-status"));
   });
 });

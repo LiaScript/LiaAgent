@@ -168,6 +168,8 @@ function lightNext(journal, states) {
   const unit = journal.units.find(item => item.n === "1");
   if (!unit?.material) return mini ? action("write-mini-course", "teaching", "create-mini-course") : action("convert-course", "teaching", "convert-course");
   if (states.get("1") !== "done" && !awaitsOwnMedia(unit)) return unitAction(unit);
+  // Publishing needs a passed course check, as on the full track; the unit check refreshes it (one unit, one run).
+  if (!(journal.validation?.mode === "course" && journal.validation?.result === "PASS")) return action("check-course", "teaching", "validate-course", {}, "🔍");
   if (["link", "platform"].includes(journal.delivery) && !journal.published) return action("publish", "development", "create-project", {}, "🚀");
   return null;
 }

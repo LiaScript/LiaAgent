@@ -29,6 +29,9 @@ export function laterOf(track = "full", mode = null) {
   return [];
 }
 
+// Marked sections that the overview does not list in process.later (never offered on a new light course).
+export const laterHidden = ["Analysis Status"];
+
 // The first non-empty line of a section body is the marker.
 export const isLater = body => (String(body).split("\n").map(line => line.trim()).find(Boolean) ?? "") === laterMarker;
 

@@ -39,6 +39,7 @@ export const englishTerms = {
   noBlocks: "none",
   asOf: "As of {date}",
   laterNote: "When needed – not needed for this course yet.",
+  miniSessionsNote: "The material is written in one go with “Write the course”.",
   passedMissing: "passed – still missing: {what}",
   passedConcerns: "passed – {n} point(s) to decide",
   blocksPerUnit: "checked per {unit} – none needed so far ({k} of {N})",
@@ -94,6 +95,8 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   const later = headings.map(heading => heading.key).filter(key => isLater(section(key)));
   const personas = section("Agents").match(/^### Learner Personas[^\n]*\n([\s\S]*?)(?=^#{1,3} |(?![\s\S]))/m)?.[1] ?? "";
   if (isLater(personas)) later.push("Learner Personas");
+  // "### Learner Personas – Lernendenprofile": the translated suffix labels its when-needed entry.
+  const personasSuffix = section("Agents").match(/^### Learner Personas\s+–\s+(.+?)\s*$/m)?.[1] ?? null;
 
   const agenda = agendaUnits(section("Agenda"));
   const sessions = section("Sessions");
@@ -116,7 +119,7 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   const validationSummary = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
   return {
     language, terms, pack, headings, terminology, delivery, hasAgenda: agenda.length > 0, units: list, projectDir,
-    track, convertMode, source: source_, later,
+    track, convertMode, source: source_, later, personasSuffix,
     filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
     agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
     templates: readTemplates(section("Templates")),

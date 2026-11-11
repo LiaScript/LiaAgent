@@ -7,7 +7,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
 import { readJournal, loadPacks } from "./journal-model.mjs";
-import { trackIds, sectionSlug, stepsOf } from "./tracks.mjs";
+import { trackIds, sectionSlug, stepsOf, laterHidden } from "./tracks.mjs";
 import { unencodedUrls, describeUrl, analyseMaterial } from "./check-material.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -391,7 +391,7 @@ for (const link of agentCommands ? agentLinks : []) {
   const shownSteps = JSON.parse(match[1]).process?.steps ?? [];
   if (journal.track !== "full" && shownSteps.length !== ownSteps.length) problems.push(`process.steps has ${shownSteps.length} steps, the ${journal.track} track has ${ownSteps.length} (${ownSteps.join(", ")}) – replace them with the steps of the track (tasks/update-dashboard.md → Process steps per track)`);
   const shownLater = (JSON.parse(match[1]).process?.later ?? []).map(item => String(item?.href ?? "").match(/[?&]section=([\w-]+)/)?.[1] ?? "").sort().join(",");
-  const markedLater = journal.later.map(sectionSlug).sort().join(",");
+  const markedLater = journal.later.filter(key => !laterHidden.includes(key)).map(sectionSlug).sort().join(",");
   if (shownLater !== markedLater) problems.push(`process.later does not match the sections marked when needed (overview: ${shownLater || "none"}; journal: ${markedLater || "none"}) – run \`node specs/dashboard/derive-dashboard.mjs --write\``);
 }
 // Visible commands must not show raw placeholders like {description}.
@@ -445,6 +445,12 @@ const staleNote = notes.find(line => /after the didactics|nach der Didaktik/i.te
 if (agendaRows && staleNote) problems.push(`## Sessions still shows the empty-state note "${staleNote.trim().slice(0, 80)}" although ## Agenda plans ${agendaRows} units – the note says instead that the units are planned in the agenda and are created one after another, starting with the first`);
 // Warnings: likely contradictions the instructor reads, printed without changing the exit code.
 const warnings = [...stepsWarnings];
+// Stage 1 offers only the full and the mini track: convert and template wait for their entry command.
+{
+  const track = section("Course Context").match(/^\s*\d+\.\s*Track:\s*(convert|template)\b/m)?.[1];
+  const [agent, command] = { convert: ["teaching", "convert-course"], template: ["development", "start-template"] }[track] ?? [];
+  if (agent && agentCommands && !agentCommands[agent]?.has(command)) warnings.push(`Track: ${track} is not available yet (no :${command} in specs/agents/${agent}-agent.yaml) – switch to full or mini (tasks/activate-section.md → Track switch)`);
+}
 // An agreement with the instructor ("wishes … next time") is theirs to see: a prepare item, never internal (R12c-SP121).
 const agreementWords = /\b(vereinbart|wünscht|nächste[sn]? Mal|beim nächsten|möchte|zugesagt|agreed|wishes|wants|next time|promised)\b/i;
 model.decisions.filter(item => item.kind === "internal" && agreementWords.test(`${item.title ?? ""} ${item.why ?? ""} ${item.how ?? ""}`)).forEach(item =>

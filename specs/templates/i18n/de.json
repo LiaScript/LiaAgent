@@ -361,6 +361,7 @@
   "noBlocks": "keine",
   "asOf": "Stand: {date}",
   "laterNote": "Bei Bedarf – für diesen Kurs noch nicht nötig.",
+  "miniSessionsNote": "Das Material entsteht in einem Zug mit „Kurs schreiben“.",
   "checkCorrection": "Prüfung: Korrektur nötig ({n})",
   "passedMissing": "bestanden – es fehlt noch: {what}",
   "passedConcerns": "bestanden – {n} Punkt(e) zu entscheiden",
