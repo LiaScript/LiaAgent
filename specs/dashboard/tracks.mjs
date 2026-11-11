@@ -1,3 +1,4 @@
+// Module for the dashboard scripts: track ids, step lists and when-needed sections per track.
 // The course tracks (full, mini, convert, template): their steps and the sections a track sets to "when needed".
 // Pure data and helpers, shared by journal-model.mjs, derive-dashboard.mjs and actions.mjs.
 export const trackIds = ["full", "mini", "convert", "template"];
@@ -19,9 +20,9 @@ export function stepsOf(track = "full", mode = null) {
 
 // Section keys the track sets to `later` when the course is set up.
 export function laterOf(track = "full", mode = null) {
-  if (track === "mini") return ["Didactics", "Visual Identity", "Templates", "Agenda", "Learner Personas", "Analysis Status"];
+  if (track === "mini") return ["Didactics", "Visual Identity", "Agenda", "Learner Personas", "Analysis Status"];
   if (track === "convert") {
-    const rest = ["Didactics", "Templates", "Agenda", "Learner Personas", "Analysis Status"];
+    const rest = ["Didactics", "Agenda", "Learner Personas", "Analysis Status"];
     return mode === "transfer" ? ["Outline", ...rest] : rest;
   }
   if (track === "template") return ["Outline", "Didactics", "Visual Identity", "Agenda", "Sessions", "Learner Personas", "Validation", "Analysis Status"];

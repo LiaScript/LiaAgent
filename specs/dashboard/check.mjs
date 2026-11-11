@@ -2565,6 +2565,7 @@ test("tracks: steps and later sections per track", () => {
   assert.deepEqual(laterOf("full"), []);
   assert.ok(laterOf("template").includes("Sessions"));
   assert.ok(!laterOf("mini").includes("Sessions"), "the README is unit 1");
+  for (const [track, mode] of [["mini"], ["convert", "rebuild"], ["convert", "transfer"], ["template"]]) assert.ok(!laterOf(track, mode).includes("Templates"), "Templates holds the Dashboard import and is never when needed");
   assert.equal(sectionSlug("Learner Personas"), "learner-personas");
 });
 test("readJournal: track, convert mode, source and later sections (also under a translated heading)", () => {
@@ -2712,6 +2713,7 @@ test("validate-journal asks for process.later that matches the marked sections",
   assert.equal(missing.status, 2, missing.output);
   assert.match(missing.output, /process\.later does not match the sections marked when needed.*derive-dashboard\.mjs --write/);
   const extra = validateText(journalWith({ dash: { process: { steps: [{ title: "A", state: "planned" }], later: [laterEntry("Didactics")] } } }));
+  assert.equal(extra.status, 2, extra.output);
   assert.match(extra.output, /process\.later does not match/);
   const fine = validateText(journalWith({ later: ["Didactics"], dash: { process: { steps: [{ title: "A", state: "planned" }], later: [laterEntry("Didactics")] } } }));
   assert.equal(fine.status, 0, fine.output);
@@ -2744,5 +2746,6 @@ for (const track of ["mini"]) test(`${track}-track journal with markers on all l
     const run = spawnSync(process.execPath, [fileURLToPath(new URL("./validate-journal.mjs", import.meta.url)), file], { encoding: "utf8" });
     assert.equal(run.status, 0, run.stdout + run.stderr);
     assert.doesNotMatch(run.stderr, /when needed/);
+    assert.match(readFileSync(file, "utf8"), /## Templates[\s\S]*?### Dashboard\s+\* __Import:__/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
