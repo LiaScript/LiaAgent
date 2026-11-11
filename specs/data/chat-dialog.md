@@ -27,7 +27,7 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   so the status below does not read "not saved yet"; a second question comes as its own message. After a
   check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
   line between — a single line break becomes a space) and links the report; details follow after the
-  overview update. The message ends with `<!-- saved: {what} -->` as its last line, after all of this ({what} = section(s) or file(s), e.g. `<!-- saved: Course Context, Outline -->`; never in a message without a save; `data/chat-memory.md` reads it).
+  overview update. The message (preview chat only) ends with `<!-- saved: {what} -->` as its last line, after all of this ({what} = section(s) or file(s), e.g. `<!-- saved: Course Context, Outline -->`; never in a message without a save; `data/chat-memory.md` reads it).
 - **An agreement is noted in the same turn:** when the instructor agrees to do something before the material is
   used (look at a page on the device, bring a photo, fix older units next time) — also in a farewell — write it as
   a `prepare` item in their words (`tasks/update-dashboard.md` step 6) with that turn's overview write, or say that it

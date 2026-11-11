@@ -43,7 +43,9 @@ works in the terminal and wants to move to the browser.
 4. **Greeting:** post one `chat` message, signed by the active agent, in the
    course language: one sentence that the chat is open, plus exactly the
    Dashboard's next action as the one way to start (`data/chat-wording.md` →
-   First contact, One way to start). A `chat` message also unfolds a collapsed
+   First contact, One way to start). If the saved chat has entries, the pick-up
+   sentence of `data/chat-memory.md` → Picking up replaces the "chat is open"
+   sentence; the one link stays the Dashboard's next. A `chat` message also unfolds a collapsed
    chat; `get_state.chat` only says that a chat exists, not that it is unfolded.
 5. Say in the terminal in one line that the chat is open in the browser.
 
