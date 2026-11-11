@@ -19,7 +19,8 @@ Dashboard, in the session action lines and in the chat offers of every agent
 - A session number is also accepted as `file` (e.g. `3`): resolve it to the
   session's material document via `journal.md` → `## Course Context` →
   `__File Structure:__` (see `data/file-structure-modes.md`). In single-file
-  mode this is root `README.md` plus the slide of the session's `##` chapter.
+  mode this is root `README.md` plus the slide of the session's `##` chapter
+  (light track: the whole `README.md` is unit 1, slide 1).
 
 ## Steps
 

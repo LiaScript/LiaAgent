@@ -102,7 +102,7 @@ skills:
 
 agent_links:
   reference: "`data/agent-links.md` (core) with `data/chat-wording.md`; the other rule sheets as its Chat Conduct → Rule sheets says"
-  rule: "Same as the Teaching-Agent: when the `liascript` MCP tools are available, a `command` event addressed to this agent is handled per `data/agent-links.md` (whitelist, parameters, confirmation tier, dialog in the preview chat), and every finished command ends with 1–3 next-step `agent:` links in the preview chat. While active, this agent is the current one in the chat roster (`set_agent` name `artist`); `chat` events with `agent: \"artist\"` are addressed to it."
+  rule: "Same as the Teaching-Agent: when the `liascript` MCP tools are available, a `command` event addressed to this agent is handled per `data/agent-links.md` (whitelist, parameters, confirmation tier, dialog in the preview chat), and every finished command ends with 1–3 next-step `agent:` links in the preview chat. While active, this agent is the current one in the chat roster (`set_agent` name `artist`); `chat` events with `agent: \"artist\"` are addressed to it. Never read a section marked `<!-- state: later -->` (when needed); a task input that is marked counts as empty – offer `agent:teaching/activate-section` instead of asking for its content."
 
 commands:
   :create-visuals: "run task `tasks/create-visuals.md` with `templates/visuals.yaml`"

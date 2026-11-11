@@ -14,7 +14,7 @@ Plan images where they help (as image spots for the Artist-Agent, see step 4 →
 - Objectives and duration of the session (`data/session-types.md` → "Objectives and duration of a session": `## Agenda`, without an agenda `## Outline`)
 - Terminology & conventions from `journal.md` → `## Course Context`
 - LiaScript template usage rules from `journal.md` → `## Templates` (if present)
-- Currently open material document, if one exists yet (otherwise this task creates it, see step 6) — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode
+- Currently open material document, if one exists yet (otherwise this task creates it, see step 6) — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode (light track: the whole `README.md` is unit 1)
 - Optional `{number}` (e.g. from the session's action line `agent:teaching/coauthor-materials?number=3`): work on that session; without it, take the currently open material or ask which session
 - Optionally, corresponding session subsection in `journal.md` → `## Sessions`
 - Didactic inputs from `journal.md` → `## Didactics` (concept, course type, difficulty; not the primary persona source)
