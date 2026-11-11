@@ -22,12 +22,12 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   changes; a change of meaning (a step becomes required, a point disappears) is a question, not an update.
   When a chat answer admits that an overview text is wrong, say it will be corrected at the next overview
   write. A yes/no decision gets buttons (`chat` with `inputs`), never "just tell me whether I should".
-- **Report the save first:** right after the write send "✅ Saved: …", ending with the marker `<!-- saved: {what} -->` ({what} = section(s) or file(s), e.g. `<!-- saved: Course Context, Outline -->`; never in a message without a save, `data/chat-memory.md` reads it), what the instructor may do now ("You
+- **Report the save first:** right after the write send "✅ Saved: …", what the instructor may do now ("You
   can already look at the page", translated) and what still runs ("only the overview is being updated"),
   so the status below does not read "not saved yet"; a second question comes as its own message. After a
   check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
   line between — a single line break becomes a space) and links the report; details follow after the
-  overview update.
+  overview update. The message ends with `<!-- saved: {what} -->` as its last line, after all of this ({what} = section(s) or file(s), e.g. `<!-- saved: Course Context, Outline -->`; never in a message without a save; `data/chat-memory.md` reads it).
 - **An agreement is noted in the same turn:** when the instructor agrees to do something before the material is
   used (look at a page on the device, bring a photo, fix older units next time) — also in a farewell — write it as
   a `prepare` item in their words (`tasks/update-dashboard.md` step 6) with that turn's overview write, or say that it

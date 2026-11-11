@@ -112,7 +112,7 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
 // growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b, measured durations and agreements after R12c).
 const budgets = {
-  "tasks/update-dashboard.md": 3005, "data/agent-links.md": 3898, /* +23: chat-memory sheet row and pointer */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1218, /* +27: the save marker rule */
+  "tasks/update-dashboard.md": 3005, "data/agent-links.md": 3898, /* +23: chat-memory sheet row and pointer */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1226, /* +35 over 1191: the save marker rule */
   "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4198, "tasks/quick-fix.md": 1613,
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
@@ -159,7 +159,7 @@ test("chat memory: the chat is picked up after a restart from the last save mark
   for (const phrase of ["the newest entry with a `<!-- saved: … -->` marker", "offer to save, never write it silently", "the journal wins", "nothing counts as saved", "asked again"]) assert.ok(sheet.includes(phrase), `data/chat-memory.md lost: ${phrase}`);
   assert.match(read("data/agent-links.md"), /data\/chat-memory\.md/);
   assert.match(read("data/agent-links.md"), /\| `data\/chat-memory\.md` \|/, "the Rule sheets table lists chat-memory.md");
-  assert.ok(read("data/chat-dialog.md").includes("ending with the marker `<!-- saved: {what} -->`") && read("data/chat-dialog.md").includes("never in a message without a save"), "chat-dialog.md carries the save marker rule");
+  assert.ok(read("data/chat-dialog.md").includes("ends with `<!-- saved: {what} -->` as its last line") && read("data/chat-dialog.md").includes("never in a message without a save"), "chat-dialog.md carries the save marker rule");
   for (const task of ["tasks/start.md", "tasks/open-chat.md"]) assert.match(read(task), /data\/chat-memory\.md/, `${task} does not name chat-memory.md`);
   assert.match(read("agents/teaching-agent.yaml"), /\(5\) `read_chat`:[^"]*data\/chat-memory\.md/);
 });
