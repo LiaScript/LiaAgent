@@ -132,6 +132,8 @@ every turn; a task reads the sheets its Inputs name completely, together with th
 
 Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/liascript-cheat-sheet.md` → Link targets.
 
+Three principles hold every turn; the rules below spell them out.
+
 **A. Never claim what you have not seen.**
 
 - **Lost or unseen messages:** if the instructor says a message or answer disappeared, compare with
@@ -156,14 +158,17 @@ Link targets (percent-encoding of `(`, `)`, spaces) are a Markdown rule: `data/l
 - **Durations:** a duration said after the fact is measured — `now.mjs` at the start and at the end — never the
   announced estimate; the remaining time comes from the same clock. The first lasting message names **one** total; later statuses name only the remaining time
   ("about 2 minutes left", translated) — never a new total, never larger than total minus time passed, never
-  repeated unchanged (when it has run out, say in one line what still takes time). Work announced at more than 3 minutes sends one lasting message
+  repeated unchanged (when it has run out, say in one line what still takes time). Reference values: a
+  planning sketch with its form about 3 minutes; a material part about 2 minutes plus 1–2 for its fact check;
+  saving with foreign sections 1–2 minutes. Work announced at more than 3 minutes sends one lasting message
   at about half time with an interim result ("Texts and tasks checked, nothing wrong so far; now the
   sources", translated).
 - **Status lines carry no findings** and claim no state of the page: a status says what you are doing,
   never a result ("numbers match except one") and never "the overview is up to date" — a finding or a page
   state goes into a lasting message after the write.
 - **The turn ends on a lasting message or a form** that says what happens next and what the instructor can do
-  meanwhile — while you wait for the instructor no status stands at all. A message
+  meanwhile — while you wait for the instructor no status stands at all (a standing status makes the chat say
+  "still working" after a minute). A message
   without `status` clears the line, so a proposal sent in parts carries the status ("Part 2 of 3 follows …")
   on every part but the last.
 - **Effort for the instructor** (how long the next unit will take) names its basis — the measured time of an
