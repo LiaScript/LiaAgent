@@ -4363,6 +4363,9 @@ test("design → full: images and look stay, no approval round, outline next", (
   assert.match(text, /\| 1 \| What goes into compost \| existing \| ✅ \| ✅ `course\/compost-basics\.md` \| ✅ \|/);
   // The course summary keeps only check facts: the design result no longer opens publishing.
   assert.equal(journal.validation.result, "FAIL");
+  // Only check facts with dates: no design-track wording, nothing that "waits" (tasks/activate-section.md → Track switch step 2).
+  const summary = text.split("\n### Latest Validation Summary")[1].split("\n## ")[0].replace(/<!--[\s\S]*?-->/g, "");
+  assert.doesNotMatch(summary, /design track|wait/i);
   const sessions = text.split("\n## Sessions")[1].split("\n## ")[0];
   assert.match(sessions, /^_The units exist; the next step is the outline\._$/m);
   const check = validateFile(path, compostFiles);

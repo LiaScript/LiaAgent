@@ -648,7 +648,7 @@ _No learner profiles yet._
 <!-- data-key="course-findings" -->
 **Course findings:**
 
-- **Basics:** skipped – outline and didactics wait (design track)
+- **Basics:** not part of the design check (13 Nov 2026)
 - **Units:** unit 1 and unit 2 passed the design check (13 Nov 2026) and are approved; their content was not checked
 - **Material:** unit 1 — one photo, kept, credited; unit 2 — no images
 
