@@ -7,7 +7,7 @@ image becomes an entry in the unit's `#### Images` block with the status `existi
 known or unclear). For each image the instructor chooses in one form: keep · make new in the course's style · replace
 with a free photo · remove; an image with an unclear licence is preselected on "replace", never silently kept. New
 image spots are added where the instructor says so on a slide in the preview. Afterwards `:create-image {number}`
-works through the open entries; missing alt texts are added. Like `:apply-theme`, it never changes teaching text.
+works through the open entries; missing alt texts are added. Like `:apply-theme`, it never changes teaching text — one exception: when an image is removed, the sentence that explicitly refers to it ("see figure") may be adapted, and that change is shown in the confirmation. An image that is an answer option of a quiz can only be replaced, never removed.
 
 ## Command
 

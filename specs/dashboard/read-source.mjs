@@ -33,7 +33,9 @@ const cut = text => text.length > WIDTH ? `${text.slice(0, WIDTH - 1)}…` : tex
 
 // ---- LiaScript ----
 
-// Header styling (link: on .css, @style … @end, theme imports), imports, slides and images of a LiaScript course.
+// Header styling (link: to a stylesheet or font service, @style/@custom … @end, theme imports), imports, slides and
+// images of a LiaScript course. A theme block of ## Visual Identity is made of exactly these kinds.
+const STYLESHEET = /\.css([?#]|$)|\/css2?\?|^https?:\/\/(fonts\.googleapis\.com|fonts\.bunny\.net|use\.typekit\.net)\//i;
 export function readLiaScript(text) {
   const styling = [], imports = [];
   const entry = (key, values) => {
@@ -43,14 +45,14 @@ export function readLiaScript(text) {
       imports.push({ url, kind });
       if (kind === "theme") styling.push({ kind: "theme-import", lines: [`import: ${url}`] });
     }
-    if (key === "link") for (const url of urls.filter(url => /\.css([?#]|$)/i.test(url))) styling.push({ kind: "link-css", lines: [`link: ${url}`] });
+    if (key === "link") for (const url of urls.filter(url => STYLESHEET.test(url))) styling.push({ kind: "link-css", lines: [`link: ${url}`] });
   };
   let key = null, values = [], block = null;
   for (const line of headerOf(text).split(/\r?\n/)) {
     const trimmed = line.trim();
     if (block) {
       block.lines.push(line);
-      if (trimmed === "@end") { if (block.name === "style") styling.push({ kind: "style", lines: block.lines }); block = null; }
+      if (trimmed === "@end") { if (block.name === "style" || block.name === "custom") styling.push({ kind: block.name, lines: block.lines }); block = null; }
       continue;
     }
     const start = trimmed.match(/^@([\w.-]+)$/);
@@ -259,7 +261,7 @@ function printLiaScript(name, r) {
   say([`LiaScript course: ${name}`,
     `Header: ${imports.length} import(s) (${imports.length - themes} template, ${themes} theme), styling: ${styling.length ? styling.map(item => item.kind).join(", ") : "none"}`,
     ...imports.map(item => `  import (${item.kind}): ${item.url}`),
-    ...styling.filter(item => item.kind !== "theme-import").map(item => item.kind === "style" ? `  style: @style … @end (${item.lines.length} lines)` : `  ${item.kind}: ${item.lines[0]}`),
+    ...styling.filter(item => item.kind !== "theme-import").map(item => item.kind === "style" || item.kind === "custom" ? `  ${item.kind}: @${item.kind} … @end (${item.lines.length} lines)` : `  ${item.kind}: ${item.lines[0]}`),
     `Slides: ${r.slides.length}`, ...r.slides.map(slide => `  ${slide.n} ${"#".repeat(slide.level)} ${cut(slide.title)}`),
     `Images: ${r.images.length} (${r.images.filter(image => image.credit).length} credited)`,
     ...r.images.map(image => `  slide ${image.slide} · ${image.alt ? `"${cut(image.alt)}"` : "(no alt text)"} · ${image.target} · ${image.credit ? "credit" : "no credit"}`)]);

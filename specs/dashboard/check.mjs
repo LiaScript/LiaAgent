@@ -4187,6 +4187,20 @@ test("read-source: LiaScript header, slides, images and credits", () => {
   assert.deepEqual(r.header.styling.map(s => s.kind), ["theme-import", "link-css", "style"]);
   assert.deepEqual(r.images.map(i => [i.slide, i.alt, i.credit]), [[2, "A tree", true], [4, "", false]]);
 });
+test("read-source: a whole theme is styling – @custom blocks and stylesheet or font links (stage 2a T9 fix)", () => {
+  const text = "<!--\nlink: https://fonts.googleapis.com/css2?family=Inter&display=swap\n      https://example.org/page.html\nlink: https://fonts.bunny.net/css?family=lora\nlink: https://use.typekit.net/abc.js\nlink: https://example.org/x/css2?family=A\n@custom\n--lia-color: #123;\n@end\n@style\nh1 { color: red }\n@end\n@macro\nx\n@end\n-->\n# T\n";
+  const r = readLiaScript(text);
+  assert.deepEqual(r.header.styling.map(s => [s.kind, s.lines[0]]), [
+    ["link-css", "link: https://fonts.googleapis.com/css2?family=Inter&display=swap"],
+    ["link-css", "link: https://fonts.bunny.net/css?family=lora"],
+    ["link-css", "link: https://use.typekit.net/abc.js"],
+    ["link-css", "link: https://example.org/x/css2?family=A"],
+    ["custom", "@custom"], ["style", "@style"]]);
+  const dir = tmpProject({ "a.md": text });
+  const out = runReadSource(["a.md"], dir).output;
+  assert.match(out, /styling: link-css, link-css, link-css, link-css, custom, style/);
+  assert.match(out, /^ {2}custom: @custom … @end \(3 lines\)$/m);
+});
 test("read-source: pptx slides, notes, images and theme colours", () => {
   const pptx = makeZip({ "ppt/slides/slide1.xml": slideXml("Title one", ["Point"]), "ppt/notesSlides/notesSlide1.xml": notesXml("Say this"), "ppt/slides/_rels/slide1.xml.rels": relsXml({ rId2: "../media/image1.png" }), "ppt/media/image1.png": Buffer.from([137, 80, 78, 71]), "ppt/theme/theme1.xml": themeXml({ accent1: "1F4E79" }, "Calibri", "Arial") });
   const r = readPptx(pptx);

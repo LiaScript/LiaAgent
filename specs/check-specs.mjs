@@ -303,6 +303,14 @@ test("apply-theme: one confirmation, foreign styling asked, macro imports kept, 
   assert.match(visuals, /read-source\.mjs/, "the variant reads the course with read-source.mjs");
   assert.match(visuals, /`images`[^\n]*only the image style/, "scope images: only the image style");
   assert.match(visuals, /offer `:apply-theme`/, "create-visuals does not offer :apply-theme");
+  // Fix round 1: a whole old theme is replaced by kind, template imports on a shared key stay, the tier is named.
+  assert.match(t, /every `@style … @end` and `@custom … @end` block, every `link:` URL it lists as `link-css`[^\n]*every theme import/, "apply-theme does not name the kinds of foreign styling");
+  assert.match(t, /recognised by these kinds, never by comparing with an older `## Visual Identity`/);
+  assert.match(t, /remove only the URL of a theme import or a stylesheet\/font link; other URLs on the same key stay/, "removing styling could remove a template import");
+  assert.match(t, /offered again on a later run — intended: the answer is not stored/);
+  assert.match(visuals, /never an empty `@style … @end`/, "a hand-written theme may leave an empty @style block");
+  assert.match(read("data/agent-links.md"), /\| \*\*start interview\*\* \|[^\n]*`apply-theme`/, "apply-theme is not in the start-interview tier");
+  for (const file of ["agents/artist-agent.yaml", "tasks/review-images.md"]) assert.match(read(file), /see figure/, `${file} lacks the exception for a reference to a removed image`);
 });
 
 test("preview is a navigation command of every agent", () => {
