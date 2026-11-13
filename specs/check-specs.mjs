@@ -706,6 +706,11 @@ test("every helper script in specs/dashboard and specs/catalog is on the shell l
   assert.ok(yaml.includes("`node --test lia-templates/{id}/check.mjs`"), "agents/teaching-agent.yaml: the test of an own template is missing from the shell list");
 });
 
+test("the shell list of CLAUDE.md names read-source.mjs with its arguments (stage 2a, T6)", () => {
+  const built = readFileSync(join(specs, "..", "CLAUDE.md"), "utf8");
+  assert.ok(built.includes("`node specs/dashboard/read-source.mjs <file | folder | URL>`"), "CLAUDE.md: read-source.mjs is missing from the shell list – run python specs/build.py");
+});
+
 test("older journals: the validator's migration hint leads to a confirmed migration in update-dashboard (R11-D2)", () => {
   const task = read("tasks/update-dashboard.md");
   assert.match(task, /\*\*Older journal layout:\*\*/);

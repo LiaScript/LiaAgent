@@ -4112,3 +4112,93 @@ test("validate: the design track's entry commands are the artist's (warning unti
   const out = validateText(withDash(designJournalText({}))).output;
   assert.match(out, /Track: design is not available yet \(no :apply-theme in specs\/agents\/artist-agent\.yaml\)/);
 });
+
+// ---- Stage 2a, T6: read-source.mjs – compact excerpts of a source ----
+
+import { readLiaScript, listCourses, readPptx, readPdfInfo, readHtml, unzip } from "./read-source.mjs";
+import { deflateRawSync, crc32 } from "node:zlib";
+
+// A valid ZIP (local headers, central directory, end record) of { "path": text | Buffer }, every entry deflated.
+function makeZip(files) {
+  const locals = [], centrals = [];
+  let offset = 0;
+  for (const [name, content] of Object.entries(files)) {
+    const data = Buffer.isBuffer(content) ? content : Buffer.from(content);
+    const packed = deflateRawSync(data), path = Buffer.from(name);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(8, 8);
+    local.writeUInt32LE(crc32(data), 14); local.writeUInt32LE(packed.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(path.length, 26);
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0); central.writeUInt16LE(20, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(8, 10);
+    central.writeUInt32LE(crc32(data), 16); central.writeUInt32LE(packed.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(path.length, 28); central.writeUInt32LE(offset, 42);
+    locals.push(local, path, packed);
+    centrals.push(central, path);
+    offset += 30 + path.length + packed.length;
+  }
+  const directory = Buffer.concat(centrals), end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(centrals.length / 2, 8); end.writeUInt16LE(centrals.length / 2, 10);
+  end.writeUInt32LE(directory.length, 12); end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...locals, directory, end]);
+}
+const ns = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+const shape = (type, lines) => `<p:sp><p:nvSpPr><p:cNvPr id="1" name="s"/><p:cNvSpPr/><p:nvPr>${type ? `<p:ph type="${type}"/>` : ""}</p:nvPr></p:nvSpPr><p:txBody>${lines.map(line => `<a:p><a:r><a:t>${line}</a:t></a:r></a:p>`).join("")}</p:txBody></p:sp>`;
+const slideXml = (title, points) => `<?xml version="1.0"?><p:sld ${ns}><p:cSld><p:spTree>${shape("title", [title])}${shape(null, points)}<p:pic><p:blipFill><a:blip r:embed="rId2"/></p:blipFill></p:pic></p:spTree></p:cSld></p:sld>`;
+const notesXml = text => `<?xml version="1.0"?><p:notes ${ns}><p:cSld><p:spTree>${shape("sldImg", [])}${shape("body", [text])}${shape("sldNum", ["1"])}</p:spTree></p:cSld></p:notes>`;
+const relsXml = targets => `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${Object.entries(targets).map(([id, target]) => `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${target}"/>`).join("")}</Relationships>`;
+const themeXml = (colors, major, minor) => `<?xml version="1.0"?><a:theme ${ns} name="T"><a:themeElements><a:clrScheme name="C"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>${Object.entries(colors).map(([key, value]) => `<a:${key}><a:srgbClr val="${value}"/></a:${key}>`).join("")}</a:clrScheme><a:fontScheme name="F"><a:majorFont><a:latin typeface="${major}"/></a:majorFont><a:minorFont><a:latin typeface="${minor}"/></a:minorFont></a:fontScheme></a:themeElements></a:theme>`;
+const readSourceScript = fileURLToPath(new URL("./read-source.mjs", import.meta.url));
+const runReadSource = (args, cwd) => { const run = spawnSync(process.execPath, [readSourceScript, ...args], { cwd, encoding: "utf8" }); return { status: run.status, output: run.stdout + run.stderr }; };
+
+test("read-source: LiaScript header, slides, images and credits", () => {
+  const text = "<!--\nimport: https://example.org/macros/README.md\nimport: https://example.org/my-theme/README.md\nlink: style.css\n@style\n.lia { color: red }\n@end\n-->\n# Course\n## One\n![A tree](img/tree.png)\n## Image credits\n- tree.png – CC BY 4.0\n## Two\n![](img/house.png)\n";
+  const r = readLiaScript(text);
+  assert.deepEqual(r.header.imports.map(i => i.kind), ["template", "theme"]);
+  // The plan's verbatim assertion read ["link-css", "style"]; a theme import is foreign styling as well (plan, case 1).
+  assert.deepEqual(r.header.styling.map(s => s.kind), ["theme-import", "link-css", "style"]);
+  assert.deepEqual(r.images.map(i => [i.slide, i.alt, i.credit]), [[2, "A tree", true], [4, "", false]]);
+});
+test("read-source: pptx slides, notes, images and theme colours", () => {
+  const pptx = makeZip({ "ppt/slides/slide1.xml": slideXml("Title one", ["Point"]), "ppt/notesSlides/notesSlide1.xml": notesXml("Say this"), "ppt/slides/_rels/slide1.xml.rels": relsXml({ rId2: "../media/image1.png" }), "ppt/media/image1.png": Buffer.from([137, 80, 78, 71]), "ppt/theme/theme1.xml": themeXml({ accent1: "1F4E79" }, "Calibri", "Arial") });
+  const r = readPptx(pptx);
+  assert.equal(r.slides[0].title, "Title one");
+  assert.deepEqual(r.slides[0].notes, ["Say this"]);
+  assert.deepEqual(r.slides[0].images, ["image1.png"]);
+  assert.equal(r.theme.colors.accent1, "#1F4E79");
+  assert.deepEqual(r.theme.fonts, { major: "Calibri", minor: "Arial" });
+});
+test("read-source: pdf info, html blocks, folder listing, bad input", () => {
+  assert.equal(readPdfInfo(Buffer.from("%PDF-1.4\n1 0 obj<</Type /Page>>endobj 2 0 obj<</Type /Page>>endobj\n/Title (Notes)")).pages, 2);
+  const h = readHtml("<h1>T</h1><p>Text <b>bold</b></p><ul><li>A</li></ul><img src='p.png' alt='x'><script>no</script>", "https://example.org/a/");
+  assert.deepEqual(h.blocks.map(b => b.type), ["h", "p", "li"]);
+  assert.equal(h.images[0].src, "https://example.org/a/p.png");
+  const dir = tmpProject({ "a.md": "<!--\nauthor: x\n-->\n# A\n", "journal.md": "<!--\n-->\n# J\n", "node_modules/b.md": "<!--\n-->\n# B\n", "plain.md": "# no header\n" });
+  assert.deepEqual(listCourses(dir), ["a.md"]);
+  assert.equal(runReadSource(["nothing.xyz"]).status, 2);
+});
+test("read-source: details – multi-URL imports, theme raw lines, pdf metadata, html cleanup, unzip, CLI", () => {
+  const r = readLiaScript("<!--\nauthor: A\nimport: https://example.org/a/README.md\n        https://example.org/design-x/README.md\n@macro\nx\n@end\n-->\n# T\n```\n# not a slide\n![no](x.png)\n```\n## Quellen\nx.png\n");
+  assert.deepEqual(r.header.imports.map(i => i.url), ["https://example.org/a/README.md", "https://example.org/design-x/README.md"]);
+  assert.deepEqual(r.header.theme, ["import: https://example.org/design-x/README.md"]);
+  assert.deepEqual(r.slides.map(s => [s.n, s.level, s.title]), [[1, 1, "T"], [2, 2, "Quellen"]]);
+  assert.deepEqual(r.images, []);
+  const encoded = readLiaScript("# T\n![a](https://example.org/Special:FilePath/A%2C_b_%28c%29.jpg?width=330)\n## Image credits\n- [page](https://example.org/wiki/File:A,_b_(c).jpg)\n");
+  assert.equal(encoded.images[0].credit, true);
+  const info = readPdfInfo(Buffer.concat([Buffer.from("%PDF-1.7\n<</Type /Pages /Count 7>>\n/Title <FEFF00C40062> /Author (A\\(B\\))")]));
+  assert.deepEqual(info, { pages: 7, title: "Äb", author: "A(B)" });
+  const h = readHtml("<title>Page &amp; more</title><nav><p>menu</p></nav><h2 class='x'>Sub</h2><style>p{}</style><footer><p>foot</p></footer><img src=\"/i.png\">", "https://example.org/a/b.html");
+  assert.equal(h.title, "Page & more");
+  assert.deepEqual(h.blocks, [{ type: "h", level: 2, text: "Sub" }]);
+  assert.deepEqual(h.images, [{ src: "https://example.org/i.png", alt: "" }]);
+  assert.equal(unzip(makeZip({ "a/b.txt": "hello" })).get("a/b.txt").toString(), "hello");
+  assert.throws(() => unzip(Buffer.from("not a zip")), /ZIP/);
+  const dir = tmpProject({ "course/x.md": "<!--\nauthor: x\n-->\n# X\n## Y\n![a](a.png)\n", "deck.pptx": "" });
+  writeFileSync(join(dir, "deck.pptx"), makeZip({ "ppt/slides/slide1.xml": slideXml("One", []), "ppt/slides/_rels/slide1.xml.rels": relsXml({ rId2: "../media/image1.png" }), "ppt/media/image1.png": Buffer.from([1, 2]) }));
+  const folder = runReadSource(["."], dir);
+  assert.equal(folder.status, 0);
+  assert.match(folder.output, /course\/x\.md/);
+  const deck = runReadSource(["deck.pptx"], dir);
+  assert.equal(deck.status, 0);
+  assert.ok(existsSync(join(dir, ".cache/source/deck/image1.png")));
+  assert.match(runReadSource(["course/x.md", "--json"], dir).output, /"slides"/);
+  assert.equal(runReadSource([], dir).status, 2);
+});
