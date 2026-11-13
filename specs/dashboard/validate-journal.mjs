@@ -6,7 +6,7 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
-import { readJournal, loadPacks, recheckOpenText, approvalTails, withoutApproval, recordedPath } from "./journal-model.mjs";
+import { readJournal, loadPacks, recheckOpenText, approvalTails, withoutApproval, recordedPath, englishTerms as modelEnglishTerms } from "./journal-model.mjs";
 import { unitState } from "./derive-dashboard.mjs";
 import { unitIsCourseCheck, outlineShort, englishActions } from "./actions.mjs";
 import { trackIds, sectionSlug, stepsOf, laterHidden, laterOf } from "./tracks.mjs";
@@ -516,6 +516,28 @@ const warnings = [...stepsWarnings, ...earlyWarnings];
   const track = section("Course Context").match(/^\s*\d+\.\s*Track:\s*(convert|template)\b/m)?.[1];
   const [agent, command] = { convert: ["teaching", "convert-course"], template: ["development", "start-template"] }[track] ?? [];
   if (agent && agentCommands && !agentCommands[agent]?.has(command)) warnings.push(`Track: ${track} is not available yet (no :${command} in specs/agents/${agent}-agent.yaml) – switch to full or mini (tasks/activate-section.md → Track switch)`);
+}
+// The design track (look and/or images of an existing course): a scope, a recorded course file per unit, the theme in
+// the files of done units and the credit text of kept images with an unclear licence.
+if (/^\s*\d+\.\s*Track:\s*design\b/m.test(section("Course Context"))) {
+  const journal = readJournal(source, { projectDir: dirname(resolve(file)), packs: loadPacks() });
+  const scope = journal.designScope;
+  if (!scope) problems.push("Track: design needs Design scope: look, images or both (Course Context → Track, field 4)");
+  // Entry commands of the track: the Artist-Agent's, by scope (look → :apply-theme, images → :review-images).
+  const entry = { look: ["apply-theme"], images: ["review-images"] };
+  const wanted = scope === "look" || scope === "images" ? entry[scope] : [...entry.look, ...entry.images];
+  for (const command of wanted) if (agentCommands && !agentCommands.artist?.has(command)) warnings.push(`Track: design is not available yet (no :${command} in specs/agents/artist-agent.yaml) – switch to full or mini (tasks/activate-section.md → Track switch)`);
+  const creditTerms = [journal.terms.licenseUnclearKept, modelEnglishTerms.licenseUnclearKept].filter(Boolean).map(term => term.toLowerCase());
+  const parts = new Map([...section("Sessions").matchAll(/^### (\d+)\.\s[\s\S]*?(?=^### \d+\.\s|(?![\s\S]))/gm)].map(match => [match[1], match[0]]));
+  for (const unit of journal.units) {
+    if (!unit.material && !unit.tableTitle) continue;
+    if (!unit.file) problems.push(`unit ${unit.n} has no recorded course file – write its path into the Material cell of the overview table (data/file-structure-modes.md → Recorded paths)`);
+    if (unit.done && unit.themeApplied === false && (scope === "look" || scope === "both")) warnings.push(`unit ${unit.n} is done, but its file does not carry the theme of ## Visual Identity – apply it again (:apply-theme)`);
+    // An image kept with an unclear licence: its credit line in the file says so (terms.licenseUnclearKept).
+    const unclear = [...(parts.get(unit.n) ?? "").matchAll(/^\s*[*-]\s+__License:__[ \t]*(.+)$/gm)].some(match => creditTerms.some(term => match[1].toLowerCase().includes(term.split(" ").slice(1).join(" "))));
+    const text = unit.file && existsSync(join(projectDir, unit.file)) ? readFileSync(join(projectDir, unit.file), "utf8").toLowerCase() : null;
+    if (unclear && text !== null && !creditTerms.some(term => text.includes(term))) warnings.push(`unit ${unit.n} keeps an image with an unclear licence, but its file lacks the credit text "${journal.terms.licenseUnclearKept}" – add it to the image credits`);
+  }
 }
 // An agreement with the instructor ("wishes … next time") is theirs to see: a prepare item, never internal (R12c-SP121).
 const agreementWords = /\b(vereinbart|wünscht|nächste[sn]? Mal|beim nächsten|möchte|zugesagt|agreed|wishes|wants|next time|promised)\b/i;

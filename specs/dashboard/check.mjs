@@ -3713,13 +3713,13 @@ import { after } from "node:test";
 
 // A minimal English journal on the design track: two units whose course files are recorded in the Material cell
 // (data/file-structure-modes.md → Recorded paths). Options: scope (null → "n/a"), theme (lines of the
-// `__LiaScript Theme:__` block; none → no block), images (per unit: [{ status, source }]), reviewed (per unit: the
-// decision "images reviewed"), files (per unit: the recorded path or null).
-function designJournal({ scope = "both", theme = null, images = [[], []], reviewed = [false, false], files = ["course/a.md", "course/b.md"] } = {}) {
+// `__LiaScript Theme:__` block; none → no block), images (per unit: [{ status, source, license }]), reviewed (per unit: the
+// decision "images reviewed"), files (per unit: the recorded path or null), done (per unit: Done ✅ in the table).
+function designJournal({ scope = "both", theme = null, images = [[], []], reviewed = [false, false], files = ["course/a.md", "course/b.md"], done = [false, false] } = {}) {
   const titles = ["Unit A", "Unit B"];
   const themeBlock = theme ? `\n* __LiaScript Theme:__ written by hand\n\n  \`\`\`text\n${theme.map(line => `  ${line}`).join("\n")}\n  \`\`\`\n` : "";
-  const rows = titles.map((title, index) => `| ${index + 1} | ${title} | existing | ✅ | ✅${files[index] ? ` \`${files[index]}\`` : ""} | | |`).join("\n");
-  const imageBlock = list => list.length ? `\n#### Images\n\n${list.map((entry, index) => `<section>\n\n#### picture-${index + 1}\n\n* __Status:__ ${entry.status}\n${entry.source ? `* __Source:__ ${entry.source}\n` : ""}\n</section>\n`).join("\n")}` : "";
+  const rows = titles.map((title, index) => `| ${index + 1} | ${title} | existing | ✅ | ✅${files[index] ? ` \`${files[index]}\`` : ""} | ${done[index] ? "✅" : ""} | |`).join("\n");
+  const imageBlock = list => list.length ? `\n#### Images\n\n${list.map((entry, index) => `<section>\n\n#### picture-${index + 1}\n\n* __Status:__ ${entry.status}\n${entry.source ? `* __Source:__ ${entry.source}\n` : ""}${entry.license ? `* __License:__ ${entry.license}\n` : ""}\n</section>\n`).join("\n")}` : "";
   const unit = (title, index) => `### ${index + 1}. ${title}\n\n**Decisions:**\n\n- **2026-11-13:** look kept as it is${reviewed[index] ? "\n- **2026-11-13:** images reviewed" : ""}\n${imageBlock(images[index] ?? [])}`;
   return `<!--\nauthor: A. Teacher\n-->\n# Design course\n\n## Course Context\n\n* __Track:__\n  1. Track: design\n  2. Convert mode: n/a\n  3. Source: course/a.md\n  4. Design scope: ${scope ?? "n/a"}\n\n* __Terminology:__\n  1. sessions-called: unit\n\n* __File Structure:__\n  1. Mode: multi-file\n\n## Visual Identity\n${themeBlock}\n## Sessions\n\n<details><summary>Technical overview</summary>\n\n<!-- data-type="none" -->\n| # | Title | Type | Skeleton | Material | Done | Notes |\n|---|-------|------|----------|----------|------|-------|\n${rows}\n\n</details>\n\n${titles.map(unit).join("\n")}\n`;
 }
@@ -4068,4 +4068,47 @@ test("design next: only own photos left on a unit not marked Done – the unit's
   const journal = designCourse({ scope: "look", theme: ["x"], applied: [true, true], done: [true, true], delivery: "link" });
   journal.units[0] = { ...journal.units[0], done: false, images: photo };
   assert.equal(nextOf(journal), "agent:artist/create-image?number=1");
+});
+
+// ---- Stage 2a, T5: the validator checks the design track ----
+
+// Validates a design journal inside a project folder holding the given course files.
+const withDash = text => `${text}\n## Dashboard\n\n${dashJson({ title: "Design course" })}\n`;
+const validateDesign = (text, files = {}) => {
+  text = withDash(text);
+  const dir = tmpProject(files);
+  writeFileSync(join(dir, "journal.md"), text);
+  const run = spawnSync(process.execPath, [fileURLToPath(new URL("./validate-journal.mjs", import.meta.url)), join(dir, "journal.md")], { encoding: "utf8" });
+  return { status: run.status, output: run.stdout + run.stderr };
+};
+test("validate: design track needs a scope and a recorded file per unit", () => {
+  const scope = validateText(withDash(designJournalText({ scope: null })));
+  assert.match(scope.output, /Track: design needs Design scope: look, images or both/);
+  assert.equal(scope.status, 2);
+  const file = validateText(withDash(designJournalText({ files: ["course/a.md", null] })));
+  assert.match(file.output, /unit 2 has no recorded course file/);
+  assert.equal(file.status, 2);
+  assert.doesNotMatch(validateText(withDash(designJournalText({}))).output, /needs Design scope|no recorded course file/);
+});
+test("validate: a done unit without the theme is a warning (design, look)", () => {
+  const files = { "course/a.md": "<!--\nx\n-->\n# A\n", "course/b.md": "<!--\ny\n-->\n# B\n" };
+  const out = validateDesign(designJournalText({ scope: "look", theme: ["x"], done: [true, true] }), files).output;
+  assert.match(out, /unit 2 is done, but its file does not carry the theme of ## Visual Identity/);
+  assert.doesNotMatch(out, /unit 1 is done, but its file/);
+  assert.doesNotMatch(validateDesign(designJournalText({ scope: "look", theme: ["x"], done: [true, false] }), files).output, /unit 2 is done, but/);
+  assert.doesNotMatch(validateDesign(designJournalText({ scope: "images", theme: ["x"], done: [true, true] }), files).output, /does not carry the theme/);
+});
+test("validate: a kept image with an unclear licence needs the credit line in the file", () => {
+  const license = "License unclear – kept by the instructor";
+  const images = [[{ status: "existing", license }], []];
+  const files = text => ({ "course/a.md": text, "course/b.md": "# B\n" });
+  const out = validateDesign(designJournal({ images }), files("# A\n")).output;
+  assert.match(out, /unit 1 keeps an image with an unclear licence.*credit text "license unclear – kept/i);
+  assert.doesNotMatch(validateDesign(designJournalText({ images }), files("# A\n\n## Image credits\n\n- x, LICENSE UNCLEAR – kept by the instructor\n")).output, /unclear licence/);
+  assert.doesNotMatch(validateDesign(designJournalText({ images: [[{ status: "existing", license: "CC BY 4.0" }], []] }), files("# A\n")).output, /unclear licence/);
+  assert.doesNotMatch(validateDesign(designJournalText({ images: [[{ status: "existing", license: "Lizenz ungeklärt – von der Lehrkraft behalten" }], []] }), files("# A\n\nLizenz ungeklärt – von der Lehrkraft behalten\n")).output, /unclear licence/);
+});
+test("validate: the design track's entry commands are the artist's (warning until they exist)", () => {
+  const out = validateText(withDash(designJournalText({}))).output;
+  assert.match(out, /Track: design is not available yet \(no :apply-theme in specs\/agents\/artist-agent\.yaml\)/);
 });
