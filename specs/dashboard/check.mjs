@@ -3708,7 +3708,7 @@ test("a stale approval item next to an approved unit is reported (T5-88)", () =>
 // ---- Stage 2a, T3: the design track (look and/or images of an existing LiaScript course) in the journal model ----
 
 import { recordedPath, headerOf } from "./journal-model.mjs";
-import { stepTitleKey } from "./tracks.mjs";
+import { stepTitleKey, englishLightStepTitles } from "./tracks.mjs";
 import { after } from "node:test";
 
 // A minimal English journal on the design track: two units whose course files are recorded in the Material cell
@@ -3804,4 +3804,32 @@ test("validate: a recorded course file outside materials/, with spaces and paren
     assert.match(output, /unit 2: "Material ✅" but the material document is missing \(course\/b\.md\)/, output);
     assert.doesNotMatch(output, /Track: "design" is not one of/, output);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+// ---- T3 fix round 1 ----
+test("header of a course file: exactly the comment at the top, also with macros that hold headings", () => {
+  const macro = "<!--\nauthor: A\n@section\n# @0\n@end\n@style\n.x { --y: 1 }\n@end\n-->\n# Title\n";
+  assert.match(headerOf(macro), /@section\n# @0\n@end\n@style/);
+  assert.match(headerOf("﻿\n\n<!--\r\nauthor: A\r\n-->\r\n# T\r\n"), /author: A/);
+  assert.equal(headerOf("Some text first\n\n<!-- a comment -->\n"), "");
+  assert.equal(headerOf("<!-- unterminated\n# T\n"), "");
+  const theme = ["@style", ".x { --y: 1 }", "@end"];
+  const files = { "course/a.md": macro, "course/b.md": "<!--\r\n@style\r\n.x { --y: 1 }\r\n@end\r\n-->\r\n# B\r\n" };
+  assert.deepEqual(readJournal(designJournal({ theme }), { projectDir: tmpProject(files) }).units.map(u => u.themeApplied), [true, true]);
+  const body = { "course/a.md": "<!--\nauthor: A\n-->\n# A\n\n@style\n.x { --y: 1 }\n@end\n", "course/b.md": "\n\n<!--\n@style\n.x { --y: 1 }\n@end\n-->\n# B\n" };
+  assert.deepEqual(readJournal(designJournal({ theme }), { projectDir: tmpProject(body) }).units.map(u => u.themeApplied), [false, true]);
+});
+test("images reviewed: only a dated decision line of the unit itself, not negated", () => {
+  const reviewed = text => readJournal(text, { projectDir: tmpProject({}) }).units.map(u => u.imagesReviewed);
+  const base = designJournal();
+  assert.deepEqual(reviewed(designJournal({ reviewed: [false, true] })), [false, true], "a reviewed line in another unit");
+  assert.deepEqual(reviewed(base.replace("### 2. Unit B", "#### Validation report – unit 1\n\n- **2026-11-13:** images reviewed\n\n### 2. Unit B")), [false, false], "in the report");
+  assert.deepEqual(reviewed(base.replace("### 1. Unit A\n", "### 1. Unit A\n\nOnce the images reviewed, the check follows.\n")), [false, false], "in a summary sentence");
+  assert.deepEqual(reviewed(base.replace("look kept as it is\n", "look kept as it is\n- **2026-11-13:** not images reviewed yet\n")), [false, false], "negated");
+  assert.deepEqual(reviewed(base.replace("look kept as it is\n", "look kept as it is\n* **13.11.2026:** Images reviewed – all kept\n")), [true, false], "other date and bullet form");
+});
+test("validate: a design journal with scope look and its 4 steps has no step-count problem", () => {
+  const steps = stepsOf("design", "look").map(key => ({ title: englishLightStepTitles[stepTitleKey("design", key)], state: "planned" }));
+  assert.equal(steps.length, 4);
+  const run = validateText(`${designJournal({ scope: "look" })}\n## Dashboard\n\n${dashJson({ title: "Design course", process: { steps } })}\n`);
+  assert.doesNotMatch(run.output, /process\.steps has/, run.output);
 });

@@ -453,7 +453,7 @@ for (const link of agentCommands ? agentLinks : []) {
   if (trackValue && !trackIds.includes(trackValue)) problems.push(`Track: "${trackValue}" is not one of ${trackIds.join(", ")}`);
   // A light track has exactly the steps of its track (tasks/update-dashboard.md → Rules → Process steps per track);
   // the full track may drop its agenda step with a note, so only the light tracks are counted.
-  const ownSteps = stepsOf(journal.track, journal.convertMode);
+  const ownSteps = stepsOf(journal.track, journal.trackMode);
   const shownSteps = JSON.parse(match[1]).process?.steps ?? [];
   if (journal.track !== "full" && shownSteps.length !== ownSteps.length) problems.push(`process.steps has ${shownSteps.length} steps, the ${journal.track} track has ${ownSteps.length} (${ownSteps.join(", ")}) – replace them with the steps of the track (tasks/update-dashboard.md → Process steps per track)`);
   const shownLater = (JSON.parse(match[1]).process?.later ?? []).map(item => String(item?.href ?? "").match(/[?&]section=([\w-]+)/)?.[1] ?? "").sort().join(",");

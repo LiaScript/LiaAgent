@@ -70,6 +70,7 @@ const datePattern = /(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\
 const stripComments = text => text.replace(/<!--[\s\S]*?-->/g, "");
 // "not approved", "noch nicht freigegeben" … do not count.
 const approvedWord = /(?<!\b(?:nicht|noch nicht|not|not yet)\s)\b(freigegeben|approved)\b/i;
+const escapeRegExp = text => String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // Image statuses (tasks/create-image.md): placed in the material, or still open. `existing`: an image the course
 // already had (design track, :review-images).
 const placedStatuses = ["inserted", "generated", "existing"];
@@ -87,11 +88,13 @@ export function recordedPath(cell) {
   return null;
 }
 
-// The header of a LiaScript file: the inner text of the first HTML comment before the first `#` heading, else "".
+// The header of a LiaScript file: the inner text of the HTML comment at its top (only a BOM or whitespace before
+// it), up to the first `-->` – lines inside it may look like headings (macros); else "".
 export function headerOf(markdown) {
-  const text = String(markdown ?? "");
-  const heading = text.search(/^#{1,6}\s/m);
-  return (heading >= 0 ? text.slice(0, heading) : text).match(/<!--([\s\S]*?)-->/)?.[1] ?? "";
+  const text = String(markdown ?? "").replace(/^\uFEFF/, "").trimStart();
+  if (!text.startsWith("<!--")) return "";
+  const end = text.indexOf("-->", 4);
+  return end < 0 ? "" : text.slice(4, end);
 }
 
 export function readJournal(source, { projectDir = ".", packs = loadPacks() } = {}) {
@@ -193,11 +196,15 @@ function outlineUnits(outline, slideWords) {
   return count > 0 ? count : null;
 }
 
+// The track mode for stepsOf: readJournal's trackMode; a facts object without that field (built by hand, older
+// callers) falls back to its convertMode.
+const modeOf = journal => journal.trackMode !== undefined ? journal.trackMode : journal.convertMode ?? null;
+
 // The keys (tracks.mjs → stepsOf) of the overview's course steps. The full track may drop a step (the agenda step
 // with `Agenda required: no`, the template step in older journals): when every title is a known title of the
 // empty journal (English or the course pack), each step gets the key of its title; else by position, as before.
 export function courseStepKeys(steps = [], journal = {}) {
-  const keys = stepsOf(journal.track ?? "full", journal.trackMode ?? journal.convertMode ?? null);
+  const keys = stepsOf(journal.track ?? "full", modeOf(journal));
   if ((journal.track ?? "full") !== "full" || !steps.length) return keys;
   const lists = [englishCourseSteps(), journal.pack?.dashboard?.process?.steps].filter(list => list?.length === keys.length);
   const norm = text => String(text ?? "").trim().toLowerCase();
@@ -221,7 +228,7 @@ export function englishCourseSteps() {
 // The steps of a track as the empty journal or the language pack names them: full – the empty journal's steps
 // (title, state, why); a light track – the titles of `lightStepTitles`. null without words in the course language.
 export function trackSteps(journal) {
-  const keys = stepsOf(journal.track ?? "full", journal.trackMode ?? journal.convertMode ?? null);
+  const keys = stepsOf(journal.track ?? "full", modeOf(journal));
   const english = journal.language === "en";
   if ((journal.track ?? "full") === "full") {
     const list = journal.pack?.dashboard?.process?.steps ?? (english ? englishCourseSteps() : null);
@@ -323,10 +330,14 @@ function readUnits(sessions, terms) {
     // "Let it be prepared" was confirmed with the planning sketch (tasks/build-session.md): a dated decision
     // with terms.buildRequested. While no check report exists, the run is still going (SK58).
     item.buildRequested = [terms.buildRequested, englishTerms.buildRequested].some(word => word && stripComments(part.split(/^#### /m)[0]).toLowerCase().includes(String(word).toLowerCase()));
-    // The images of the unit were reviewed (design track, :review-images): a line of its decisions with
-    // terms.imagesReviewed – also for a unit without any image.
-    const decisions = stripComments(part.split(/^#### /m)[0]).toLowerCase().split("\n");
-    item.imagesReviewed = [terms.imagesReviewed, englishTerms.imagesReviewed].some(word => word && decisions.some(line => line.includes(String(word).toLowerCase())));
+    // The images of the unit were reviewed (design track, :review-images): a dated decision line of the unit
+    // ("- **{date}:** …", templates/session-skeleton.yaml → decisions) with terms.imagesReviewed, not negated –
+    // also for a unit without any image.
+    const decisions = stripComments(part.split(/^#### /m)[0]).split("\n")
+      .map(line => line.match(new RegExp(`^\\s*[-*]\\s+\\*\\*${datePattern.source}:?\\*\\*:?\\s*(.*)$`))?.[1]).filter(Boolean);
+    const reviewedWords = [terms.imagesReviewed, englishTerms.imagesReviewed].filter(Boolean)
+      .map(word => new RegExp(`(?<!\\b(?:nicht|noch nicht|not|not yet)\\s)${escapeRegExp(word)}`, "i"));
+    item.imagesReviewed = decisions.some(line => reviewedWords.some(word => word.test(line)));
     // The building-block line decided with the planning sketch (session-skeleton.yaml → building-blocks).
     const blocks = part.match(/<!--\s*data-key="building-blocks"\s*-->\s*\n\s*\*\*[^*]+\*\*\s*(.*)/);
     if (blocks) item.blocks = blocks[1].trim();
