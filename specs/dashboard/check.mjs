@@ -2874,7 +2874,7 @@ function inMiniProject(text, files, run) {
   const dir = mkdtempSync(join(tmpdir(), "dashboard-mini-course-"));
   const file = join(dir, "journal.md");
   writeFileSync(file, text);
-  for (const [name, content] of Object.entries(files)) writeFileSync(join(dir, name), content);
+  for (const [name, content] of Object.entries(files)) { mkdirSync(dirname(join(dir, name)), { recursive: true }); writeFileSync(join(dir, name), content); }
   const script = name => spawnSync(process.execPath, [fileURLToPath(new URL(`./${name}`, import.meta.url)), ...(name === "derive-dashboard.mjs" ? ["--write"] : []), file], { encoding: "utf8" });
   try { return run({ file, derive: () => script("derive-dashboard.mjs"), validate: () => script("validate-journal.mjs"), read: () => readFileSync(file, "utf8") }); }
   finally { rmSync(dir, { recursive: true, force: true }); }
@@ -4329,4 +4329,42 @@ test("read-source: credit lines with captions, bold, tables, quotes and links co
   assert.equal(credited("[a.png](u) CC0"), true);
   assert.equal(credited("a.png2 CC0"), false);
   assert.equal(readLiaScript("# T\n![](1.png)\n## Image credits\n- 11.png – CC0\n").images[0].credit, false);
+});
+
+// ---- Stage 2a, T12: the switch design → full ("Content and structure"), as a real journal in fixtures/ ----
+
+// The course files the fixture records in its Material cells (data/file-structure-modes.md → Recorded paths): the
+// theme of ## Visual Identity is applied, each kept image credited.
+const compostTheme = "@style\n.lia-slide { --color-highlight: #2e7d32; }\n@end";
+const compostFiles = {
+  "course/compost-basics.md": `<!--\nauthor: A. Teacher\nlanguage: en\n${compostTheme}\n-->\n\n# What goes into compost\n\nGreen and brown material, air and water.\n\n![A compost heap with layers of leaves and kitchen scraps](img/heap.jpg)\n\n## Image credits\n\n- img/heap.jpg – CC0\n`,
+  "course/compost-practice.md": `<!--\nauthor: A. Teacher\nlanguage: en\n${compostTheme}\n-->\n\n# Building a compost bin\n\nWhere it stands, what goes in first.\n\n## Quiz\n\nWhat goes in first?\n\n- [(X)] Coarse twigs\n- [( )] Kitchen scraps\n`,
+  "course/img/heap.jpg": "jpg"
+};
+
+test("design → full: images and look stay, no approval round, outline next", () => {
+  const path = fixture("journal-design-to-full.md");
+  const after = deriveFile(path);
+  assert.equal(after.next.href, "agent:teaching/create-outline");
+  assert.ok(!(after.decisions ?? []).some(item => /^approve-unit-/.test(item.key)));
+  assert.deepEqual(after.units.map(unit => [unit.state, unit.approved]), [["done", true], ["done", true]]);
+  // The full track marks only the agenda (Agenda required: no); every other marker of the design track is gone.
+  assert.deepEqual(after.process.later.map(item => item.href), ["agent:teaching/activate-section?section=agenda"]);
+  const text = readFileSync(path, "utf8");
+  const journal = readJournal(text);
+  assert.equal(journal.track, "full");
+  assert.equal(journal.designScope, null);
+  assert.deepEqual(journal.later, ["Agenda"]);
+  assert.match(text, /^ {2}1\. Type: improve-existing$/m);
+  // Visual Identity and the image blocks stay; the recorded paths too.
+  assert.ok(journal.filled["Visual Identity"]);
+  assert.equal(journal.visualTheme.join("\n"), compostTheme);
+  assert.equal(text.split("\n#### Images\n").length - 1, 2);
+  assert.match(text, /\| 1 \| What goes into compost \| existing \| ✅ \| ✅ `course\/compost-basics\.md` \| ✅ \|/);
+  // The course summary keeps only check facts: the design result no longer opens publishing.
+  assert.equal(journal.validation.result, "FAIL");
+  const sessions = text.split("\n## Sessions")[1].split("\n## ")[0];
+  assert.match(sessions, /^_The units exist; the next step is the outline\._$/m);
+  const check = validateFile(path, compostFiles);
+  assert.equal(check.status, 0, check.output);
 });
