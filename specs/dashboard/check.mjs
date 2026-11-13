@@ -3859,8 +3859,8 @@ const designCourse = ({ scope = "both", theme = [], applied = [null, null], revi
 const deriveDesign = (opts = {}) => {
   const theme = opts.theme ?? [];
   const files = Object.fromEntries((opts.applied ?? []).map((applied, i) => [["course/a.md", "course/b.md"][i], `<!--\nauthor: A\n${applied ? `${theme.join("\n")}\n` : ""}-->\n# T\n`]));
-  const journal = readJournal(designJournalText(opts).replace("sessions-called: unit", "sessions-called: Einheit"), { projectDir: tmpProject(files) });
   const text = designJournalText(opts).replace("sessions-called: unit", "sessions-called: Einheit");
+  const journal = readJournal(text, { projectDir: tmpProject(files) });
   return { ...derive(journal, { title: "Design course", process: { steps: structuredClone(englishCourseSteps()) }, ...(opts.data ?? {}) }, { date: "2026-11-13" }), journal, text };
 };
 
@@ -4015,4 +4015,57 @@ test("no course-check link in the Sessions action line once the unit check is th
   };
   assert.doesNotMatch(design(true), /validate-course/);
   assert.match(design(false), /validate-course/);
+});
+
+// ---- T4 fix round 2: the Sessions line comes back; own photos and unread course files on the design track ----
+
+// One derive + patch run over a journal text (as derive-dashboard.mjs --write does), returning the new text.
+const patchRun = text => { const journal = readJournal(text); return patchJournal(text, journal, derive(journal, dashboardOf(text), { date: "2026-11-13" })).source; };
+const sessionsLine = text => {
+  const part = text.split(/^## Sessions[^\n]*\n/m)[1].split(/^### /m)[0];
+  const lines = part.split("\n");
+  const at = lines.findIndex(line => line.trim());
+  return lines[at]?.trim() === '<!-- class="journal-actions" -->' ? lines[at + 1] : null;
+};
+test("the Sessions action line comes back once links are due again (reopened unit, switch to the full track)", () => {
+  const approved = patchRun(miniState({ report: true, course: "PASS", approved: true, done: true }));
+  assert.equal(sessionsLine(approved), null, "approved: the line went with its marker");
+  // Reopened: Done no longer ✅ – the check is due again, the line is back directly below the heading.
+  const reopened = patchRun(approved.replace("| 1 | Reading a timetable | n/a | ✅ | ✅ | ✅ |", "| 1 | Reading a timetable | n/a | ✅ | ✅ | ❌ |"));
+  assert.match(sessionsLine(reopened) ?? "", /agent:teaching\/validate-course\) `:validate-course`/);
+  assert.match(reopened, /^## Sessions[^\n]*\n\n<!-- class="journal-actions" -->\n\[[^\n]*\n\n/m);
+  assert.equal(patchRun(reopened), reopened, "a second run changes nothing");
+  // Switch to the full track: the full track's Sessions line appears.
+  const full = patchRun(switchToFull(approved));
+  assert.match(sessionsLine(full) ?? "", /agent:teaching\/create-didactics/);
+  // A Sessions section marked when needed never gets a line.
+  const later = approved.replace(/(## Sessions[^\n]*\n)/, `$1\n${laterMarker}\n`).replace("| ✅ | ✅ | ✅ |", "| ✅ | ✅ | ❌ |");
+  assert.equal(sessionsLine(patchRun(later)), null);
+});
+test("design: a unit's images step waits for own photos (planned), current only as the course's next", () => {
+  // Reviewed, one own photo still to come, checked and approved, Done ✅: the photo is the course's next.
+  const photo = [{ status: "wanted", source: "own" }];
+  const waiting = designJournal({ scope: "images", theme: ["x"], reviewed: [true, true], images: [photo, []] });
+  const reportOf = n => `#### Validation report – unit ${n}\n\n<section data-key="validation-report">\n\n**Outcome:** passed (2026-11-13)\n\n**Usable with learners now:** yes\n\n<details><summary>Technical report</summary>\n\n__Result:__ PASS\n__Mode:__ session\n\n</details>\n\n</section>\n`;
+  const ready = waiting.replace(/\| ✅ \| ✅ (`course\/(a|b)\.md`) \| \|/g, "| ✅ | ✅ $1 | ✅ |")
+    .replace("- **2026-11-13:** look kept as it is", "- **2026-11-13:** material approved\n- **2026-11-13:** look kept as it is")
+    .replace("### 2. Unit B", `${reportOf(1)}\n### 2. Unit B`);
+  const journal = readJournal(ready, { projectDir: tmpProject({}) });
+  assert.equal(journal.units[0].images.waiting, 1, "the fixture has one own photo waiting");
+  const { data } = derive(journal, { title: "D" }, { date: "2026-11-13" });
+  // Unit 2 is not checked yet: it is the course's next – unit 1's photo waits, its step is planned.
+  assert.equal(data.next.href, "agent:teaching/validate-course?number=2");
+  assert.equal(data.units[0].process.steps[0].state, "planned");
+});
+test("design: a course file the model cannot read does not hold the look back – the unit's look step is optional", () => {
+  const { data } = deriveDesign({ scope: "look", theme: ["x"], applied: [true] });
+  assert.equal(data.process.steps[1].state, "done", "course level: no file says false");
+  assert.equal(data.units[1].process.steps[0].state, "optional", "unit 2: no readable course file");
+  assert.equal(data.units[0].process.steps[0].state, "done");
+});
+test("design next: only own photos left on a unit not marked Done – the unit's own action, never null", () => {
+  const photo = { total: 1, placed: 0, open: 1, waiting: 1 };
+  const journal = designCourse({ scope: "look", theme: ["x"], applied: [true, true], done: [true, true], delivery: "link" });
+  journal.units[0] = { ...journal.units[0], done: false, images: photo };
+  assert.equal(nextOf(journal), "agent:artist/create-image?number=1");
 });

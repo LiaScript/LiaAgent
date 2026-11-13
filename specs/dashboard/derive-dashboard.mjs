@@ -234,12 +234,23 @@ export function derive(journal, input, { date, previous } = {}) {
     // no entry is open; a step is in progress while the unit's own next action belongs to it.
     if (designTemplate) {
       const own = designUnitAction(facts, journal)?.key;
-      const designState = (title, done, keys, why) => {
+      const byAction = keys => keys.includes(own) ? "current" : "planned";
+      const designState = (title, state, why) => {
         const step = unit.process?.steps?.find(item => item.title === title);
-        if (step) set(step, "state", done ? "done" : keys.includes(own) ? "current" : "planned", `${path} step "${title}".state`, done ? why : own ? `the unit's next action: ${own}` : "not reached yet");
+        if (step) set(step, "state", state, `${path} step "${title}".state`, why);
       };
-      designState(lightTitles.look, facts.themeApplied === true, ["design-look", "apply-theme"], "the course file carries the theme");
-      designState(lightTitles.images, facts.imagesReviewed && facts.images.open === 0, ["review-images", "insert-images", ...(designKeys.includes("look") ? [] : ["design-look"])], "images reviewed, none open");
+      // Look: a course file the model cannot read (themeApplied null while a theme exists) does not hold the look
+      // back on the course level, so its unit step is optional – not done, and nothing for the unit to do.
+      const unread = facts.themeApplied == null && journal.visualTheme?.length > 0;
+      designState(lightTitles.look, facts.themeApplied === true ? "done" : unread ? "optional" : byAction(["design-look", "apply-theme"]),
+        facts.themeApplied === true ? "the course file carries the theme" : unread ? "course file not readable: the theme state is unknown" : `the unit's next action: ${own}`);
+      // Images: only own photos left wait for the instructor ("planned", SK41/SK60), current only as the course's next.
+      const { open: imagesOpen, waiting: imagesWaiting = 0 } = facts.images;
+      const ownOnly = facts.imagesReviewed && imagesOpen > 0 && imagesOpen === imagesWaiting;
+      const photoIsNext = expected?.key === "insert-images" && String(expected.params.number) === String(facts.n);
+      designState(lightTitles.images, facts.imagesReviewed && imagesOpen === 0 ? "done" : ownOnly ? (photoIsNext ? "current" : "planned")
+        : byAction(["review-images", "insert-images", ...(designKeys.includes("look") ? [] : ["design-look"])]),
+        facts.imagesReviewed && imagesOpen === 0 ? "images reviewed, none open" : ownOnly ? "only own photos still to come" : `the unit's next action: ${own}`);
     }
     // Only own photos still missing: the step waits for the instructor ("planned") – it becomes current again
     // when it is the next action (after the check, SK41).

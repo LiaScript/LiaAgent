@@ -218,15 +218,16 @@ export function unitIsCourseCheck(journal, states) {
 function designNext(journal, states) {
   if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");
   const scope = journal.designScope ?? "both";
-  if (scope !== "images") {
-    if (!journal.visualTheme?.length) return action("design-look", "artist", "create-visuals");
-    if (journal.units.some(unit => unit.themeApplied === false)) return action("apply-theme", "artist", "apply-theme");
-  } else if (!journal.filled["Visual Identity"]) return action("design-look", "artist", "create-visuals");
+  if (!lookSet(journal)) return action("design-look", "artist", "create-visuals");
+  if (scope !== "images" && journal.units.some(unit => unit.themeApplied === false)) return action("apply-theme", "artist", "apply-theme");
   if (scope !== "look") {
     const unreviewed = journal.units.find(unit => !unit.imagesReviewed);
     if (unreviewed) return action("review-images", "artist", "review-images", { number: unreviewed.n });
   }
-  const open = journal.units.find(unit => states.get(unit.n) !== "done" && !awaitsOwnMedia(unit));
+  // A unit only waiting for own photos does not hold the others back; once it is the last one left, its own
+  // action (the photo, the approval) is next – never nothing while work is left.
+  const open = journal.units.find(unit => states.get(unit.n) !== "done" && !awaitsOwnMedia(unit))
+    ?? journal.units.find(unit => states.get(unit.n) !== "done");
   if (open) return designUnitAction(open, journal);
   if (unitIsCourseCheck(journal, states) && ["link", "platform", "open"].includes(journal.delivery) && !journal.published) return publishOrDecide(journal);
   return null;
@@ -234,10 +235,12 @@ function designNext(journal, states) {
 
 // A design unit's main action, in the order of designNext: the look (set, then applied to its course file), its
 // images reviewed, then as on every track – its open images, the check, the approval.
+// The look is set: scope look/both – a theme in ## Visual Identity; scope images – the section filled (image style).
+const lookSet = journal => (journal.designScope ?? "both") === "images" ? Boolean(journal.filled["Visual Identity"]) : journal.visualTheme?.length > 0;
+
 export function designUnitAction(unit, journal) {
   const scope = journal.designScope ?? "both";
-  if (scope !== "images" && !journal.visualTheme?.length) return action("design-look", "artist", "create-visuals");
-  if (scope === "images" && !journal.filled?.["Visual Identity"]) return action("design-look", "artist", "create-visuals");
+  if (!lookSet(journal)) return action("design-look", "artist", "create-visuals");
   if (scope !== "images" && unit.themeApplied === false) return action("apply-theme", "artist", "apply-theme");
   if (scope !== "look" && !unit.imagesReviewed) return action("review-images", "artist", "review-images", { number: unit.n });
   return unitAction(unit);
@@ -430,7 +433,9 @@ const relabel = (text, icon, words) => words?.label ? text.replace(/^\[[^\]]*\]/
 
 // Rewrites the action lines of the core sections. A link that is already right – same command, same kind of
 // icon – keeps its command and takes the button word of the language pack (an older form of its icon is renewed); links the table does not allow go.
-// A line left without any link goes with its marker (an empty line would pass the marker on to the next block).
+// A line left without any link goes with its marker (an empty line would pass the marker on to the next block); the
+// ## Sessions line comes back directly below its heading (where templates/journal.md has it) once links are due
+// again and no marker stands before its first unit – never in a section marked when needed.
 export function patchSectionActions(source, journal, wordsFor, states = new Map()) {
   const lines = source.split("\n");
   const changes = [];
@@ -443,8 +448,15 @@ export function patchSectionActions(source, journal, wordsFor, states = new Map(
     if (at < 0) continue;
     let marker = at + 1;
     while (marker < lines.length && !lines[marker].trim()) marker++;
-    if (lines[marker]?.trim() !== '<!-- class="journal-actions" -->') continue;
-    const old = lines[marker + 1] ?? "";
+    const isMarker = line => line?.trim() === '<!-- class="journal-actions" -->';
+    let insert = false;
+    if (!isMarker(lines[marker])) {
+      const end = lines.findIndex((line, index) => index > at && /^#{2,3} /.test(line));
+      const region = lines.slice(at + 1, end < 0 ? lines.length : end);
+      if (key !== "Sessions" || !links.length || (journal.later ?? []).includes("Sessions") || region.some(isMarker)) continue;
+      insert = true;
+    }
+    const old = insert ? "" : lines[marker + 1] ?? "";
     const present = [...old.matchAll(linkPattern)].map(match => ({ text: match[0].trim(), href: match[2], label: match[1] }));
     const parts = [];
     let lacking = false;
@@ -460,7 +472,8 @@ export function patchSectionActions(source, journal, wordsFor, states = new Map(
     const next = parts.join(" · ");
     if (next === old) continue;
     changes.push({ path: `## ${key} action line`, from: old, to: next || undefined, why: next ? "actions that fit the state of the section" : "no action fits the state of the section" });
-    if (next) lines[marker + 1] = next;
+    if (insert) lines.splice(at + 1, 0, "", '<!-- class="journal-actions" -->', next);
+    else if (next) lines[marker + 1] = next;
     else lines.splice(marker, lines[marker + 2]?.trim() === "" ? 3 : 2);
   }
   return { source: lines.join("\n"), changes, missing };
