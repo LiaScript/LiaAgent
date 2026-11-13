@@ -27,6 +27,7 @@ MAIN_MD = "main.md"
 BUNDLE_ORDER = [
     (MAIN_MD, False),
     ("agents/teaching-agent.yaml", False),
+    ("agents/teaching-agent.nav.yaml", False),
     ("agents/learner-agent.yaml", False),
     ("agents/artist-agent.yaml", False),
     ("agents/development-agent.yaml", False),
@@ -92,7 +93,8 @@ def _read_file_bundle(file: Path, name: str) -> str:
     elif name.endswith(".json"):
         content = f"```json\n{content}\n```"
 
-    if name.startswith("agents/"):
+    # The nav part of the Teaching-Agent (commands, links, coordination) follows its definition as plain YAML.
+    if name.startswith("agents/") and not name.endswith(".nav.yaml"):
         generic = "".join([
             "  - ONLY load dependency files when explicitly invoked\n",
             "  - The agent.customization field ALWAYS takes precedence\n",
@@ -153,9 +155,12 @@ def _load_agent_yaml() -> dict:
         print("ERROR: PyYAML is required for navigation targets.")
         print("       Install it with: pip install pyyaml")
         sys.exit(1)
-    agent_file = BASE_DIR / "agents/teaching-agent.yaml"
-    with open(agent_file, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    # The core (read at start) and the nav part (commands, links, coordination), merged.
+    agent = {}
+    for name in ("agents/teaching-agent.yaml", "agents/teaching-agent.nav.yaml"):
+        with open(BASE_DIR / name, encoding="utf-8") as f:
+            agent.update(yaml.safe_load(f) or {})
+    return agent
 
 
 def _extract_task_file(desc: str) -> str:

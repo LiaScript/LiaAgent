@@ -415,12 +415,15 @@ if (visiblePlaceholders.length) problems.push(`${visiblePlaceholders.length} vis
   else if (typeof value === "string" && value.includes("{{")) problems.push(`Dashboard ${path} shows a template placeholder: "${value}"${path === "footer" && value.includes("{{YYYY-MM-DD}}") ? ` – ${migrateHint}` : ""}`);
 })(JSON.parse(source.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}"), "");
 // Every agent: link (overview data and action lines) names an agent and a command of its `commands:` map in
-// agents/{agent}-agent.yaml; `switch` is reserved for the persona switch (data/agent-links.md).
+// agents/{agent}-agent.yaml (the teaching agent's in its nav part, agents/teaching-agent.nav.yaml);
+// `switch` is reserved for the persona switch (data/agent-links.md).
 const agentCommands = (() => {
   const dir = resolve(here, "..", "agents");
   if (!existsSync(dir)) return null;
   return Object.fromEntries(readdirSync(dir).filter(name => /-agent\.ya?ml$/.test(name)).map(name => {
-    const block = readFileSync(join(dir, name), "utf8").split(/^commands:\s*$/m)[1]?.split(/^\S/m)[0] ?? "";
+    const nav = join(dir, name.replace(/\.ya?ml$/, ".nav.yaml"));
+    const text = readFileSync(join(dir, name), "utf8") + "\n" + (existsSync(nav) ? readFileSync(nav, "utf8") : "");
+    const block = text.split(/^commands:\s*$/m)[1]?.split(/^\S/m)[0] ?? "";
     return [name.replace(/-agent\.ya?ml$/, ""), new Set([...block.matchAll(/^ {2}:([\w-]+)/gm)].map(match => match[1]))];
   }));
 })();

@@ -12,6 +12,16 @@ import { laterOf } from "./dashboard/tracks.mjs";
 
 const specs = dirname(fileURLToPath(import.meta.url));
 const read = path => readFileSync(join(specs, path), "utf8");
+// The teaching agent is split (T5-111): the core read at start, and teaching-agent.nav.yaml with commands,
+// coordination, skills and links, which build.py renders into CLAUDE.md. Tests of those sections read both.
+const teachingAgent = () => read("agents/teaching-agent.yaml") + "\n" + (existsSync(join(specs, "agents/teaching-agent.nav.yaml")) ? read("agents/teaching-agent.nav.yaml") : "");
+const agentYaml = name => name === "teaching" ? teachingAgent() : read(`agents/${name}-agent.yaml`);
+const yamlCommands = text => Object.fromEntries([...(text.split(/^commands:\s*$/m)[1]?.split(/^\S/m)[0] ?? "").matchAll(/^ {2}(:[\w-]+[^:\n]*):\s*(.*)$/gm)].map(match => [match[1].trim(), match[2]]));
+// The fixed start reading of an agent: its core YAML and the rule sheets read once per session at start.
+const startLoad = agent => {
+  const files = [`agents/${agent}-agent.yaml`, "data/agent-links.md", "data/chat-wording.md", "data/chat-language.md", "data/chat-memory.md"];
+  return { files, bytes: files.reduce((sum, file) => sum + Buffer.byteLength(read(file)), 0) };
+};
 
 // File → sentences that must stay (one key phrase per rule).
 const required = {
@@ -82,7 +92,7 @@ const flat = text => text.replace(/\s+/g, " ");
 for (const [file, phrases] of Object.entries(required)) {
   test(`${file} keeps its key rules`, () => {
     assert.ok(existsSync(join(specs, file)), `${file} is missing`);
-    const text = flat(read(file));
+    const text = flat(file === "agents/teaching-agent.yaml" ? teachingAgent() : read(file));
     for (const phrase of phrases) assert.ok(text.includes(flat(phrase)), `${file} lost: "${phrase}"`);
   });
 }
@@ -129,7 +139,7 @@ test("commands never stand in the chat, only in journal.md after their link", ()
 test("start: the first command after liadev init creates the empty journal, opens the browser and greets in the chat", () => {
   const task = read("tasks/start.md");
   for (const phrase of ["`cp specs/templates/journal.md journal.md`", "run `liadev init` in this folder first", "`tasks/open-chat.md` steps 2–5", "Language before the frame", "Do not start a server yourself"]) assert.ok(task.includes(phrase), `tasks/start.md lost: ${phrase}`);
-  const yaml = read("agents/teaching-agent.yaml");
+  const yaml = teachingAgent();
   assert.match(yaml, /^ {2}:start: "run task `tasks\/start\.md`/m);
   assert.match(yaml, /on_activation:\n\s+- "If the instructor's first message is only `start`/, "start is the first activation rule");
   assert.match(read("data/agent-links.md"), /\| \*\*run\*\* \|[^\n]*`start`/);
@@ -163,7 +173,7 @@ test("chat memory: the chat is picked up after a restart from the last save mark
   assert.match(read("data/agent-links.md"), /\| `data\/chat-memory\.md` \|/, "the Rule sheets table lists chat-memory.md");
   assert.ok(read("data/chat-dialog.md").includes("ends with `<!--- saved: {what} --->` as its last line") && read("data/chat-dialog.md").includes("never in a message without a save"), "chat-dialog.md carries the save marker rule");
   for (const task of ["tasks/start.md", "tasks/open-chat.md"]) assert.match(read(task), /data\/chat-memory\.md/, `${task} does not name chat-memory.md`);
-  assert.match(read("agents/teaching-agent.yaml"), /\(5\) `read_chat` without arguments:[^"]*data\/chat-memory\.md/);
+  assert.match(teachingAgent(), /\(5\) `read_chat` without arguments:[^"]*data\/chat-memory\.md/);
   // R5/R6: the rule "no arguments" must stand where read_chat is called, not only in the sheet read after the call (T5-106).
   for (const task of ["tasks/start.md", "tasks/open-chat.md"]) assert.match(read(task), /`read_chat` without arguments/, `${task} calls read_chat without "without arguments"`);
 });
@@ -188,7 +198,7 @@ test("the workflow quick reference lists every agent command with its signature"
   const generic = new Set([":agent", ":help", ":exit", ":list-agents"]);
   const workflow = read("workflows/course-development.yaml");
   for (const agent of ["teaching", "artist", "learner", "development"]) {
-    const keys = [...read(`agents/${agent}-agent.yaml`).matchAll(/^\s{2}(:[\w-]+[^:\n]*):/gm)].map(match => match[1].trim())
+    const keys = [...agentYaml(agent).matchAll(/^\s{2}(:[\w-]+[^:\n]*):/gm)].map(match => match[1].trim())
       .filter(key => !generic.has(key.split(" ")[0]));
     const list = workflow.split(`${agent}_agent_commands:`)[1]?.split(/\n\s*\n/)[0] ?? "";
     const listed = [...list.matchAll(/^\s*- (:.+)$/gm)].map(match => match[1].trim());
@@ -210,8 +220,8 @@ test("the Development-Agent builds and publishes own templates: commands, tiers,
     assert.ok(read(`tasks/${task}.md`).includes("tasks/update-dashboard.md"), `${task} does not run update-dashboard`);
     assert.ok(triggers.includes(`:${task}`), `${task} is missing in the update-dashboard trigger list`);
   }
-  assert.match(read("agents/teaching-agent.yaml"), /`:publish-template`[^"]*`gh repo create`[^"]*`gh repo fork`[^"]*`gh pr create`[^"]*`rm -r \.cache\/catalog-pr`/, "shell list lacks the named git/gh calls of publish-template");
-  assert.doesNotMatch(read("agents/teaching-agent.yaml"), /the others its plan lists/, "the shell list names the publish-template commands, not 'the others'");
+  assert.match(teachingAgent(), /`:publish-template`[^"]*`gh repo create`[^"]*`gh repo fork`[^"]*`gh pr create`[^"]*`rm -r \.cache\/catalog-pr`/, "shell list lacks the named git/gh calls of publish-template");
+  assert.doesNotMatch(teachingAgent(), /the others its plan lists/, "the shell list names the publish-template commands, not 'the others'");
   const readme = read("../README.md");
   for (const key of [":develop-template {id}", ":publish-template {id}"]) assert.ok(readme.includes(`\`${key}\``), `README.md lacks ${key}`);
   assert.match(readme, /\| `liascript-templates` \| 🛠️ Development \|[^\n]*`:develop-template`/, "README.md skills table lacks the Development row");
@@ -223,7 +233,7 @@ test("the Development-Agent builds and publishes own templates: commands, tiers,
 
 test("every task file an agent's commands run exists", () => {
   for (const agent of ["teaching", "artist", "learner", "development"]) {
-    const files = [...read(`agents/${agent}-agent.yaml`).matchAll(/run task `(tasks\/[\w-]+\.md)`/g)].map(match => match[1]);
+    const files = [...agentYaml(agent).matchAll(/run task `(tasks\/[\w-]+\.md)`/g)].map(match => match[1]);
     assert.deepEqual([...new Set(files)].filter(file => !existsSync(join(specs, file))), [], `${agent}-agent.yaml runs a task file that does not exist`);
   }
 });
@@ -260,13 +270,13 @@ test("a task that runs only in a light track names no section its track marks wh
 
 test("preview is a navigation command of every agent", () => {
   for (const agent of ["teaching", "artist", "learner", "development"]) {
-    assert.match(read(`agents/${agent}-agent.yaml`), /^  :preview \{file\?\} \{slide\?\}:/m, `${agent} has no :preview`);
+    assert.match(agentYaml(agent), /^  :preview \{file\?\} \{slide\?\}:/m, `${agent} has no :preview`);
   }
 });
 
 test("open-chat is a navigation command of every agent and opens a collapsed chat", () => {
   for (const agent of ["teaching", "artist", "learner", "development"]) {
-    assert.match(read(`agents/${agent}-agent.yaml`), /^  :open-chat: "run task `tasks\/open-chat\.md`/m, `${agent} has no :open-chat`);
+    assert.match(agentYaml(agent), /^  :open-chat: "run task `tasks\/open-chat\.md`/m, `${agent} has no :open-chat`);
   }
   const task = read("tasks/open-chat.md");
   assert.match(task, /A `chat` message also unfolds a collapsed\s+chat/);
@@ -327,7 +337,7 @@ test("cheat sheet quiz examples put the attribute comment above the options and 
 });
 
 test("skills are detected by their installed names; old names only as aliases", () => {
-  const files = ["data/skills.md", "agents/teaching-agent.yaml", "agents/development-agent.yaml", "tasks/create-project.md", "tasks/update-project.md", "tasks/manage-templates.md", "tasks/suggest-templates.md", "tasks/develop-template.md", "tasks/publish-template.md"];
+  const files = ["data/skills.md", "agents/teaching-agent.yaml", "agents/teaching-agent.nav.yaml", "agents/development-agent.yaml", "tasks/create-project.md", "tasks/update-project.md", "tasks/manage-templates.md", "tasks/suggest-templates.md", "tasks/develop-template.md", "tasks/publish-template.md"];
   for (const file of files) {
     for (const old of ["exporter-workflow", "template-development"]) {
       const lines = read(file).split("\n").filter(line => line.includes(old) && !/older name/.test(line));
@@ -345,11 +355,11 @@ test("skills and Playwright are installed only after consent, project-local, ask
   for (const phrase of ["no installed Playwright found", "has no browser of its own", "npm i -D playwright", "npx playwright install chromium", "npm init -y", "`--with-deps`"]) assert.ok(checks.includes(phrase), `data/chat-checks.md lost: ${phrase}`);
   assert.match(checks, /not for\s+every exit code 2/);
   assert.match(read("tasks/build-session.md"), /before the start confirmation run `node specs\/dashboard\/check-material\.mjs[^\n]*ask once in the terminal \*\*before the run starts\*\*/i);
-  for (const file of ["agents/teaching-agent.yaml", "agents/development-agent.yaml", "agents/artist-agent.yaml"]) assert.match(read(file), /Installing a Missing Skill/, `${file} does not point to the install rule`);
+  for (const file of ["agents/teaching-agent.nav.yaml", "agents/development-agent.yaml", "agents/artist-agent.yaml"]) assert.match(read(file), /Installing a Missing Skill/, `${file} does not point to the install rule`);
   for (const file of ["tasks/coauthor-materials.md", "tasks/quick-fix.md", "tasks/validate-course.md", "tasks/build-session.md"]) assert.match(read(file), /Offering the Rendered Check/, `${file} does not point to the Playwright offer`);
-  assert.match(read("agents/teaching-agent.yaml"), /npm i -D playwright/, "shell list lacks the installs");
+  assert.match(teachingAgent(), /npm i -D playwright/, "shell list lacks the installs");
   assert.match(read("data/agent-links.md"), /skill and Playwright installs/, "tier table lacks the installs");
-  for (const file of ["data/skills.md", "agents/teaching-agent.yaml", "agents/development-agent.yaml", "agents/artist-agent.yaml", "tasks/create-project.md", "tasks/update-project.md", "../README.md"]) assert.doesNotMatch(read(file), /never install/i, `${file} still forbids installing`);
+  for (const file of ["data/skills.md", "agents/teaching-agent.yaml", "agents/teaching-agent.nav.yaml", "agents/development-agent.yaml", "agents/artist-agent.yaml", "tasks/create-project.md", "tasks/update-project.md", "../README.md"]) assert.doesNotMatch(read(file), /never install/i, `${file} still forbids installing`);
 });
 
 test("authoring notes in the journal template are <!--- … ---> so LiaScript ignores them", () => {
@@ -371,7 +381,7 @@ test("one unit word (no lectures-called), no early build link, cp only for the e
     assert.ok(!read(file).includes("lectures-called"), `${file} still uses lectures-called`);
   }
   assert.ok(!read("templates/session-skeleton.yaml").includes("agent:teaching/build-session"), "the skeleton offers build-session before an approved unit");
-  assert.match(read("agents/teaching-agent.yaml"), /`cp specs\/templates\/journal\.md journal\.md`/);
+  assert.match(teachingAgent(), /`cp specs\/templates\/journal\.md journal\.md`/);
 });
 
 test("leftovers of the first test round stay fixed", () => {
@@ -579,7 +589,7 @@ test("a type's display name must not repeat the unit word; its slug may", () => 
 
 test("session commands identify a unit by its number; the type is never a parameter", () => {
   const keys = ["teaching", "artist", "learner", "development"].flatMap(agent =>
-    [...read(`agents/${agent}-agent.yaml`).matchAll(/^\s{2}(:[\w-]+[^:\n]*):/gm)].map(match => match[1]));
+    [...agentYaml(agent).matchAll(/^\s{2}(:[\w-]+[^:\n]*):/gm)].map(match => match[1]));
   assert.deepEqual(keys.filter(key => /\{type\??\}/.test(key) && !key.startsWith(":save-notes")), []);
   const walk = dir => readdirSync(dir).flatMap(name => {
     const path = join(dir, name);
@@ -683,7 +693,7 @@ test("outdated state wordings are recognised, never recommended; the current ter
 
 
 test("every helper script in specs/dashboard and specs/catalog is on the shell list of the YAML and of the built CLAUDE.md", () => {
-  const yaml = read("agents/teaching-agent.yaml");
+  const yaml = teachingAgent();
   const built = readFileSync(join(specs, "..", "CLAUDE.md"), "utf8");
   // Modules of the scripts declare themselves in their first line ("// Module for …") and are no commands.
   for (const folder of ["dashboard", "catalog"]) {
@@ -706,13 +716,13 @@ test("older journals: the validator's migration hint leads to a confirmed migrat
 });
 
 test("the agent YAML carries no outdated journal rules: no {{…}} skeletons, all write ways, re-reading named inputs", () => {
-  const yaml = read("agents/teaching-agent.yaml");
+  const yaml = teachingAgent();
   assert.doesNotMatch(yaml, /keep their `\{\{\.\.\.\}\}` placeholder skeleton/, "the empty journal has one-line notes, not {{…}} skeletons");
   assert.doesNotMatch(yaml, /bullet skeleton per section/);
   assert.doesNotMatch(yaml, /only with the file-edit tool, and re-read/, "the line replacer and write_section are allowed write ways too");
   assert.match(yaml, /every file its Inputs mark as read completely/);
   assert.match(yaml, /Read `specs\/agents\/teaching-agent\.yaml` completely once per session/);
-  for (const name of ["teaching", "artist", "learner", "development"]) assert.match(read(`agents/${name}-agent.yaml`), /the switch is one short message signed by the new agent/, `${name}-agent.yaml`);
+  for (const name of ["teaching", "artist", "learner", "development"]) assert.match(agentYaml(name), /the switch is one short message signed by the new agent/, `${name}-agent.yaml`);
 });
 
 test("language packs cover the empty journal in both directions: every visible line is translated or an English key tasks read", () => {
@@ -753,7 +763,7 @@ test("agent rules: a lean core, topic sheets named where they are used, no refer
   assert.ok(core.split("\n").length <= 400, `data/agent-links.md has ${core.split("\n").length} lines – keep the core under 400, topics go into the rule sheets`);
   const sheets = readdirSync(join(specs, "data")).filter(name => /^(chat-.*|journal-links)\.md$/.test(name)).map(name => `data/${name}`);
   assert.ok(sheets.length >= 6, "the rule sheets exist");
-  const yaml = read("agents/teaching-agent.yaml");
+  const yaml = teachingAgent();
   for (const sheet of sheets) {
     assert.ok(core.includes(`\`${sheet}\``), `${sheet} is missing from the index (Chat Conduct → Rule sheets)`);
     assert.ok(yaml.includes(`- ${sheet.slice(5)}`), `${sheet} is missing from the YAML's data dependencies`);
@@ -777,4 +787,27 @@ test("light tracks: every agent skips sections marked when needed; every pack ha
   for (const name of readdirSync(join(specs, "templates", "i18n")).filter(item => item.endsWith(".json"))) assert.ok(JSON.parse(read(`templates/i18n/${name}`)).terms?.miniSessionsNote, `${name}: terms.miniSessionsNote is missing`);
   assert.doesNotMatch(read("data/journal-links.md"), /convert-course/, "a rule sheet points stage 1 agents at a command that does not exist yet");
   assert.match(read("data/agent-links.md"), /\| `data\/chat-memory\.md` \|[^\n]*\| `start`, `open-chat`, start order \|/);
+});
+
+test("the fixed start reading stays within its budget (T5-111)", () => {
+  // 64 kB, not 60 kB: the split core (≈16 kB) plus the four rule sheets read at start (≈44 kB) leave no headroom at 60 kB.
+  for (const agent of ["teaching", "artist", "learner", "development"]) {
+    const { bytes, files } = startLoad(agent);
+    assert.ok(bytes <= 64_000, `${agent}: start reading ${bytes} bytes > 64000 (${files.join(", ")})`);
+  }
+  assert.ok(Buffer.byteLength(read("agents/teaching-agent.yaml")) <= 16_000, "teaching-agent.yaml core ≤ 16 kB");
+});
+
+test("CLAUDE.md carries what moved to teaching-agent.nav.yaml", () => {
+  const claude = readFileSync(join(specs, "..", "CLAUDE.md"), "utf8");
+  const commands = Object.keys(yamlCommands(teachingAgent()));
+  assert.ok(commands.length >= 20, `the teaching agent has its commands (${commands.length})`);
+  for (const key of commands) assert.ok(claude.includes(key.split(" ")[0]), key);
+  assert.ok(existsSync(join(specs, "agents/teaching-agent.nav.yaml")), "agents/teaching-agent.nav.yaml is missing");
+  for (const section of ["agent_coordination", "skills", "agent_links", "commands"]) {
+    assert.doesNotMatch(read("agents/teaching-agent.yaml"), new RegExp(`^${section}:`, "m"), `${section} still stands in the core`);
+    assert.match(read("agents/teaching-agent.nav.yaml"), new RegExp(`^${section}:`, "m"), `${section} is missing from the nav file`);
+  }
+  assert.ok(claude.includes("Read `specs/agents/teaching-agent.yaml` completely once per session (the core; CLAUDE.md carries its commands, links and coordination)"), "On Activation names the core");
+  assert.match(claude, /\(2\) read the header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` of `journal\.md`/, "start order reads only the head of the journal");
 });
