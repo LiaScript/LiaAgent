@@ -3649,3 +3649,52 @@ test("T5-91: write-dashboard names the open points it adds and removes", () => {
     assert.doesNotMatch(again.stdout, /decisions added/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ---- Model tests (stage 2a, T2): the mini course and the switch mini → full, as real journals in fixtures/ ----
+
+// The fixtures are written by the rules of tasks/init-course.md → Mini Track and tasks/activate-section.md → Track
+// switch; their Dashboard blocks come from derive-dashboard.mjs --write.
+const fixture = name => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
+// The overview as derive computes it from a journal file (the derived Dashboard data).
+const deriveFile = path => { const text = readFileSync(path, "utf8"); return derive(readJournal(text), dashboardOf(text), { date: "2026-11-11" }).data; };
+// The material of the fixtures: the mini course's README.md, and the same file restructured by the switch (unit 1
+// becomes its `##` chapter with a chapter slide, the former slides `###`).
+const waterReadme = "<!--\nauthor: A. Beispiel\nversion: 0.1.0\nlanguage: de\nnarrator: Deutsch Female\n-->\n\n# Der Wasserkreislauf\n\nHier wiederholst du, wie das Wasser auf der Erde im Kreis wandert. Am Ende kannst du die Stationen nennen und ordnen. Klicke auf ▶, dann wird dir jeder Text vorgelesen.\n\n## Wo ist das Wasser?\n\nIm Meer, in Flüssen und Seen, in den Wolken und im Boden.\n\n## Quiz: Was passiert zuerst?\n\nDie Sonne wärmt das Meer. Was passiert danach?\n\n- [( )] Es regnet.\n- [(X)] Wasser verdunstet.\n- [( )] Der Fluss fließt ins Meer.\n\n## Geschafft!\n\n- [[ ]] Ich kann die Stationen des Wasserkreislaufs nennen.\n";
+const waterReadmeFull = restructureReadme(waterReadme, "Lernseite: Der Wasserkreislauf")
+  .replace("## Lernseite: Der Wasserkreislauf\n\n", "## Lernseite: Der Wasserkreislauf\n\nIn drei Schritten: wo das Wasser ist, was zuerst passiert, was du jetzt kannst.\n\n");
+// validate-journal.mjs on a journal file, in a project folder with the material next to it.
+const validateFile = (path, files = { "README.md": waterReadmeFull }) => inMiniProject(readFileSync(path, "utf8"), files, ({ validate }) => {
+  const run = validate();
+  return { status: run.status, output: run.stdout + run.stderr };
+});
+// The journal text with one more open point appended to the Dashboard block.
+const withDecision = (path, item) => {
+  const text = readFileSync(path, "utf8");
+  const data = dashboardOf(text);
+  data.decisions = [...(data.decisions ?? []), item];
+  return text.replace(/```json @Dashboard\.View\n[\s\S]*?\n```/, dashJson(data));
+};
+
+test("mini → full: no new approval round, outline first, agenda later (T5-71/67/74)", () => {
+  const after = deriveFile(fixture("journal-mini-to-full.md"));
+  assert.equal(after.next.href, "agent:teaching/create-outline");
+  assert.ok(!(after.decisions ?? []).some(item => /approve-unit-1/.test(item.key)));
+  assert.equal(after.units[0].approved, true);
+  assert.deepEqual(after.process.later.map(item => item.href), ["agent:teaching/activate-section?section=agenda"]);
+  assert.equal(after.units.length, 1);
+  assert.equal(after.unitsPlanned, 2);
+  const check = validateFile(fixture("journal-mini-to-full.md"));
+  assert.equal(check.status, 0, check.output);
+  // The one warning that stays is right: the course frame plans 2 units, the outline describes 1 – the same fact that
+  // makes completing the outline `next` (T5-67 asserts this warning). Any other warning fails.
+  const warnings = (check.output.split("Warnings:\n")[1] ?? "").split(/\n(?:ERRORS:|Exit code)/)[0].split("\n").filter(Boolean);
+  assert.deepEqual(warnings, ["- course profile plans 2 units, the outline describes 1 – complete the outline (:create-outline)"], check.output);
+});
+test("mini, approved: the unit check is the course check (T5-53)", () => {
+  const mini = deriveFile(fixture("journal-mini-approved.md"));
+  assert.notEqual(mini.next?.href, "agent:teaching/validate-course");
+});
+test("a stale approval item next to an approved unit is reported (T5-88)", () => {
+  const broken = withDecision(fixture("journal-mini-to-full.md"), { key: "approve-unit-1", kind: "prepare", title: "Unit 1 – look at it and approve", how: "…" });
+  assert.match(validateText(broken).output, /unit 1 is approved, but the overview asks to approve it again/);
+});
