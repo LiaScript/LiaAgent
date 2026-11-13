@@ -3683,6 +3683,10 @@ test("mini → full: no new approval round, outline first, agenda later (T5-71/6
   assert.deepEqual(after.process.later.map(item => item.href), ["agent:teaching/activate-section?section=agenda"]);
   assert.equal(after.units.length, 1);
   assert.equal(after.unitsPlanned, 2);
+  // The one-line note of ## Sessions says that unit 1 exists (tasks/activate-section.md → Track switch step 2).
+  const sessions = readFileSync(fixture("journal-mini-to-full.md"), "utf8").split("\n## Sessions")[1].split("\n## ")[0];
+  assert.match(sessions, /^_Lernseite 1 ist fertig; die nächsten Lernseiten entstehen nach der Didaktik\._$/m);
+  assert.doesNotMatch(sessions, /Noch keine/);
   const check = validateFile(fixture("journal-mini-to-full.md"));
   assert.equal(check.status, 0, check.output);
   // The one warning that stays is right: the course frame plans 2 units, the outline describes 1 – the same fact that
@@ -3693,6 +3697,8 @@ test("mini → full: no new approval round, outline first, agenda later (T5-71/6
 test("mini, approved: the unit check is the course check (T5-53)", () => {
   const mini = deriveFile(fixture("journal-mini-approved.md"));
   assert.notEqual(mini.next?.href, "agent:teaching/validate-course");
+  assert.equal(mini.next.href, "agent:development/create-project");
+  assert.equal(mini.units[0].approved, true);
 });
 test("a stale approval item next to an approved unit is reported (T5-88)", () => {
   const broken = withDecision(fixture("journal-mini-to-full.md"), { key: "approve-unit-1", kind: "prepare", title: "Unit 1 – look at it and approve", how: "…" });

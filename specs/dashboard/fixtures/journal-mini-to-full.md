@@ -356,6 +356,8 @@ _Bei Bedarf – für diesen Kurs noch nicht nötig._
 
 <!--- Managed by :create-session, :promote-session, :coauthor-materials and :validate-course. Overview first — status list, then the technical table in <details> (templates/session-skeleton.yaml → section_layout.overview) — then one `### {n}. {title}` subsection per session. --->
 
+_Lernseite 1 ist fertig; die nächsten Lernseiten entstehen nach der Didaktik._
+
 <!--- One subsection per session, structured like this:
 
 `### {n}. {Session Title}` (the heading line of each subsection)
