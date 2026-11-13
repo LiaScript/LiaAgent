@@ -88,14 +88,16 @@ export function readLiaScript(text) {
   }
   const creditPattern = /(bild|image|foto|photo).*(nachweis|credit|quelle|source)|^(quellen|sources|lizenz|licen[cs]e)/i;
   // File names compare decoded, with "_" as space and in lower case: "a%2C_b.jpg" is credited by "File:A,_b.jpg";
-  // the name starts the credit text or follows a space, "/", ":", "(", "[" or "`" ("1.png" is not credited by "11.png").
+  // no letter or digit may stand right before or after the name ("1.png" is not credited by "11.png" or "1.png2").
   const plain = value => value.replace(/(%[0-9A-F]{2})+/gi, code => { try { return decodeURIComponent(code); } catch { return code; } }).replace(/_/g, " ").toLowerCase();
-  // Images standing on a credit slide do not credit themselves: their own markup is left out.
+  // An image on a credit slide credits itself only with a caption on its line ("![](a.png) Foto: CC BY"); the markup
+  // of an image standing alone there is left out.
+  const markup = /(?<!\?)!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>/gi;
   const credits = plain(slides.filter(slide => creditPattern.test(slide.title)).map(slide => bodies[slide.n]).join("\n")
-    .replace(/(?<!\?)!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>/gi, " "));
+    .split("\n").map(line => /[\p{L}\p{N}]/u.test(line.replace(markup, " ")) ? line : line.replace(markup, " ")).join("\n"));
   for (const image of images) {
     const name = plain(basename(image.target.split(/[?#]/)[0]));
-    image.credit = Boolean(name) && new RegExp(`(^|[\\s/:(\\[\`])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(credits);
+    image.credit = Boolean(name) && new RegExp(`(?<![\\p{L}\\p{N}])${name.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u").test(credits);
   }
   return { header: { theme: styling.flatMap(item => item.lines), styling, imports }, slides, images };
 }

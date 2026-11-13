@@ -4274,3 +4274,15 @@ test("read-source: URLs – HTML read, PDF info, other types and errors refused,
     assert.match(missing.output, /HTTP 404/);
   } finally { server.close(); }
 });
+test("read-source: credit lines with captions, bold, tables, quotes and links count; a bare image on the credit slide does not", () => {
+  const credited = line => readLiaScript(`# T\n![](img/a.png)\n## Image credits\n${line}\n`).images[0].credit;
+  assert.equal(credited("![](img/a.png) Foto: CC BY"), true);
+  assert.equal(credited("![x](a.png)"), false);
+  assert.equal(credited("**a.png** CC0"), true);
+  assert.equal(credited("|a.png|CC0|"), true);
+  assert.equal(credited("\"a.png\" CC0"), true);
+  assert.equal(credited("- a.png – CC BY 4.0"), true);
+  assert.equal(credited("[a.png](u) CC0"), true);
+  assert.equal(credited("a.png2 CC0"), false);
+  assert.equal(readLiaScript("# T\n![](1.png)\n## Image credits\n- 11.png – CC0\n").images[0].credit, false);
+});
