@@ -6,7 +6,7 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
-import { readJournal, loadPacks, recheckOpenText, approvalTails, withoutApproval } from "./journal-model.mjs";
+import { readJournal, loadPacks, recheckOpenText, approvalTails, withoutApproval, recordedPath } from "./journal-model.mjs";
 import { unitState } from "./derive-dashboard.mjs";
 import { unitIsCourseCheck, outlineShort, englishActions } from "./actions.mjs";
 import { trackIds, sectionSlug, stepsOf, laterHidden, laterOf } from "./tracks.mjs";
@@ -333,11 +333,10 @@ const fileMode = section("Course Context").match(/Mode:\s*(single-file|multi-fil
 // (mini, convert) the whole README.md is unit 1 (data/file-structure-modes.md → Light tracks).
 const readme = () => existsSync(join(projectDir, "README.md")) ? readFileSync(join(projectDir, "README.md"), "utf8") : "";
 const lightTrack = /^\s*\d+\.\s*Track:\s*(mini|convert)\b/m.test(section("Course Context"));
-// multi-file: a Material cell may name the path of an existing course whose folder keeps its own name
-// ("✅ `materials/carpentry-joints/README.md`", data/file-structure-modes.md → Recorded paths); else
-// materials/{n}-…/README.md.
+// multi-file: a Material cell may name the path of an existing course file in the project, e.g. a folder that keeps
+// its own name ("✅ `materials/carpentry-joints/README.md`", data/file-structure-modes.md → Recorded paths;
+// journal-model.mjs → recordedPath); else materials/{n}-…/README.md.
 const recordedPaths = new Map();
-const recordedPath = cell => cell?.match(/\bmaterials\/[^\s`|)]+\.md\b/)?.[0] ?? null;
 const materialFile = number => {
   const recorded = recordedPaths.get(number);
   if (recorded) return existsSync(join(projectDir, recorded)) ? join(projectDir, recorded) : null;

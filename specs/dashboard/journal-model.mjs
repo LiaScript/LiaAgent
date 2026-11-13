@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isLater, trackIds, stepsOf, englishLightStepTitles } from "./tracks.mjs";
+import { isLater, trackIds, stepsOf, englishLightStepTitles, stepTitleKey } from "./tracks.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -55,7 +55,8 @@ export const englishTerms = {
   recheckDone: "re-checked",
   recheckShort: "{n} point(s) changed since – short re-check open",
   correctionOpen: "correction needed: {open} of {n} points open",
-  usableYes: "yes", usableLimited: "yes, with limits: {what}", usableNo: "not yet: {why}"
+  usableYes: "yes", usableLimited: "yes, with limits: {what}", usableNo: "not yet: {why}",
+  imagesReviewed: "images reviewed"
 };
 
 // LiaScript slide anchor: full heading text, lower case, spaces and "-" collapse to one "-", punctuation stays.
@@ -69,8 +70,29 @@ const datePattern = /(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\
 const stripComments = text => text.replace(/<!--[\s\S]*?-->/g, "");
 // "not approved", "noch nicht freigegeben" … do not count.
 const approvedWord = /(?<!\b(?:nicht|noch nicht|not|not yet)\s)\b(freigegeben|approved)\b/i;
-// Image statuses (tasks/create-image.md): placed in the material, or still open.
-const placedStatuses = ["inserted", "generated"];
+// Image statuses (tasks/create-image.md): placed in the material, or still open. `existing`: an image the course
+// already had (design track, :review-images).
+const placedStatuses = ["inserted", "generated", "existing"];
+
+// A unit's course file recorded in the Material cell of the technical table (data/file-structure-modes.md →
+// Recorded paths): the path in backticks, relative to the project, ending in `.md`, without `..` and without a
+// scheme; percent-encoding as in Markdown links is decoded ("docs/Kurs%20(neu).md" → "docs/Kurs (neu).md").
+export function recordedPath(cell) {
+  for (const [, raw] of String(cell ?? "").matchAll(/`([^`\n]+)`/g)) {
+    let path = raw.trim();
+    try { path = decodeURIComponent(path); } catch { /* keep as written */ }
+    if (!/\.md$/i.test(path) || /^[a-z][a-z\d+.-]*:/i.test(path) || /^[\\/]/.test(path) || path.split(/[\\/]/).includes("..")) continue;
+    return path.replace(/^\.\//, "");
+  }
+  return null;
+}
+
+// The header of a LiaScript file: the inner text of the first HTML comment before the first `#` heading, else "".
+export function headerOf(markdown) {
+  const text = String(markdown ?? "");
+  const heading = text.search(/^#{1,6}\s/m);
+  return (heading >= 0 ? text.slice(0, heading) : text).match(/<!--([\s\S]*?)-->/)?.[1] ?? "";
+}
 
 export function readJournal(source, { projectDir = ".", packs = loadPacks() } = {}) {
   const language = (source.match(/^language:\s*(\w+)/m)?.[1] ?? "en").slice(0, 2).toLowerCase();
@@ -93,9 +115,12 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   // open: not decided yet – publishing waits until the instructor settles it (T5-54).
   const delivery = context.match(/Delivery:\s*(link|platform|print|local|open)\b/i)?.[1].toLowerCase() ?? null;
 
-  // The track (full when the field is missing), its convert mode and source.
-  const track = context.match(/^\s*\d+\.\s*Track:\s*(full|mini|convert|template)\b/m)?.[1] ?? trackIds[0];
+  // The track (full when the field is missing), its convert mode, design scope and source; trackMode is the mode
+  // the steps of the track depend on (tracks.mjs → stepsOf).
+  const track = context.match(/^\s*\d+\.\s*Track:\s*(full|mini|convert|template|design)\b/m)?.[1] ?? trackIds[0];
   const convertMode = context.match(/Convert mode:\s*(transfer|rebuild)\b/)?.[1] ?? null;
+  const designScope = context.match(/Design scope:\s*(look|images|both)\b/)?.[1] ?? null;
+  const trackMode = track === "convert" ? convertMode : track === "design" ? designScope : null;
   const sourceValue = context.match(/^\s*\d+\.\s*Source:\s*(.+)$/m)?.[1].trim();
   const source_ = !sourceValue || /^n\/a$/i.test(sourceValue) ? null : sourceValue;
   // Sections marked "when needed": every ## section and ### Learner Personas under ## Agents.
@@ -108,6 +133,10 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   const agenda = agendaUnits(section("Agenda"));
   const sessions = section("Sessions");
   const units = readUnits(sessions, terms);
+  // The course theme (## Visual Identity → `__LiaScript Theme:__`, templates/visuals.yaml): the non-empty lines of
+  // its ```text block. A course file carries the theme when every one of them stands in its header.
+  const visualTheme = later.includes("Visual Identity") ? [] : themeLines(section("Visual Identity"));
+  for (const item of units.values()) item.themeApplied = themeApplied(item.file, visualTheme, projectDir);
 
   // Every unit the journal knows: agenda rows, subsections, table rows and status lines.
   const numbers = [...new Set([...agenda.map(row => row.n), ...units.keys()])].sort((a, b) => Number(a) - Number(b));
@@ -130,7 +159,7 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   const validationSummary = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
   return {
     language, terms, pack, headings, terminology, delivery, hasAgenda: agenda.length > 0, units: list, projectDir,
-    track, convertMode, source: source_, later, personasSuffix,
+    track, convertMode, designScope, trackMode, source: source_, later, personasSuffix, visualTheme,
     unitsPlanned: Number.isInteger(unitsPlanned) && unitsPlanned > 0 ? unitsPlanned : null, unitsInOutline: later.includes("Outline") ? null : unitsInOutline,
     filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
     agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
@@ -168,7 +197,7 @@ function outlineUnits(outline, slideWords) {
 // with `Agenda required: no`, the template step in older journals): when every title is a known title of the
 // empty journal (English or the course pack), each step gets the key of its title; else by position, as before.
 export function courseStepKeys(steps = [], journal = {}) {
-  const keys = stepsOf(journal.track ?? "full", journal.convertMode ?? null);
+  const keys = stepsOf(journal.track ?? "full", journal.trackMode ?? journal.convertMode ?? null);
   if ((journal.track ?? "full") !== "full" || !steps.length) return keys;
   const lists = [englishCourseSteps(), journal.pack?.dashboard?.process?.steps].filter(list => list?.length === keys.length);
   const norm = text => String(text ?? "").trim().toLowerCase();
@@ -192,7 +221,7 @@ export function englishCourseSteps() {
 // The steps of a track as the empty journal or the language pack names them: full – the empty journal's steps
 // (title, state, why); a light track – the titles of `lightStepTitles`. null without words in the course language.
 export function trackSteps(journal) {
-  const keys = stepsOf(journal.track ?? "full", journal.convertMode ?? null);
+  const keys = stepsOf(journal.track ?? "full", journal.trackMode ?? journal.convertMode ?? null);
   const english = journal.language === "en";
   if ((journal.track ?? "full") === "full") {
     const list = journal.pack?.dashboard?.process?.steps ?? (english ? englishCourseSteps() : null);
@@ -200,8 +229,9 @@ export function trackSteps(journal) {
     return keys.map((key, index) => ({ key, title: list[index].title, state: list[index].state ?? "planned", ...(list[index].why ? { why: list[index].why } : {}) }));
   }
   const titles = journal.pack?.lightStepTitles ?? (english ? englishLightStepTitles : null);
-  if (!titles || keys.some(key => !titles[key])) return null;
-  return keys.map(key => ({ key, title: titles[key], state: "planned" }));
+  const titleOf = key => titles?.[stepTitleKey(journal.track, key)];
+  if (!titles || keys.some(key => !titleOf(key))) return null;
+  return keys.map(key => ({ key, title: titleOf(key), state: "planned" }));
 }
 
 // ## Templates (templates/course-templates.yaml): the selection line before <section> (missing = open), the
@@ -246,7 +276,7 @@ function agendaUnits(agenda) {
 }
 
 function emptyUnit(n) {
-  return { n, heading: null, tableTitle: null, material: false, done: false, notes: null, statusLine: null, report: null, images: { total: 0, placed: 0, open: 0, waiting: 0 }, approved: false, buildRequested: false };
+  return { n, heading: null, tableTitle: null, material: false, done: false, notes: null, statusLine: null, report: null, images: { total: 0, placed: 0, open: 0, waiting: 0 }, approved: false, buildRequested: false, file: null, themeApplied: null, imagesReviewed: false };
 }
 
 function readUnits(sessions, terms) {
@@ -270,6 +300,7 @@ function readUnits(sessions, terms) {
       item.material = Boolean(cells[column("Material", 3)]?.includes("✅"));
       item.done = Boolean(cells[column("Done", 2)]?.includes("✅"));
       item.notes = cells[column("Notes", 1)] ?? null;
+      item.file = recordedPath(cells[column("Material", 3)]);
     }
   }
   // (3) the subsections ### {n}. {title}
@@ -292,6 +323,10 @@ function readUnits(sessions, terms) {
     // "Let it be prepared" was confirmed with the planning sketch (tasks/build-session.md): a dated decision
     // with terms.buildRequested. While no check report exists, the run is still going (SK58).
     item.buildRequested = [terms.buildRequested, englishTerms.buildRequested].some(word => word && stripComments(part.split(/^#### /m)[0]).toLowerCase().includes(String(word).toLowerCase()));
+    // The images of the unit were reviewed (design track, :review-images): a line of its decisions with
+    // terms.imagesReviewed – also for a unit without any image.
+    const decisions = stripComments(part.split(/^#### /m)[0]).toLowerCase().split("\n");
+    item.imagesReviewed = [terms.imagesReviewed, englishTerms.imagesReviewed].some(word => word && decisions.some(line => line.includes(String(word).toLowerCase())));
     // The building-block line decided with the planning sketch (session-skeleton.yaml → building-blocks).
     const blocks = part.match(/<!--\s*data-key="building-blocks"\s*-->\s*\n\s*\*\*[^*]+\*\*\s*(.*)/);
     if (blocks) item.blocks = blocks[1].trim();
@@ -304,6 +339,23 @@ function readUnits(sessions, terms) {
     item.status = rest.match(/^\s*[–-]\s+(.+)$/)?.[1] ?? null;
   }
   return units;
+}
+
+// The non-empty lines of the ```text block under `__LiaScript Theme:__`, trimmed; [] without the block.
+function themeLines(visualIdentity) {
+  const after = visualIdentity.split(/^\s*[*-]\s+__LiaScript Theme:__/m)[1];
+  const block = after?.split(/^\s*[*-]\s+__/m)[0].match(/^\s*```text[^\n]*\n([\s\S]*?)^\s*```/m)?.[1];
+  return block ? block.split("\n").map(line => line.trim()).filter(Boolean) : [];
+}
+
+// Whether a unit's course file carries the course theme: every theme line stands in its header. null without a
+// theme or without a readable file.
+function themeApplied(file, theme, projectDir) {
+  if (!file || !theme.length) return null;
+  let text;
+  try { text = readFileSync(join(projectDir, file), "utf8"); } catch { return null; }
+  const header = new Set(headerOf(text).split("\n").map(line => line.trim()));
+  return theme.every(line => header.has(line));
 }
 
 // A check report: a #### heading that starts with "Validation Report" (older journals), or any #### heading

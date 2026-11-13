@@ -3704,3 +3704,104 @@ test("a stale approval item next to an approved unit is reported (T5-88)", () =>
   const broken = withDecision(fixture("journal-mini-to-full.md"), { key: "approve-unit-1", kind: "prepare", title: "Unit 1 – look at it and approve", how: "…" });
   assert.match(validateText(broken).output, /unit 1 is approved, but the overview asks to approve it again/);
 });
+
+// ---- Stage 2a, T3: the design track (look and/or images of an existing LiaScript course) in the journal model ----
+
+import { recordedPath, headerOf } from "./journal-model.mjs";
+import { stepTitleKey } from "./tracks.mjs";
+import { after } from "node:test";
+
+// A minimal English journal on the design track: two units whose course files are recorded in the Material cell
+// (data/file-structure-modes.md → Recorded paths). Options: scope (null → "n/a"), theme (lines of the
+// `__LiaScript Theme:__` block; none → no block), images (per unit: [{ status, source }]), reviewed (per unit: the
+// decision "images reviewed"), files (per unit: the recorded path or null).
+function designJournal({ scope = "both", theme = null, images = [[], []], reviewed = [false, false], files = ["course/a.md", "course/b.md"] } = {}) {
+  const titles = ["Unit A", "Unit B"];
+  const themeBlock = theme ? `\n* __LiaScript Theme:__ written by hand\n\n  \`\`\`text\n${theme.map(line => `  ${line}`).join("\n")}\n  \`\`\`\n` : "";
+  const rows = titles.map((title, index) => `| ${index + 1} | ${title} | existing | ✅ | ✅${files[index] ? ` \`${files[index]}\`` : ""} | | |`).join("\n");
+  const imageBlock = list => list.length ? `\n#### Images\n\n${list.map((entry, index) => `<section>\n\n#### picture-${index + 1}\n\n* __Status:__ ${entry.status}\n${entry.source ? `* __Source:__ ${entry.source}\n` : ""}\n</section>\n`).join("\n")}` : "";
+  const unit = (title, index) => `### ${index + 1}. ${title}\n\n**Decisions:**\n\n- **2026-11-13:** look kept as it is${reviewed[index] ? "\n- **2026-11-13:** images reviewed" : ""}\n${imageBlock(images[index] ?? [])}`;
+  return `<!--\nauthor: A. Teacher\n-->\n# Design course\n\n## Course Context\n\n* __Track:__\n  1. Track: design\n  2. Convert mode: n/a\n  3. Source: course/a.md\n  4. Design scope: ${scope ?? "n/a"}\n\n* __Terminology:__\n  1. sessions-called: unit\n\n* __File Structure:__\n  1. Mode: multi-file\n\n## Visual Identity\n${themeBlock}\n## Sessions\n\n<details><summary>Technical overview</summary>\n\n<!-- data-type="none" -->\n| # | Title | Type | Skeleton | Material | Done | Notes |\n|---|-------|------|----------|----------|------|-------|\n${rows}\n\n</details>\n\n${titles.map(unit).join("\n")}\n`;
+}
+// The same journal with the German language pack (header `language: de`).
+const designJournalText = opts => designJournal(opts).replace("<!--\n", "<!--\nlanguage: de\n");
+// A fresh project folder with the given files ({ "relative/path.md": text }); returns its path. Removed after the run.
+const tmpProjects = [];
+after(() => tmpProjects.forEach(dir => rmSync(dir, { recursive: true, force: true })));
+function tmpProject(files = {}) {
+  const dir = mkdtempSync(join(tmpdir(), "design-project-"));
+  tmpProjects.push(dir);
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(dir, path)), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  }
+  return dir;
+}
+
+test("design track: steps per scope, later sections, step titles", () => {
+  assert.deepEqual(stepsOf("design", "both"), ["frame", "look", "images", "check", "publish"]);
+  assert.deepEqual(stepsOf("design", null), ["frame", "look", "images", "check", "publish"]);
+  assert.deepEqual(stepsOf("design", "look"), ["frame", "look", "check", "publish"]);
+  assert.deepEqual(stepsOf("design", "images"), ["frame", "images", "check", "publish"]);
+  assert.deepEqual(laterOf("design"), ["Outline", "Didactics", "Agenda", "Learner Personas", "Analysis Status"]);
+  assert.equal(stepTitleKey("design", "frame"), "frameDesign");
+  assert.equal(stepTitleKey("mini", "frame"), "frame");
+});
+test("recorded paths: any project .md path, also with spaces and parentheses", () => {
+  assert.equal(recordedPath("✅ `docs/Kurs (neu).md`"), "docs/Kurs (neu).md");
+  assert.equal(recordedPath("✅ `docs/Kurs%20%28neu%29.md`"), "docs/Kurs (neu).md");
+  assert.equal(recordedPath("✅ `README.md`"), "README.md");
+  assert.equal(recordedPath("✅ `materials/carpentry-joints/README.md`"), "materials/carpentry-joints/README.md");
+  assert.equal(recordedPath("✅ `../x.md`"), null);
+  assert.equal(recordedPath("✅ `/abs/x.md`"), null);
+  assert.equal(recordedPath("✅ `https://example.org/x.md`"), null);
+  assert.equal(recordedPath("✅ `notes.txt`"), null);
+  assert.equal(recordedPath("✅"), null);
+  assert.equal(recordedPath(undefined), null);
+});
+test("header of a course file: the first HTML comment before the first heading", () => {
+  assert.equal(headerOf("<!--\nauthor: A\n-->\n# T\n<!-- later -->\n").trim(), "author: A");
+  assert.equal(headerOf("# T\n\n<!-- not a header -->\n"), "");
+  assert.equal(headerOf(""), "");
+});
+test("design journal: scope, files, theme state, reviewed images", () => {
+  const j = readJournal(designJournal({ scope: "both", theme: ["@style", ".lia-slide { --x: 1 }", "@end"] }), { projectDir: tmpProject({ "course/a.md": "<!--\n@style\n.lia-slide { --x: 1 }\n@end\n-->\n# A\n", "course/b.md": "<!--\nlink: old.css\n-->\n# B\n" }) });
+  assert.equal(j.track, "design"); assert.equal(j.designScope, "both"); assert.equal(j.trackMode, "both");
+  assert.deepEqual(j.visualTheme, ["@style", ".lia-slide { --x: 1 }", "@end"]);
+  assert.deepEqual(j.units.map(u => [u.file, u.themeApplied]), [["course/a.md", true], ["course/b.md", false]]);
+  assert.equal(j.units[0].imagesReviewed, false);
+  assert.equal(readJournal(designJournal({ reviewed: [true, false] }), { projectDir: tmpProject({}) }).units[0].imagesReviewed, true);
+});
+test("design journal: no theme block or no readable file → theme state unknown", () => {
+  const files = { "course/a.md": "<!--\nx\n-->\n# A\n" };
+  const noTheme = readJournal(designJournal({ scope: "look" }), { projectDir: tmpProject(files) });
+  assert.deepEqual(noTheme.visualTheme, []);
+  assert.deepEqual(noTheme.units.map(u => u.themeApplied), [null, null]);
+  assert.equal(noTheme.trackMode, "look");
+  const missing = readJournal(designJournal({ theme: ["x"] }), { projectDir: tmpProject(files) });
+  assert.deepEqual(missing.units.map(u => u.themeApplied), [true, null]);
+  const later = readJournal(designJournal({ theme: ["x"] }).replace("## Visual Identity\n", `## Visual Identity\n\n${laterMarker}\n`), { projectDir: tmpProject(files) });
+  assert.deepEqual(later.visualTheme, []);
+  assert.equal(readJournal(designJournal({ scope: null })).designScope, null);
+});
+test("an existing image counts as placed", () => {
+  const images = readJournal(designJournal({ images: [[{ status: "existing" }, { status: "wanted", source: "free-photo" }]] }), { projectDir: tmpProject({}) }).units[0].images;
+  assert.deepEqual([images.placed, images.open], [1, 1]);
+});
+test("old journals: Convert mode without Design scope read as before", () => {
+  const j = readJournal(readFileSync(fixture("journal-84484ae.md"), "utf8"));
+  assert.equal(j.track, "full"); assert.equal(j.designScope, null); assert.equal(j.trackMode, null);
+  const convert = readJournal("## Course Context\n\n* __Track:__\n  1. Track: convert\n  2. Convert mode: transfer\n");
+  assert.equal(convert.trackMode, "transfer"); assert.equal(convert.convertMode, "transfer"); assert.equal(convert.designScope, null);
+});
+test("validate: a recorded course file outside materials/, with spaces and parentheses, is found", () => {
+  const dir = tmpProject({ "docs/Kurs (neu).md": "<!--\nauthor: A\n-->\n# A\n" });
+  try {
+    writeFileSync(join(dir, "journal.md"), `${designJournal({ files: ["docs/Kurs%20(neu).md", "course/b.md"] })}\n## Dashboard\n\n${dashJson({ title: "Design course" })}\n`);
+    const run = spawnSync(process.execPath, [fileURLToPath(new URL("./validate-journal.mjs", import.meta.url)), join(dir, "journal.md")], { encoding: "utf8" });
+    const output = run.stdout + run.stderr;
+    assert.doesNotMatch(output, /unit 1: "Material ✅" but the material document is missing/, output);
+    assert.match(output, /unit 2: "Material ✅" but the material document is missing \(course\/b\.md\)/, output);
+    assert.doesNotMatch(output, /Track: "design" is not one of/, output);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
