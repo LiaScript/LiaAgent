@@ -820,6 +820,36 @@ test("check-material measures question to last option against the visible area, 
   assert.match(describeFit(fitOnScreen({ view, question: 650, options: [{ top: 690, bottom: 730 }] }), { width: 1024, height: 768 }), /^1024×768 landscape: fits only once scrolled \(at open 0 of 1 options visible; question at the top: fits\)$/);
 });
 
+const { contrastRatio, contrastFindings, describeContrast } = await import("./check-material.mjs");
+
+test("contrast: WCAG ratio and thresholds", () => {
+  assert.equal(Math.round(contrastRatio("#000", "#fff") * 10) / 10, 21);
+  assert.equal(Math.round(contrastRatio("rgb(119, 119, 119)", "#ffffff") * 100) / 100, 4.48);
+  assert.equal(Math.round(contrastRatio("rgba(0, 0, 0, 0.5)", "#ffffff") * 100) / 100, 3.95);
+  const found = contrastFindings([
+    { slide: 1, selector: "p", fg: "#777777", bg: "#ffffff", size: 16, weight: 400 },
+    { slide: 1, selector: "h1", fg: "#777777", bg: "#ffffff", size: 32, weight: 700 },
+    { slide: 2, selector: "p", fg: "#000000", bg: "#ffffff", size: 16, weight: 400 }
+  ]);
+  assert.deepEqual(found.map(f => [f.slide, f.selector, f.need]), [[1, "p", 4.5]]);
+});
+
+test("contrast: bold large text needs 3:1, one finding per slide and selector (the lowest), the error line", () => {
+  // 18.66 px bold counts as large text (14 pt), 18 px bold does not.
+  const bold = size => contrastFindings([{ slide: 1, selector: "li", fg: "#888888", bg: "#ffffff", size, weight: 700 }]);
+  assert.equal(bold(18.66).length, 0);
+  assert.deepEqual(bold(18).map(f => f.need), [4.5]);
+  const found = contrastFindings([
+    { slide: 3, selector: "a", fg: "#777777", bg: "#ffffff", size: 16, weight: 400 },
+    { slide: 3, selector: "a", fg: "#aaaaaa", bg: "#ffffff", size: 16, weight: 400 },
+    { slide: 3, selector: "p", fg: "not a colour", bg: "#ffffff", size: 16, weight: 400 }
+  ]);
+  assert.equal(found.length, 1);
+  assert.equal(describeContrast(found[0]), "contrast 2.32:1 < 4.5:1 on slide 3 (a)");
+  // Dark mode: light text on a dark background passes.
+  assert.equal(contrastFindings([{ slide: 1, selector: "p", fg: "rgb(230, 230, 230)", bg: "rgb(30, 30, 30)", size: 16, weight: 400 }]).length, 0);
+});
+
 test("check-material takes window sizes from --viewport, else the default list", () => {
   assert.deepEqual(defaultViewports.map(viewportName), ["1024×768 landscape", "810×1080 portrait", "1080×810 landscape"]);
   assert.deepEqual(parseViewport("810x1080"), { width: 810, height: 1080 });

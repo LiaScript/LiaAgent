@@ -1,12 +1,14 @@
 // Renders a course material in the LiaScript DevServer and reports what learners see:
 // slides, quizzes, read-aloud buttons, missing and broken images, oversized images, real errors and,
 // per quiz and window size, whether the question and all its options fit on one screen – counted from the
-// top of an image directly above the question, which the question refers to.
+// top of an image directly above the question, which the question refers to – and whether text has enough contrast
+// to its background (WCAG 2.x: 4.5:1, large text 3:1; up to 20 text elements per slide, in the page's colour mode).
 // The source is read first (image placeholders, quizzes whose options cannot be told apart,
 // link and image targets with unencoded "(" ")" or spaces, image options without a size limit,
 // hints that are not read aloud, page photos wider than 500 px, answer options that give the answer away by their
 // surface – length, build, position, articles and capitals on gap cards, a gap sentence that stands twice); that part
-// needs no browser and is exported as analyseMaterial() for check.mjs, as is the fit arithmetic (fitOnScreen, describeFit).
+// needs no browser and is exported as analyseMaterial() for check.mjs, as are the fit arithmetic (fitOnScreen, describeFit)
+// and the contrast arithmetic (contrastRatio, contrastFindings).
 // Run from the course project root: node <path>/dashboard/check-material.mjs [README.md] [--viewport WxH …]
 // Exit code 0: no errors · 1: errors in the material (also: LiaScript cannot read it) · 2: invalid call or the rendered check was not possible.
 // Stopped from outside: 130 (SIGINT), 143 (SIGTERM), 129 (SIGHUP) – the DevServer of the run is stopped too.
@@ -33,8 +35,12 @@ their gap, a gap sentence that also stands as its own line), then renders every 
 CHROMIUM_PATH if set, else Playwright's own browser, else a system Chrome/Chromium (images that do
 not load, images over 200 KB, and per quiz and window whether the question line and all options fit
 the visible area – from the top of an image directly above the question, measured at slide open and
-with the question or that image at the top). Page photos wider than 500 px (?width=…) are warned
-about from the source, whatever their file size.
+with the question or that image at the top; text contrast per WCAG 2.x – up to 20 elements h1, h2, h3,
+p, li, a, label with visible text per slide, against the first solid background colour of their
+ancestors, else white, in the colour mode the page is in; text over a background image or gradient
+is skipped; below 4.5:1, or 3:1 for text from 24 px or bold from 18.66 px, is an error:
+"contrast {ratio}:1 < {need}:1 on slide {n} ({element})"). Page photos wider than 500 px (?width=…)
+are warned about from the source, whatever their file size.
 The windows are desktop browser windows of that size, not devices (no touch, no browser bars).
 Exit code 0: no errors · 1: errors in the material (also: LiaScript cannot read it and shows its
 error course) · 2: invalid call or rendered check not possible (no browser, the DevServer did not
@@ -440,6 +446,55 @@ const fitsText = /: (fits|image and question fit)$/;
 const notFitText = /: (does not fit|image and question do not fit)/;
 
 // ---------------------------------------------------------------------------
+// Text contrast (WCAG 2.x; pure arithmetic, the colours come from the rendered page)
+
+// A CSS colour as [r, g, b, a] (0–255, alpha 0–1): #rgb, #rrggbb, rgb(), rgba(); null for anything else.
+function parseColour(text) {
+  const value = String(text ?? "").trim().toLowerCase();
+  const hex = value.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/)?.[1];
+  if (hex) return [...(hex.length === 3 ? hex.split("").map(digit => digit + digit) : hex.match(/../g)).map(pair => parseInt(pair, 16)), 1];
+  const parts = value.match(/^rgba?\(([^)]*)\)$/)?.[1].split(/[\s,/]+/).filter(Boolean);
+  if (!parts || parts.length < 3 || parts.length > 4) return null;
+  const number = (part, scale) => part.endsWith("%") ? parseFloat(part) / 100 * scale : parseFloat(part);
+  const colour = [number(parts[0], 255), number(parts[1], 255), number(parts[2], 255), parts[3] == null ? 1 : number(parts[3], 1)];
+  return colour.every(Number.isFinite) ? colour : null;
+}
+// A colour with alpha drawn over an opaque one: whole channel values, as the screen shows them.
+const over = ([r, g, b, a], below) => [r, g, b].map((channel, index) => Math.round(channel * a + below[index] * (1 - a)));
+const luminance = rgb => {
+  const [r, g, b] = rgb.map(channel => channel / 255).map(c => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+// The contrast ratio of text colour fg on background bg (1–21); a transparent fg is mixed over bg, a transparent
+// bg over white. NaN when a colour cannot be read.
+export function contrastRatio(fg, bg) {
+  const back = parseColour(bg);
+  const front = parseColour(fg);
+  if (!back || !front) return NaN;
+  const below = over(back, [255, 255, 255]);
+  const [light, dark] = [luminance(over(front, below)), luminance(below)].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+// Samples { slide, selector, fg, bg, size (px), weight } → the ones below the WCAG AA minimum: 3:1 for large text
+// (24 px, or 18.66 px bold), else 4.5:1. One finding per slide and selector – the lowest ratio, in sample order.
+export function contrastFindings(samples) {
+  const found = new Map();
+  for (const sample of samples) {
+    const ratio = contrastRatio(sample.fg, sample.bg);
+    const need = sample.size >= 24 || (sample.weight >= 700 && sample.size >= 18.66) ? 3 : 4.5;
+    const key = `${sample.slide}\u0000${sample.selector}`;
+    if (!(ratio < need) || (found.has(key) && found.get(key).ratio <= ratio)) continue;
+    found.set(key, { slide: sample.slide, selector: sample.selector, ratio, need });
+  }
+  return [...found.values()];
+}
+
+// One finding as the error line of the report.
+export const describeContrast = finding => `contrast ${finding.ratio.toFixed(2)}:1 < ${finding.need}:1 on slide ${finding.slide} (${finding.selector})`;
+
+// ---------------------------------------------------------------------------
 // Rendered check
 
 const require = createRequire(import.meta.url);
@@ -611,7 +666,10 @@ function report(file, analysis, rendered, reason) {
   if (rendered) parts.push(`${broken.length} not loaded${broken.length ? `: ${broken.slice(0, 4).map(([src, slide]) => `${short(src, 90)} (slide "${slide}")`).join(", ")}${broken.length > 4 ? " …" : ""}` : ""}`);
   console.log(`Missing images: ${markers.length + files.length + broken.length} (${parts.join("; ")})`);
   if (rendered) warnings.push(...rendered.warnings);
-  const errors = [...problems, ...(rendered ? [...new Set(rendered.errors)] : []), ...(failure?.kind === "unreadable" ? [failure.text] : [])];
+  // Text below the WCAG contrast minimum is an error: learners cannot read it (e.g. after a new theme).
+  const contrast = rendered ? contrastFindings(rendered.contrast).map(describeContrast) : [];
+  if (rendered) console.log(`Text contrast (WCAG 2.x, ${rendered.contrast.length} text sample${rendered.contrast.length === 1 ? "" : "s"}, the page's colour mode): ${contrast.length} below the minimum`);
+  const errors = [...problems, ...contrast, ...(rendered ? [...new Set(rendered.errors)] : []), ...(failure?.kind === "unreadable" ? [failure.text] : [])];
   console.log(`Errors (without missing images and the known interpreter error fetchError): ${errors.length}`);
   errors.slice(0, 8).forEach(error => console.log(`- ${error}`));
   if (errors.length > 8) console.log(`- … ${errors.length - 8} more`);
@@ -725,6 +783,7 @@ async function main() {
     const broken = new Map();
     const warnings = [];
     const fit = new Map();
+    const contrast = [];
     // Opens a slide and waits until every image has loaded or failed (at most 10 s; external images may
     // take a while). Lazy images below the window are loaded too, so that the fit uses their real height.
     const open = async index => {
@@ -788,15 +847,54 @@ async function main() {
       const slide = await page.evaluate(() => {
         const visible = element => !element.closest("nav, header, aside, .lia-toc");
         const count = selector => Array.from(document.querySelectorAll(selector)).filter(visible).length;
+        // Text contrast in the mode the page is in: up to 20 text elements with visible text; the background is
+        // the first non-transparent background-color up the ancestors (semi-transparent ones mixed over the
+        // next), else white. A background image or gradient on the way cannot be judged: such text is skipped.
+        // Colours are read back from a 1×1 canvas, so that any CSS colour syntax arrives as rgba().
+        const canvas = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+        const rgba = colour => {
+          canvas.clearRect(0, 0, 1, 1);
+          canvas.fillStyle = "#000";
+          canvas.fillStyle = colour;
+          canvas.fillRect(0, 0, 1, 1);
+          const [r, g, b, a] = canvas.getImageData(0, 0, 1, 1).data;
+          return [r, g, b, a / 255];
+        };
+        const background = element => {
+          const layers = [];
+          for (let item = element; item; item = item.parentElement) {
+            const style = getComputedStyle(item);
+            if (style.backgroundImage !== "none") return null;
+            const colour = rgba(style.backgroundColor);
+            if (colour[3] > 0) layers.push(colour);
+            if (colour[3] >= 1) break;
+          }
+          const [r, g, b] = layers.reduceRight((below, [r, g, b, a]) => [r, g, b].map((channel, index) => Math.round(channel * a + below[index] * (1 - a))), [255, 255, 255]);
+          return `rgb(${r}, ${g}, ${b})`;
+        };
+        const contrast = [];
+        for (const element of document.querySelectorAll("h1, h2, h3, p, li, a, label")) {
+          if (contrast.length >= 20) break;
+          const box = element.getBoundingClientRect();
+          if (!visible(element) || !element.innerText?.trim() || !box.width || !box.height) continue;
+          if (element.checkVisibility && !element.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+          const style = getComputedStyle(element);
+          const [r, g, b, a] = rgba(style.color);
+          const bg = a > 0 && background(element);
+          if (!bg) continue;
+          contrast.push({ selector: element.tagName.toLowerCase(), fg: `rgba(${r}, ${g}, ${b}, ${a})`, bg, size: parseFloat(style.fontSize), weight: Number(style.fontWeight) || 400 });
+        }
         return {
           quizzes: count(".lia-quiz"),
           blocks: count(".lia-effect__playback-controls button .icon-play"),
-          inline: count(".lia-effect--inline button .icon-play-circle")
+          inline: count(".lia-effect--inline button .icon-play-circle"),
+          contrast
         };
       });
       counts.quizzes += slide.quizzes;
       counts.blocks += slide.blocks;
       counts.inline += slide.inline;
+      contrast.push(...slide.contrast.map(sample => ({ ...sample, slide: index })));
     }
     // The other windows: only the slides with quizzes, each opened anew (slide-open position).
     for (const size of sizes.slice(1)) {
@@ -808,7 +906,7 @@ async function main() {
       }
     }
     for (const [url, size] of large) warnings.push(`large image (${size} KB): ${short(url, 100)} – use a smaller thumbnail (Wikimedia Commons standard widths: 330 px for answer options, 500 px for page photos)`);
-    return report(file, analysis, { titles, counts, missing, broken, warnings, errors, fit: [...fit.values()], sizes });
+    return report(file, analysis, { titles, counts, missing, broken, warnings, errors, fit: [...fit.values()], sizes, contrast });
   } finally {
     await browser?.close();
     server.kill();
