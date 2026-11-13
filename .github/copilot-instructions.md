@@ -1633,6 +1633,7 @@ The `{image-slug}` here (derived from the image description) is independent of t
 Resolve `{path}` from `journal.md` → `## Course Context` → `__File Structure:__`:
 - **single-file:** `assets/images/{image-slug}.png`
 - **multi-file:** `materials/{number}-{slug}/assets/images/{image-slug}.png` (this session's own folder)
+- **design track** (and any unit with a recorded path, `data/file-structure-modes.md` → Recorded paths): the course file is the unit's recorded path in the Material cell, never the File Structure mode; a new image goes into the image folder the course file already uses (the folder of its existing images), otherwise next to the file — `{path}` relative to the course file, existing image paths stay as they are
 
 ```markdown
 #### Images
@@ -1673,6 +1674,8 @@ Resolve `{path}` from `journal.md` → `## Course Context` → `__File Structure
 ```
 
 Status flow per source — `generated`: `wanted` → `prompt-ready` / `prompt-only` → `generated` (this task, then `:generate-image`); `free-photo`: `wanted` → `candidate` → `selected` → `inserted` ("Free photos" below); `own`: `wanted` → `inserted` once the instructor's file is in. An entry is **open** while its status is `wanted`, `candidate`, `selected` or `prompt-ready`; open entries make the unit's image step (`tasks/update-dashboard.md` step 2).
+
+- **Status `existing`** (written by `:review-images`): an image the course already had and the instructor keeps — placed like `inserted`, never open, with the compact fields of an `inserted` entry (`__Status:__`, `__Place:__`, `__File:__`, `__Alt text:__`, `__Author:__`, `__License:__`, `__Page:__`); it stands with them in the `<details>` block. An image to replace is a `wanted` entry with `* __Replaces:__ {old target}`; its marker in the material is the slug comment alone, above the old image line — the insert (Free photos step 6, `tasks/generate-image.md`) replaces the comment **and** the old image line, and the old image's credit line by the new one; a new spot from the review has the slug comment alone, replaced by the image. Such a comment counts as the marker of step 12 (`prompt-ready`). Drop `__Replaces:__` once inserted.
 
 - **To-dos for one image** (e.g. "replace with a smaller crop", "check on the target device") go as `* __To do:__ …` into that entry and into the `next` of the unit's image step — never into the unit's summary (`templates/session-skeleton.yaml` → summary).
 - **Compact once inserted:** an `inserted` entry keeps only `__Status:__`, `__Source:__`, `__Place:__`, `__File:__`, `__Alt text:__`, `__Author:__`, `__License:__`, `__Page:__` (and an open `__To do:__`) — drop `__Description:__`, `__Search terms:__` and `__Candidates:__`. Exception: a photo the agent chose itself in `:build-session` keeps its other looked-at candidates under `__Candidates:__` until the instructor has seen the unit, so it can be swapped without a new search. All `inserted` entries of a unit stand together at the end of its `#### Images` block inside one `<details><summary>{n} images inserted</summary>` (translated); open entries stay above it, in full.
@@ -2738,7 +2741,7 @@ For each queued entry (single or sequential batch):
 ## Phase 5b: Update Journal Entry *(all modes)*
 
 - Only once the file exists at the `__File:__` path: in the `<section>` for `{slug}`, set `__Status:__` to `generated` and add the image `![{alt text}]({path})` below the prompt. If it does not, keep `prompt-ready` and report where the file is.
-- In the material, replace the marker `<!--- image: {slug} … --->` (older journals: `<!-- image: {slug} -->`) + `> 🖼️ _…_` with the image `![{alt text}]({path relative to the material document})`. Without a marker (e.g. status `prompt-only`), insert the image at the place it belongs and say where. Only then is the image visible to learners.
+- In the material, replace the marker `<!--- image: {slug} … --->` (older journals: `<!-- image: {slug} -->`) + `> 🖼️ _…_` with the image `![{alt text}]({path relative to the material document})`. A spot from `:review-images` has only the slug comment — with `__Replaces:__` the comment and the old image line below it are replaced (`tasks/create-image.md` → Status `existing`). Without a marker (e.g. status `prompt-only`), insert the image at the place it belongs and say where. Only then is the image visible to learners.
 
 ---
 
@@ -3729,7 +3732,7 @@ Rules:
 Reviews the images a unit already has, as a building block of every way (design track, full way). Every existing
 image becomes an entry in the unit's `#### Images` block with the status `existing` (slide, alt text, source, licence
 known or unclear). For each image the instructor chooses in one form: keep · make new in the course's style · replace
-with a free photo · remove; an image with an unclear licence is preselected on "replace", never silently kept. New
+with a free photo · remove; an image with an unclear licence is preselected on "replace", never silently "keep". New
 image spots are added where the instructor says so on a slide in the preview. Afterwards `:create-image {number}`
 works through the open entries; missing alt texts are added. Like `:apply-theme`, it never changes teaching text — one exception: when an image is removed, the sentence that explicitly refers to it ("see figure") may be adapted, and that change is shown in the confirmation. An image that is an answer option of a quiz can only be replaced, never removed.
 
@@ -3744,12 +3747,50 @@ which (numbered list).
 - The unit's course file: its recorded path in the Material cell of `## Sessions` (`data/file-structure-modes.md` → Recorded paths), else the material document as that file resolves it
 - `node specs/dashboard/read-source.mjs <file>`: each image with slide, alt text, target and whether it is credited
 - Image style from `journal.md` → `## Visual Identity` (`__Course Image Generation Guidelines:__`)
-- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
+- `tasks/create-image.md` → Journal Entry Format (entry fields, statuses, compact entries, link targets), read completely
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/chat-memory.md`, `data/journal-links.md`
+
+## Output
+
+- The unit's `#### Images` block: one entry per image, the dated decision line `images reviewed`
+- The course file: only image lines, alt texts, the image credits chapter and slug comments (Rules)
+- `journal.md` → `## Dashboard`, with the layout suggestions as an open point
 
 ## Steps
 
-The steps follow in the next version. Until then say so in one line and offer `:create-image {number}`
-(`agent:artist/create-image?number={number}`) for the unit's open image entries.
+1. **Read** the unit and its course file (Inputs); no course file yet: say so in one line and stop. Run `read-source.mjs` on the file (on its own). An image whose target already has an entry in the block keeps it: its decision is protected (`data/chat-memory.md` → Conflict) and is not asked again; only images without an entry are reviewed. A unit without any image goes on with step 4 (new spots), then step 5.
+2. **Inventory:** per image one entry (`tasks/create-image.md` → Journal Entry Format; slug from the file name, unique across the journal as there, step 11):
+   ```markdown
+   <section>
+
+   #### {image-slug}
+
+   * __Status:__ existing
+   * __Place:__ slide {n} – {slide title} {", option 2 of the quiz" where it is one}
+   * __File:__ {target exactly as the course file has it}
+   * __Alt text:__ {alt text, or the proposal of step 3}
+   * __Author:__ {from the credit}
+   * __License:__ {licence with link | the term of step 4}
+   * __Page:__ [label](encoded file page)
+
+   </section>
+   ```
+   Author, licence and page are taken **verbatim** from the image's credit line; a Wikimedia Commons image without one: `node specs/dashboard/fetch-thumb.mjs <file name>` reads them. The licence is **known** when the credit (or the file data) names one, or the instructor says it is her own picture; otherwise it is **unclear** — no credit, a credit without licence. Never guess a licence.
+3. **Look at each image** (local file: the file-reading tool; Commons: the thumbnail of `fetch-thumb.mjs`) to propose a missing alt text — what is visible, never the answer term of a question. An image you could not open gets `(not looked at)` and its alt text is asked (`data/chat-checks.md` → Say how you checked). Layout ideas seen on the way (columns, boxes, a slide too full) go into the suggestion list (slide + one sentence; Rules).
+4. **Decide per image** in the chat: first show the images of a form as images, each with slide, alt text and licence; then one form with **at most 4 images per form** (`data/chat-dialog.md` → Forms), one question per image: "keep" · "make new in the course's style" · "replace with a free photo" · "remove" (translated). An image with an unclear licence is **preselected on "replace"** (a photo: the free photo; a drawing or diagram: make new) and its label says "licence unclear" — never silently "keep". If the instructor keeps it anyway, its `__License:__` and its line in the credits chapter both read `terms.licenseUnclearKept` ("license unclear – kept by the instructor", translated) — never a plain "unclear". **Images that are answer options of a quiz can only be replaced** (option lines `[( )]`, `[[ ]]`, `[[X]]` …): their question has no "remove". With the first form say once: for a new picture, go to the slide in the preview and write "an image here" (translated) in the chat — the agent takes the slide from the event's `context.slide` and `context.title` and records a `wanted` entry (`__Place:__` from them, `__Description:__` and `__Source:__` free-photo · generated · own asked in one form, `tasks/create-image.md` → Image spots).
+5. **Summary and one confirmation** (`data/chat-dialog.md` §1, future tense): per image what happens; proposed alt texts; for "remove" the image line that goes and every sentence that explicitly refers to it ("see figure"), old → new — the only teaching text that may change; the credit lines added, changed or removed; new spots; the dated line `images reviewed`; the layout suggestions as the overview point they will become. Then "Save" · "Change something" — the one confirmation, nothing is written before it.
+6. **Write** (3 writes, as `tasks/create-image.md` → Free photos step 6):
+   - **Material:** one map for `node specs/dashboard/localize-journal.mjs <map.json> <course file>` (or the file once): alt texts in; for "remove" the image line out, its reference sentence adapted and its credit line out (the image file stays on disk — never delete files); a kept unclear licence gets its credit line with `terms.licenseUnclearKept`, a newly found licence its credit line (credits chapter as in `data/file-structure-modes.md` → "Creating the material document"); above every image to replace and at every new spot the slug comment `<!--- image: {image-slug} — {description} --->` — no visible marker: the course is in use, the old image stays until its replacement is in.
+   - **Journal:** one map: the `existing` entries (kept ones compact, together with the inserted ones, `tasks/create-image.md` → Compact once inserted); an image to replace becomes `wanted` with `__Source:__` free-photo or generated, `__Place:__`, `__Description:__`, `__Search terms:__` (free photo) and `* __Replaces:__ {old target}`; new spots as `wanted`; removed images get no entry; in the unit's decisions the line `- **{date}:** {terms.imagesReviewed}` ("images reviewed", translated; date from `node specs/dashboard/now.mjs`), exactly in this form, also for a unit without images.
+   - **Overview:** run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml`; layout suggestions become one `decide` item with key `layout-suggestions-{n}`, `how` one line per suggestion (slide + one sentence) and the Teaching-Agent's `:quick-fix {n}` (`agent:teaching/quick-fix?number={n}`).
+   Then "✅ Saved: …" with the marker (`data/chat-dialog.md` §1) and `node specs/dashboard/check-material.mjs <course file>` on its own; findings in plain words, "Rendered check not possible": `data/chat-checks.md` → Offering the Rendered Check.
+7. **Finish** with a short summary and 1–3 next-step links: with open entries `:create-image {number}` (`agent:artist/create-image?number={number}`) for them, otherwise the Dashboard's `next` (the next unit's review or the unit check); the layout suggestions as `agent:teaching/quick-fix?number={n}` when they exist.
+
+## Rules
+
+- **Guard rail:** this task changes only image lines, alt texts, slug comments and the image credits chapter — never teaching text, quizzes, slide order or layout; the one exception is the reference sentence of a removed image (step 5). Layout ideas only go into the suggestion list.
+- One confirmation for the whole unit; a later change of a decision is a new one.
+- A unit that already has a validation report: the material write follows `tasks/quick-fix.md` → Change path after a check.
 
 ==================== END: specs/tasks/review-images.md ====================
 
@@ -4329,7 +4370,7 @@ Run this task automatically after any task that changes project state:
 - `:save-notes` or `:save-decision`
 - `:create-project` or `:update-project`
 - Development-Agent: `:develop-template` (its `__State:__` changes) and `:publish-template`
-- Artist-Agent: `:create-visuals`, `:create-logo`, `:create-image`, `:generate-image`, `:apply-theme`
+- Artist-Agent: `:create-visuals`, `:create-logo`, `:create-image`, `:generate-image`, `:apply-theme`, `:review-images`
 - `:try-as-learner` when it saved changes (they go through `:quick-fix`, which triggers this task)
 
 ## Steps
@@ -6701,7 +6742,7 @@ page content (and course scripts) can forge any link.
 | Tier | Commands | Behavior |
 |---|---|---|
 | **run** | `switch`, `help`, `list-agents`, `list-learners`, `agent`, `preview`, `open-chat`, `start` (setup: only the copy of the empty journal), `update-dashboard`, `validate-syntax`, `validate-course {number}` (session mode only; its fix during the check asks in the chat first, its concerns are decided one at a time in the chat) | Run immediately. Read-only, navigation, or derived state only — the dashboard, a check report and the Done / status it sets; never material or anything the instructor wrote. |
-| **start interview** | `init-course`, `scaffold`, `coauthor-materials`, `try-as-learner`, `create-outline`, `create-didactics`, `create-agenda`, `create-learner-persona`, `configure-agent`, `save-notes`, `save-decision`, and every other task whose file shows what it will write and asks "Save" (or its own scope confirmation) before the first write: `create-session`, `quick-fix`, `analyze-existing`, `suggest-templates`, `manage-templates`, `apply-theme`, `promote-session` with existing material | Start the dialog immediately, without a start confirmation. The task's own **save confirmation** (summary of what will be written + "Save" / "Change something") is the single write confirmation; if the task file has no such step, insert it before the first write. Nothing is written before it — with two exceptions, both setup without any content from the instructor: `init-course` may create `journal.md` as a byte-for-byte copy of `templates/journal.md` before the first question (so the preview can show it during the interview), and the language switch of `data/chat-language.md` → Language before the frame (header `language:`, the journal's own fixed texts). Fetching course files with `git_clone` (`init-course` D1) also comes before the save, confirmed in the terminal. |
+| **start interview** | `init-course`, `scaffold`, `coauthor-materials`, `try-as-learner`, `create-outline`, `create-didactics`, `create-agenda`, `create-learner-persona`, `configure-agent`, `save-notes`, `save-decision`, and every other task whose file shows what it will write and asks "Save" (or its own scope confirmation) before the first write: `create-session`, `quick-fix`, `analyze-existing`, `suggest-templates`, `manage-templates`, `apply-theme`, `review-images`, `promote-session` with existing material | Start the dialog immediately, without a start confirmation. The task's own **save confirmation** (summary of what will be written + "Save" / "Change something") is the single write confirmation; if the task file has no such step, insert it before the first write. Nothing is written before it — with two exceptions, both setup without any content from the instructor: `init-course` may create `journal.md` as a byte-for-byte copy of `templates/journal.md` before the first question (so the preview can show it during the interview), and the language switch of `data/chat-language.md` → Language before the frame (header `language:`, the journal's own fixed texts). Fetching course files with `git_clone` (`init-course` D1) also comes before the save, confirmed in the terminal. |
 | **confirm in chat** | every other command that only writes inside the project (`journal.md`, `materials/`, `assets/`, root `README.md`, `lia-templates/`, `templates.local.json`), e.g. `develop-template` (its plan question is this confirmation) | Ask in the preview chat (see Handling step 3) before running. |
 | **confirm in terminal** | `manage-git`, `git_clone` (course files, `init-course` D1), `create-project`, `update-project`, `publish-template`, `generate-image` on the browser route, skill and Playwright installs (`data/skills.md`, `data/chat-checks.md`) (also inside `build-session`: one confirmation before its image step; with the agent's own image tool it is "confirm in chat") | Runs git, publishing, installations, or external browser sessions. Post a chat note that confirmation is waiting in the terminal, then ask there. |
 | **never via link** | `exit`, unknown commands | Do not run. Answer in the chat that this action is not available as a link. |

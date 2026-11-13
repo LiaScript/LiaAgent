@@ -126,6 +126,7 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 const budgets = {
   "tasks/update-dashboard.md": 3275, /* +110 over 3005: process steps per track, the two new triggers; +145 over 3115 (tandem test 5): decide only for now, no approval item for an approved unit, report actions → prepare, old Course Context words in the cache; +15 over 3260 (stage 2a T8): the design track's step list with its titles "Frame" and "Images" and the scope rule */ "data/agent-links.md": 4110, /* +23: chat-memory sheet row and pointer; +15 over 3898: the pick-up replaces the due greeting; +177 over 3913 (tandem test 5): idle watch, nudge, status after a form answer, "your answer has arrived", read_chat without arguments; +20 over 4090 (stage 2a T8): git_clone of the design frame in the terminal tier and before the save */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1480, /* +35 over 1191: the save marker rule; +3 over 1226: marker in the preview chat only; +251 over 1229 (tandem test 5): no ruled-out options, saved state from the journal, to-do answer = overview, side questions without a new form, no number columns, removeBlock */
   "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4420, /* +89 over 4198: one unit, one run on a light track; +31 over 4287: light-track unit 1 in session mode, short re-check refreshes the summary; +102 over 4318 (tandem test 5): the unit check is the course check, the summary follows every later report change */ "tasks/quick-fix.md": 1750, /* +8 over 1613: light track, the whole README is unit 1; +129 over 1621 (tandem test 5): "look at it later", re-check sets Done, approval refreshes the summary, removeBlock */
+  "tasks/review-images.md": 1340, /* new in stage 2a T10: the image inventory with its entry format, form rules and three writes */
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
   assert.match(read("data/chat-wording.md"), /\*\*Commands stay off the chat:\*\*[^\n]*\n[^\n]*also not after a link/);
@@ -313,6 +314,23 @@ test("apply-theme: one confirmation, foreign styling asked, macro imports kept, 
   for (const file of ["agents/artist-agent.yaml", "tasks/review-images.md"]) assert.match(read(file), /see figure/, `${file} lacks the exception for a reference to a removed image`);
 });
 
+test("review-images: existing images, unclear licence preselected replace, quiz images only replaced", () => {
+  const t = read("tasks/review-images.md");
+  for (const phrase of ["__Status:__ existing", "preselected on \"replace\"", "never silently \"keep\"", "Images that are answer options of a quiz can only be replaced", "at most 4 images per form", "layout-suggestions-{n}", "images reviewed"]) assert.ok(t.includes(phrase), phrase);
+  assert.match(read("tasks/create-image.md"), /`existing`/);
+  // Stage 2a T10: the steps exist, the kept unclear licence is the term in journal and credits, one confirmation,
+  // new spots from the preview context, the overview item for layout ideas, the trigger and the tier.
+  assert.doesNotMatch(t, /The steps follow in the next version/, "review-images is still a skeleton");
+  for (const phrase of ["`terms.licenseUnclearKept`", "`- **{date}:** {terms.imagesReviewed}`", "`context.slide`", "one confirmation", "`agent:teaching/quick-fix?number={n}`", "tasks/update-dashboard.md", "Change path after a check", "never a plain \"unclear\""]) assert.ok(t.includes(phrase), `review-images lacks: ${phrase}`);
+  assert.match(t, /node specs\/dashboard\/read-source\.mjs <file>/);
+  const image = read("tasks/create-image.md");
+  assert.match(image, /`existing`[^\n]*placed[^\n]*compact/i, "create-image does not count existing as placed with compact fields");
+  assert.match(image, /design track[^\n]*recorded path/i, "create-image does not take the path from the recorded course file on the design track");
+  assert.match(read("tasks/update-dashboard.md"), /Artist-Agent:[^\n]*`:review-images`/, "review-images is missing in the update-dashboard trigger list");
+  assert.match(read("data/agent-links.md"), /\| \*\*start interview\*\* \|[^\n]*`review-images`/, "review-images is not in the start-interview tier");
+  assert.match(read("data/chat-memory.md"), /\*\*Protected\s+states\*\*[^.]*a decision about an existing\s+image \(keep, replace, remove\), a licence the instructor keeps/, "chat-memory lost the protected image decisions");
+});
+
 test("preview is a navigation command of every agent", () => {
   for (const agent of ["teaching", "artist", "learner", "development"]) {
     assert.match(agentYaml(agent), /^  :preview \{file\?\} \{slide\?\}:/m, `${agent} has no :preview`);
@@ -335,7 +353,7 @@ test("open-chat is a navigation command of every agent and opens a collapsed cha
 
 test("Artist tasks that write journal.md refresh the dashboard and are listed as its triggers", () => {
   const triggers = read("tasks/update-dashboard.md").split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
-  for (const task of ["create-visuals", "create-logo", "create-image", "generate-image", "apply-theme"]) {
+  for (const task of ["create-visuals", "create-logo", "create-image", "generate-image", "apply-theme", "review-images"]) {
     assert.ok(read(`tasks/${task}.md`).includes("tasks/update-dashboard.md"), `${task} does not run update-dashboard`);
     assert.ok(triggers.includes(`:${task}`), `${task} is missing in the update-dashboard trigger list`);
   }

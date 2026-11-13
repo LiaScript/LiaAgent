@@ -105,6 +105,7 @@ The `{image-slug}` here (derived from the image description) is independent of t
 Resolve `{path}` from `journal.md` → `## Course Context` → `__File Structure:__`:
 - **single-file:** `assets/images/{image-slug}.png`
 - **multi-file:** `materials/{number}-{slug}/assets/images/{image-slug}.png` (this session's own folder)
+- **design track** (and any unit with a recorded path, `data/file-structure-modes.md` → Recorded paths): the course file is the unit's recorded path in the Material cell, never the File Structure mode; a new image goes into the image folder the course file already uses (the folder of its existing images), otherwise next to the file — `{path}` relative to the course file, existing image paths stay as they are
 
 ```markdown
 #### Images
@@ -145,6 +146,8 @@ Resolve `{path}` from `journal.md` → `## Course Context` → `__File Structure
 ```
 
 Status flow per source — `generated`: `wanted` → `prompt-ready` / `prompt-only` → `generated` (this task, then `:generate-image`); `free-photo`: `wanted` → `candidate` → `selected` → `inserted` ("Free photos" below); `own`: `wanted` → `inserted` once the instructor's file is in. An entry is **open** while its status is `wanted`, `candidate`, `selected` or `prompt-ready`; open entries make the unit's image step (`tasks/update-dashboard.md` step 2).
+
+- **Status `existing`** (written by `:review-images`): an image the course already had and the instructor keeps — placed like `inserted`, never open, with the compact fields of an `inserted` entry (`__Status:__`, `__Place:__`, `__File:__`, `__Alt text:__`, `__Author:__`, `__License:__`, `__Page:__`); it stands with them in the `<details>` block. An image to replace is a `wanted` entry with `* __Replaces:__ {old target}`; its marker in the material is the slug comment alone, above the old image line — the insert (Free photos step 6, `tasks/generate-image.md`) replaces the comment **and** the old image line, and the old image's credit line by the new one; a new spot from the review has the slug comment alone, replaced by the image. Such a comment counts as the marker of step 12 (`prompt-ready`). Drop `__Replaces:__` once inserted.
 
 - **To-dos for one image** (e.g. "replace with a smaller crop", "check on the target device") go as `* __To do:__ …` into that entry and into the `next` of the unit's image step — never into the unit's summary (`templates/session-skeleton.yaml` → summary).
 - **Compact once inserted:** an `inserted` entry keeps only `__Status:__`, `__Source:__`, `__Place:__`, `__File:__`, `__Alt text:__`, `__Author:__`, `__License:__`, `__Page:__` (and an open `__To do:__`) — drop `__Description:__`, `__Search terms:__` and `__Candidates:__`. Exception: a photo the agent chose itself in `:build-session` keeps its other looked-at candidates under `__Candidates:__` until the instructor has seen the unit, so it can be swapped without a new search. All `inserted` entries of a unit stand together at the end of its `#### Images` block inside one `<details><summary>{n} images inserted</summary>` (translated); open entries stay above it, in full.
