@@ -4202,3 +4202,75 @@ test("read-source: details – multi-URL imports, theme raw lines, pdf metadata,
   assert.match(runReadSource(["course/x.md", "--json"], dir).output, /"slides"/);
   assert.equal(runReadSource([], dir).status, 2);
 });
+
+// Review round 1 of T6: archives, non-HTML URLs, adjacent images, credit boundaries, ZIP and inflate limits.
+import { spawn } from "node:child_process";
+import { createServer } from "node:http";
+import { deflateSync } from "node:zlib";
+const runReadSourceAsync = (args, cwd) => new Promise(done => {
+  const child = spawn(process.execPath, [readSourceScript, ...args], { cwd });
+  let output = "";
+  child.stdout.on("data", chunk => { output += chunk; });
+  child.stderr.on("data", chunk => { output += chunk; });
+  child.on("close", status => done({ status, output }));
+});
+test("read-source: archive and backup folders are no course files", () => {
+  const head = "<!--\nauthor: x\n-->\n# A\n";
+  const dir = tmpProject({ "a.md": head, "_archiv/x/README.md": head, "backup/y.md": head, "Backups/z.md": head, "Archive/w.md": head, "archiv/v.md": head, "course/b.md": head });
+  assert.deepEqual(listCourses(dir), ["a.md", "course/b.md"]);
+});
+test("read-source: adjacent images and credit names need a boundary", () => {
+  const r = readLiaScript("# T\n![a](x.png)![b](y.png) !?[video](v.mp4)\n## Image credits\n- 11.png – CC0\n- photos/y.png – CC0\n![c](1.png)\n");
+  assert.deepEqual(r.images.map(i => [i.alt, i.target, i.credit]), [["a", "x.png", false], ["b", "y.png", true], ["c", "1.png", false]]);
+});
+test("read-source: broken ZIP and inflate limits", () => {
+  const good = makeZip({ "ppt/slides/slide1.xml": slideXml("One", []), "ppt/media/..": Buffer.from([1]) });
+  const broken = Buffer.from(good);
+  broken.writeUInt32LE(broken.length * 2, broken.length - 6); // central directory offset beyond the end
+  assert.throws(() => unzip(broken), /broken ZIP archive \(/);
+  const cut = makeZip({ "a.txt": "x".repeat(1000) });
+  cut.writeUInt32LE(5000, cut.length - 22 - 51 + 20); // compressed size of the entry beyond the end of the archive
+  assert.throws(() => unzip(cut), /broken ZIP archive \(a\.txt runs past the end/);
+  const dir = tmpProject({});
+  writeFileSync(join(dir, "bad.pptx"), broken);
+  const run = runReadSource(["bad.pptx"], dir);
+  assert.equal(run.status, 2);
+  assert.match(run.output, /read-source: broken ZIP archive/);
+  writeFileSync(join(dir, "dots.pptx"), good);
+  assert.equal(runReadSource(["dots.pptx"], dir).status, 0);
+  // Only object streams are inflated: a deflated content stream naming another /Count does not change the page count.
+  const objStm = deflateSync(Buffer.from("<</Type /Pages /Count 3 /Kids []>>"));
+  const content = deflateSync(Buffer.from("<</Type /Pages /Count 99>>"));
+  const pdf = Buffer.concat([Buffer.from("%PDF-1.7\n1 0 obj\n<</Type /ObjStm /N 1 /First 4 /Filter /FlateDecode /Length 9>>\nstream\n"), objStm, Buffer.from("\nendstream\nendobj\n2 0 obj\n<</Filter /FlateDecode>>\nstream\n"), content, Buffer.from("\nendstream\nendobj\n")]);
+  assert.equal(readPdfInfo(pdf).pages, 3);
+});
+test("read-source: URLs – HTML read, PDF info, other types and errors refused, long pages capped in text", async () => {
+  const many = `<h1>T</h1>${Array.from({ length: 305 }, (_, i) => `<p>p${i}</p>`).join("")}`;
+  const server = createServer((request, response) => {
+    const send = (status, type, body) => { response.writeHead(status, { "content-type": type }); response.end(body); };
+    if (request.url === "/page") send(200, "text/html; charset=utf-8", many);
+    else if (request.url === "/doc.pdf") send(200, "application/pdf", "%PDF-1.4\n<</Type /Pages /Count 4>>\n/Title (Doc)");
+    else if (request.url === "/img.png") send(200, "image/png", Buffer.from([137, 80, 78, 71]));
+    else send(404, "text/plain", "missing");
+  });
+  await new Promise(done => server.listen(0, "127.0.0.1", done));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const page = await runReadSourceAsync([`${base}/page`]);
+    assert.equal(page.status, 0);
+    assert.match(page.output, /Blocks: 306/);
+    assert.match(page.output, /… 6 more/);
+    assert.doesNotMatch(page.output, /p304/);
+    assert.match((await runReadSourceAsync([`${base}/page`, "--json"])).output, /p304/);
+    const pdf = await runReadSourceAsync([`${base}/doc.pdf`]);
+    assert.equal(pdf.status, 0);
+    assert.match(pdf.output, /4 pages/);
+    assert.match(pdf.output, /Title: Doc/);
+    const image = await runReadSourceAsync([`${base}/img.png`]);
+    assert.equal(image.status, 2);
+    assert.match(image.output, /not a web page \(image\/png\) – save it into the project and read the file/);
+    const missing = await runReadSourceAsync([`${base}/missing`]);
+    assert.equal(missing.status, 2);
+    assert.match(missing.output, /HTTP 404/);
+  } finally { server.close(); }
+});

@@ -485,4 +485,19 @@ node specs/dashboard/fetch-thumb.mjs "https://commons.wikimedia.org/wiki/File:Ex
 node specs/dashboard/find.mjs -i "^### \d+\." journal.md
 ```
 
+## Quelle auslesen
+
+`node specs/dashboard/read-source.mjs <Datei|Ordner|URL> [--json]` aus dem Projektordner gibt einen kompakten Auszug einer Quelle aus, damit ein Agent Zahlen und Listen liest statt ganzer Dateien. Mit `--json` dasselbe vollständig als JSON.
+
+- **LiaScript (`.md`):** Kopf mit Imports (`template` oder `theme`, wenn die Adresse `theme` oder `design` enthält) und Styling (`theme-import`, `link-css` für `link:` auf `.css`, `style` für `@style … @end`); Folienliste (Überschriften außerhalb von Codeblöcken); je Bild Folie, Alt-Text, Ziel und ob ein Nachweis vorhanden ist (der Dateiname steht auf einer Folie wie „Bildnachweise“, „Image credits“, „Quellen“ oder „Lizenz“).
+- **Ordner:** die LiaScript-Kursdateien darin (`.md` mit Kopf) mit Titel, Folien- und Bildzahl; ohne `node_modules`, `specs`, `lia-templates`, versteckte Ordner, Archivkopien (Ordner mit `_` am Anfang, `backup`, `backups`, `archiv`, `archive`), symbolische Links und `journal.md`.
+- **PowerPoint (`.pptx`):** je Folie Titel, Text, Sprechernotizen und Bilder, dazu Theme-Farben und -Schriften. Die Bilder werden nach `.cache/source/{slug}/` entpackt (`slug` aus dem Dateinamen, klein, andere Zeichen als Buchstaben und Ziffern als `-`), nur innerhalb des aktuellen Ordners; gleichnamige Dateien werden überschrieben.
+- **PDF:** nur Seitenzahl, Titel und Autor; den Inhalt liest das Lese-Werkzeug des Agenten.
+- **Webseite (`http(s)://…` oder `.html`):** Titel, Überschriften, Absätze, Listenpunkte und Bilder mit absoluter Adresse; ohne `script`, `style`, `nav` und `footer`. Gelesen werden `text/html`, `application/xhtml+xml` und `text/plain`; eine PDF-Adresse gibt die PDF-Angaben aus, andere Typen werden abgelehnt. Höchstens 5 MB, 15 s Zeitlimit; in der Textausgabe höchstens 300 Blöcke und 300 Bilder, danach „… n more“.
+- Exit-Code 0: gelesen, 2: ungültiger Aufruf, nicht gefunden, unbekanntes Format oder nicht lesbar (eine Zeile `read-source: …`, kein Stacktrace).
+
+```bash
+node specs/dashboard/read-source.mjs .
+```
+
 Die Browserprüfung (`check-browser.mjs`) braucht feste Testdaten (leeres und gefülltes Journal) und gehört deshalb zum Testaufbau, nicht in `specs/`.

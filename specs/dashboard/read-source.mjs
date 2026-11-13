@@ -20,6 +20,10 @@ Exit code 0: read · 2: invalid call, unknown format or not readable.`;
 const TIMEOUT = 15000;
 const WIDTH = 200;
 const SKIP = new Set(["node_modules", "specs", "lia-templates"]);
+const ARCHIVE = /^(backups?|archiv|archive)$/i;
+const LIMIT = 50 * 1024 * 1024; // largest inflated ZIP entry or PDF object stream
+const PAGE_LIMIT = 5 * 1024 * 1024; // largest web page
+const ROWS = 300; // printed blocks and images of a web page (--json gives all)
 
 const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", auml: "ä", ouml: "ö", uuml: "ü", Auml: "Ä", Ouml: "Ö", Uuml: "Ü", szlig: "ß", ndash: "–", mdash: "—", hellip: "…", laquo: "«", raquo: "»", bdquo: "„", ldquo: "“", rdquo: "”", lsquo: "‘", rsquo: "’", copy: "©", shy: "" };
 const decode = text => String(text).replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (all, name) =>
@@ -76,31 +80,35 @@ export function readLiaScript(text) {
       continue;
     }
     bodies[slides.length] += `${line}\n`;
-    for (const match of line.matchAll(/(^|[^?])!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) images.push({ slide: slides.length, alt: match[2].trim(), target: match[3] });
+    for (const match of line.matchAll(/(?<!\?)!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g)) images.push({ slide: slides.length, alt: match[1].trim(), target: match[2] });
     for (const tag of line.matchAll(/<img\b[^>]*>/gi)) {
       const target = tag[0].match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
       if (target) images.push({ slide: slides.length, alt: tag[0].match(/\balt\s*=\s*["']([^"']*)["']/i)?.[1] ?? "", target });
     }
   }
   const creditPattern = /(bild|image|foto|photo).*(nachweis|credit|quelle|source)|^(quellen|sources|lizenz|licen[cs]e)/i;
-  // File names compare decoded, with "_" as space and in lower case: "a%2C_b.jpg" is credited by "File:A,_b.jpg".
+  // File names compare decoded, with "_" as space and in lower case: "a%2C_b.jpg" is credited by "File:A,_b.jpg";
+  // the name starts the credit text or follows a space, "/", ":", "(", "[" or "`" ("1.png" is not credited by "11.png").
   const plain = value => value.replace(/(%[0-9A-F]{2})+/gi, code => { try { return decodeURIComponent(code); } catch { return code; } }).replace(/_/g, " ").toLowerCase();
-  const credits = plain(slides.filter(slide => creditPattern.test(slide.title)).map(slide => bodies[slide.n]).join("\n"));
+  // Images standing on a credit slide do not credit themselves: their own markup is left out.
+  const credits = plain(slides.filter(slide => creditPattern.test(slide.title)).map(slide => bodies[slide.n]).join("\n")
+    .replace(/(?<!\?)!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>/gi, " "));
   for (const image of images) {
     const name = plain(basename(image.target.split(/[?#]/)[0]));
-    image.credit = Boolean(name) && credits.includes(name);
+    image.credit = Boolean(name) && new RegExp(`(^|[\\s/:(\\[\`])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(credits);
   }
   return { header: { theme: styling.flatMap(item => item.lines), styling, imports }, slides, images };
 }
 
 // The LiaScript course files of a folder (.md with a header), relative and sorted; skips node_modules, specs,
-// lia-templates, hidden folders (.git, .cache …), symbolic links and journal.md.
+// lia-templates, hidden folders (.git, .cache …), archive copies (folders starting with "_", backup(s), archiv(e)),
+// symbolic links and journal.md.
 export function listCourses(dir) {
   const found = [];
   (function walk(folder) {
     for (const item of readdirSync(folder, { withFileTypes: true })) {
       const path = join(folder, item.name);
-      if (item.isDirectory() && !SKIP.has(item.name) && !item.name.startsWith(".")) walk(path);
+      if (item.isDirectory() && !SKIP.has(item.name) && !/^[._]/.test(item.name) && !ARCHIVE.test(item.name)) walk(path);
       else if (item.isFile() && extname(item.name).toLowerCase() === ".md" && item.name !== "journal.md"
         && /^\s*(@?[\w-]+:|@[\w.-]+\s*$)/m.test(headerOf(readFileSync(path, "utf8")))) found.push(relative(dir, path).split(sep).join("/"));
     }
@@ -110,11 +118,14 @@ export function listCourses(dir) {
 
 // ---- ZIP and PowerPoint ----
 
-// The files of a ZIP archive (stored or deflated entries; no ZIP64), name → content.
+// The files of a ZIP archive (stored or deflated entries, each at most 50 MB inflated; no ZIP64), name → content.
 export function unzip(buffer) {
   let end = -1;
   for (let index = buffer.length - 22; index >= Math.max(0, buffer.length - 65557); index--) if (buffer.readUInt32LE(index) === 0x06054b50) { end = index; break; }
   if (end < 0) throw new Error("not a ZIP archive");
+  try { return entries(buffer, end); } catch (error) { throw new Error(`broken ZIP archive (${error.message})`); }
+}
+function entries(buffer, end) {
   const files = new Map();
   let at = buffer.readUInt32LE(end + 16);
   for (let count = buffer.readUInt16LE(end + 10); count > 0; count--) {
@@ -124,9 +135,10 @@ export function unzip(buffer) {
     at += 46 + nameLength + buffer.readUInt16LE(at + 30) + buffer.readUInt16LE(at + 32);
     if (name.endsWith("/") || buffer.readUInt32LE(local) !== 0x04034b50) continue;
     const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
+    if (start + size > buffer.length) throw new Error(`${name} runs past the end`);
     const data = buffer.subarray(start, start + size);
     if (method === 0) files.set(name, data);
-    else if (method === 8) files.set(name, inflateRawSync(data));
+    else if (method === 8) files.set(name, inflateRawSync(data, { maxOutputLength: LIMIT }));
   }
   return files;
 }
@@ -148,9 +160,10 @@ function rels(files, part) {
   return out;
 }
 
-// Slides in presentation order (title, text, speaker notes, image file names), theme colours and fonts of a .pptx.
-export function readPptx(buffer) {
-  const files = unzip(buffer);
+// Slides in presentation order (title, text, speaker notes, image file names), theme colours and fonts of a .pptx
+// (its bytes, or the files unzip() already read from it).
+export function readPptx(input) {
+  const files = input instanceof Map ? input : unzip(input);
   const number = name => Number(name.match(/(\d+)\.xml$/)?.[1] ?? 0);
   let order = [...files.keys()].filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name)).sort((a, b) => number(a) - number(b));
   const presentation = rels(files, "ppt/presentation.xml");
@@ -195,12 +208,16 @@ function pdfString(raw) {
   return bytes.toString("latin1").trim();
 }
 
-// Page count, title and author of a PDF; objects in compressed object streams are read as well.
+// Page count, title and author of a PDF; compressed object streams (/Type /ObjStm, at most 50 MB each) are read
+// as well, other streams (page content, images, fonts) are not.
 export function readPdfInfo(buffer) {
-  let source = buffer.toString("latin1");
-  if (!source.startsWith("%PDF")) throw new Error("not a PDF file");
-  for (const match of source.matchAll(/stream\r?\n([\s\S]*?)endstream/g)) {
-    try { source += `\n${inflateSync(Buffer.from(match[1], "latin1")).toString("latin1")}`; } catch { /* not deflated or not readable */ }
+  const raw = buffer.toString("latin1");
+  if (!raw.startsWith("%PDF")) throw new Error("not a PDF file");
+  let source = raw;
+  for (const match of raw.matchAll(/(?<!end)stream\r?\n([\s\S]*?)endstream/g)) {
+    const before = raw.slice(Math.max(0, match.index - 2000), match.index);
+    if (!/\/Type\s*\/ObjStm\b/.test(before.slice(before.lastIndexOf("obj")))) continue;
+    try { source += `\n${inflateSync(Buffer.from(match[1], "latin1"), { maxOutputLength: LIMIT }).toString("latin1")}`; } catch { /* not deflated or too large */ }
   }
   const counts = [...source.matchAll(/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)|\/Count\s+(\d+)[^>]*?\/Type\s*\/Pages\b/g)].map(match => Number(match[1] ?? match[2]));
   const pages = counts.length ? Math.max(...counts) : source.match(/\/Type\s*\/Page(?![a-zA-Z])/g)?.length ?? 0;
@@ -260,7 +277,14 @@ async function main(args) {
       throw new Error(error.name === "TimeoutError" ? `no answer within ${TIMEOUT / 1000} s` : `${error.message}${error.cause ? ` (${error.cause.code ?? error.cause.message})` : ""}`);
     }
     if (!response.ok) throw new Error(`HTTP ${response.status} for ${target}`);
-    const r = readHtml(await response.text(), response.url || target);
+    const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    const readable = ["text/html", "application/xhtml+xml", "text/plain", "application/pdf"];
+    if (!readable.includes(type)) throw new Error(`not a web page (${type || "no type"}) – save it into the project and read the file`);
+    if (Number(response.headers.get("content-length") ?? 0) > PAGE_LIMIT) throw new Error("larger than 5 MB");
+    const body = Buffer.from(await response.arrayBuffer());
+    if (body.length > PAGE_LIMIT) throw new Error("larger than 5 MB");
+    if (type === "application/pdf") { const r = readPdfInfo(body); if (out(r)) printPdf(target, r); return 0; }
+    const r = readHtml(body.toString("utf8"), response.url || target);
     if (out(r)) printHtml(target, r);
     return 0;
   }
@@ -277,10 +301,10 @@ async function main(args) {
     const source = readFileSync(full, "utf8"), r = readLiaScript(source);
     if (out(r)) { printLiaScript(target, r); if (!headerOf(source)) console.log("Note: no LiaScript header (plain Markdown)."); }
   } else if (type === ".pptx") {
-    const buffer = readFileSync(full), r = readPptx(buffer);
+    const files = unzip(readFileSync(full)), r = readPptx(files);
     const slug = basename(full, extname(full)).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "source";
     const root = realpathSync(process.cwd()), folder = join(root, ".cache", "source", slug);
-    const media = [...unzip(buffer)].filter(([name]) => /^ppt\/media\/[^/]+$/.test(name));
+    const media = [...files].filter(([name]) => /^ppt\/media\/[^/]+$/.test(name) && !/^\.\.?$/.test(basename(name)));
     if (media.length) {
       mkdirSync(folder, { recursive: true });
       const real = relative(root, realpathSync(folder));
@@ -295,8 +319,7 @@ async function main(args) {
         ...(slide.images.length ? [`     images: ${slide.images.join(", ")}`] : [])])]);
   } else if (type === ".pdf") {
     const r = readPdfInfo(readFileSync(full));
-    if (out(r)) say([`PDF: ${target} · ${r.pages} pages`, `Title: ${r.title ?? "–"}`, `Author: ${r.author ?? "–"}`,
-      "Read the content with the file-reading tool, at most 20 pages at a time."]);
+    if (out(r)) printPdf(target, r);
   } else if (type === ".html" || type === ".htm") {
     const r = readHtml(readFileSync(full, "utf8"), pathToFileURL(full).href);
     if (out(r)) printHtml(target, r);
@@ -304,10 +327,16 @@ async function main(args) {
   return 0;
 }
 
+function printPdf(name, r) {
+  say([`PDF: ${name} · ${r.pages} pages`, `Title: ${r.title ?? "–"}`, `Author: ${r.author ?? "–"}`,
+    "Read the content with the file-reading tool, at most 20 pages at a time."]);
+}
+// At most ROWS lines of a list, then "… n more".
+const capped = (list, line) => [...list.slice(0, ROWS).map(line), ...(list.length > ROWS ? [`  … ${list.length - ROWS} more`] : [])];
 function printHtml(name, r) {
   say([`Web page: ${name}`, `Title: ${r.title ?? "–"}`, `Blocks: ${r.blocks.length}`,
-    ...r.blocks.map(block => block.type === "h" ? `  ${"#".repeat(block.level)} ${cut(block.text)}` : `  ${block.type === "li" ? "-" : "¶"} ${cut(block.text)}`),
-    `Images: ${r.images.length}`, ...r.images.map(image => `  ${image.alt ? `"${cut(image.alt)}"` : "(no alt text)"} · ${image.src}`)]);
+    ...capped(r.blocks, block => block.type === "h" ? `  ${"#".repeat(block.level)} ${cut(block.text)}` : `  ${block.type === "li" ? "-" : "¶"} ${cut(block.text)}`),
+    `Images: ${r.images.length}`, ...capped(r.images, image => `  ${image.alt ? `"${cut(image.alt)}"` : "(no alt text)"} · ${image.src}`)]);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
