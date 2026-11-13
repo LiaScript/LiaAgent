@@ -514,6 +514,12 @@ test("Material ✅ needs the material document, and a done unit needs Done ✅",
   const single = journal({ context: "* __File Structure:__\n  1. Mode: single-file" }).replace("## Sessions\n\n", `## Sessions\n\n${table("❌")}\n\n`);
   assert.equal(checkJournal(single).status, 2);
   assert.equal(checkJournal(single, { "README.md": "# X\n\n## 1. Intro" }).status, 0);
+  // An existing course that keeps its own folder name records its path in the Material cell.
+  const recorded = base("❌").replace("| ✅ | ❌ | |", "| ✅ `materials/carpentry-intro/README.md` | ❌ | |");
+  assert.equal(checkJournal(recorded, { "materials/carpentry-intro/README.md": "# Intro" }).status, 0);
+  const lost = checkJournal(recorded, { "materials/1-intro/README.md": "# Intro" });
+  assert.equal(lost.status, 2, lost.output);
+  assert.match(lost.output, /material document is missing \(materials\/carpentry-intro\/README\.md\)/);
   const doneUnit = base("❌").replace('"state":"planned"', '"state":"done"');
   const run = checkJournal(doneUnit, { "materials/1-intro/README.md": "# Intro" });
   assert.equal(run.status, 2, run.output);

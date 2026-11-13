@@ -283,9 +283,21 @@ const fileMode = section("Course Context").match(/Mode:\s*(single-file|multi-fil
 // (mini, convert) the whole README.md is unit 1 (data/file-structure-modes.md → Light tracks).
 const readme = () => existsSync(join(projectDir, "README.md")) ? readFileSync(join(projectDir, "README.md"), "utf8") : "";
 const lightTrack = /^\s*\d+\.\s*Track:\s*(mini|convert)\b/m.test(section("Course Context"));
+// multi-file: a Material cell may name the path of an existing course whose folder keeps its own name
+// ("✅ `materials/carpentry-joints/README.md`", data/file-structure-modes.md → Recorded paths); else
+// materials/{n}-…/README.md.
+const recordedPaths = new Map();
+const recordedPath = cell => cell?.match(/\bmaterials\/[^\s`|)]+\.md\b/)?.[0] ?? null;
+const materialFile = number => {
+  const recorded = recordedPaths.get(number);
+  if (recorded) return existsSync(join(projectDir, recorded)) ? join(projectDir, recorded) : null;
+  const dir = join(projectDir, "materials");
+  const name = existsSync(dir) ? readdirSync(dir).find(item => item.startsWith(`${number}-`) && existsSync(join(dir, item, "README.md"))) : null;
+  return name ? join(dir, name, "README.md") : null;
+};
 const materialExists = (number, title) => fileMode === "single-file"
   ? (lightTrack && number === "1" ? readme().trim() !== "" : readme().split("\n").some(line => line.startsWith("## ") && (!title || line.toLowerCase().includes(title.toLowerCase()))))
-  : existsSync(join(projectDir, "materials")) && readdirSync(join(projectDir, "materials")).some(name => name.startsWith(`${number}-`) && existsSync(join(projectDir, "materials", name, "README.md")));
+  : Boolean(materialFile(number));
 const doneRows = new Set();
 const materialRows = new Set();
 const notesCells = new Map();
@@ -296,7 +308,9 @@ for (const row of sessions.matchAll(/^\|\s*(\d+)\s*\|(.*)\|\s*$/gm)) {
   if (header.length >= 6) notesCells.set(row[1], cells[column("Notes", 1)] ?? "");
   if (done?.includes("✅")) doneRows.add(row[1]);
   if (cells[column("Material", 3)]?.includes("✅")) materialRows.add(row[1]);
-  if (fileMode && cells[column("Material", 3)]?.includes("✅") && !materialExists(row[1], cells[header.indexOf("Title") >= 0 ? header.indexOf("Title") : 0])) problems.push(`unit ${row[1]}: "Material ✅" but the material document is missing (${fileMode === "single-file" ? "README.md" : `materials/${row[1]}-…/README.md`})`);
+  const recorded = fileMode === "multi-file" ? recordedPath(cells[column("Material", 3)]) : null;
+  if (recorded) recordedPaths.set(row[1], recorded);
+  if (fileMode && cells[column("Material", 3)]?.includes("✅") && !materialExists(row[1], cells[header.indexOf("Title") >= 0 ? header.indexOf("Title") : 0])) problems.push(`unit ${row[1]}: "Material ✅" but the material document is missing (${fileMode === "single-file" ? "README.md" : recorded ?? `materials/${row[1]}-…/README.md`})`);
   if (done && done.includes("✅")) {
     const block = sessions.split(new RegExp(`^### ${row[1]}\\. `, "m"))[1]?.split(/^### \d+\. /m)[0] ?? "";
     if (!/#### Validation Report[\s\S]*?__Result:__\s*PASS(?!\s*with)/.test(block)) problems.push(`unit ${row[1]}: "Done ✅" without a passed check (Validation Report with "Result: PASS" – not "with concerns" – is missing)`);
@@ -477,8 +491,11 @@ if (openBriefs.length && openBriefs.every(brief => brief.state === "ready to tes
   model.process?.steps?.filter(step => /\bin (development|Entwicklung)\b/i.test(String(step.result ?? ""))).forEach(step =>
     warnings.push(`the template step says "${short(step.result, 60)}", but every open brief is ready to test (${openBriefs.map(brief => brief.id).join(", ")}) – write "ready to test" (German "bereit zum Ausprobieren")`));
 }
+// Being worked on = begun and not done; existing material without a planning sketch (a draft without `href`,
+// taken over by :analyze-existing) does not count (actions.mjs → courseNext).
+const workedOn = unit => ["current", "draft", "review", "revision"].includes(unit.state) && (unit.state !== "draft" || Boolean(unit.href));
 if (/^agent:teaching\/suggest-templates\b/.test(String(model.next?.href ?? ""))) {
-  const working = model.units.find(unit => ["current", "draft", "review", "revision"].includes(unit.state));
+  const working = model.units.find(workedOn);
   if (working) warnings.push(`next suggests templates although unit ${working.id} is being worked on – next stays with the unit, :suggest-templates goes into explore (icon ➕)`);
   else if (agendaTableRows) warnings.push("next suggests templates although the agenda is saved – next stays with the agenda and the units, :suggest-templates goes into explore (icon ➕)");
 }
@@ -487,7 +504,7 @@ if (/^agent:teaching\/suggest-templates\b/.test(String(model.next?.href ?? "")))
 const briefNext = String(model.next?.href ?? "").match(/^agent:(development\/develop-template\?id|teaching\/manage-templates\?name)=([a-z0-9-]+)/);
 const nextBrief = briefNext && openBriefs.find(brief => brief.id === briefNext[2]);
 if (nextBrief) {
-  const working = model.units.find(unit => ["current", "draft", "review", "revision"].includes(unit.state));
+  const working = model.units.find(workedOn);
   const names = id => /\b(all|alle|allen)\b/i.test(nextBrief.usedIn)
     || [...nextBrief.usedIn.matchAll(/(\d+)\s*[–-]\s*(\d+)/g)].some(([, from, to]) => Number(id) >= Number(from) && Number(id) <= Number(to))
     || new RegExp(`(^|\\D)${String(id).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\D|$)`).test(nextBrief.usedIn);
@@ -567,9 +584,9 @@ for (const entry of imageEntries) {
 const loose = text => { try { return decodeURI(text); } catch { return text; } };
 const materialText = unit => {
   if (fileMode === "single-file") return readme();
-  const dir = join(projectDir, "materials");
-  const name = existsSync(dir) ? readdirSync(dir).find(item => item.startsWith(`${unit}-`) && existsSync(join(dir, item, "README.md"))) : null;
-  return name ? readFileSync(join(dir, name, "README.md"), "utf8") : "";
+  // the recorded path of the Material cell, else materials/{n}-…/README.md
+  const path = materialFile(unit);
+  return path ? readFileSync(path, "utf8") : "";
 };
 const groups = new Map();
 imageEntries.forEach(entry => {

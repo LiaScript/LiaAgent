@@ -67,7 +67,7 @@ Offers two paths for each missing core section:
 6b. Reconstruct or create `journal.md` → `## Sessions` from project memory and the existing file system — prepared here, written only after "Save" in step 8b:
    - Scan `journal.md` → `## Sessions` for `### {number}. {title}` subsections and for material documents per `data/file-structure-modes.md` — `materials/{number}-{slug}/README.md` (multi-file; legacy `{number}-{type}` names count too, see step 1) or `##` chapters in root `/README.md` (single-file)
    - If a legacy `journal.md` → `## Session Skeletons` section exists, use it only as migration input and move reconstructed skeletons into `## Sessions`
-   - For each session found: set Skeleton ✅ if a matching `### {number}. {title}` subsection exists in `## Sessions`, Material ✅ if its material document exists, Done stays ❌ (cannot be inferred — instructor must confirm)
+   - For each session found: set Skeleton ✅ if a matching `### {number}. {title}` subsection exists in `## Sessions`, Material ✅ if its material document exists — for a multi-file folder not named `{number}-…` followed by its path (`` ✅ `materials/{folder}/README.md` ``, `data/file-structure-modes.md` → Recorded paths), Done stays ❌ (cannot be inferred — instructor must confirm)
    - Prepare the overview (status list + technical table, `templates/session-skeleton.yaml` → `section_layout.overview`) directly below `## Sessions`, before all `### {number}. {title}` subsections
 
 6c. Ensure `journal.md` → `## Agents` exists — prepared here, written only after "Save" in step 8b:

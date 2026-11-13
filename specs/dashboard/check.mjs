@@ -1709,7 +1709,9 @@ test("a brief takes next from a unit at work only when its __Used in:__ names th
   assert.doesNotMatch(validate({ title: "Kurs", next: develop, units: [unit("1", "planned")] }, templatesSection).output, /next is the brief/, "no unit at work");
   const ready = templatesSection.replace("* __State:__ brief", "* __State:__ ready to test").replace("* __Folder:__", "* __Folder:__ lia-templates/turtle-maze/");
   const adopt = { ...develop, href: "agent:teaching/manage-templates?name=turtle-maze", command: ":manage-templates turtle-maze" };
-  const taken = validate({ title: "Kurs", next: adopt, units: [unit("1", "draft")] }, ready, { "lia-templates/turtle-maze/README.md": "# Turtle maze\n" });
+  const taken = validate({ title: "Kurs", next: adopt, units: [{ ...unit("1", "draft"), href: "#1.-e1" }] }, ready, { "lia-templates/turtle-maze/README.md": "# Turtle maze\n" });
+  // A draft without its planning sketch (existing material taken over by :analyze-existing) is not at work.
+  assert.doesNotMatch(validate({ title: "Kurs", next: adopt, units: [unit("1", "draft")] }, ready, { "lia-templates/turtle-maze/README.md": "# Turtle maze\n" }).output, /next is the brief/);
   assert.match(taken.output, /next is the brief "turtle-maze" although unit 1 is being worked on .* :manage-templates turtle-maze goes into explore/);
 });
 
@@ -2098,6 +2100,15 @@ test("the course's next action follows the order of the course process", () => {
   assert.equal(nextOf(course({ units: [doneUnit(1), doneUnit(2)], validation: { mode: "course", result: "PASS" } })), "agent:development/create-project");
   const withApproved = course({ units: [doneUnit(1), facts(2)] });
   assert.ok(accepts(courseNext(withApproved, new Map([["1", "done"], ["2", "planned"]])), "agent:teaching/build-session?number=2"), "after an approved unit, letting it be prepared is right too");
+});
+
+test("existing material without a planning sketch (improve-existing) is planned first and does not hold the course steps back", () => {
+  const existing = n => facts(n, { material: true });
+  const takenOver = more => course({ hasAgenda: false, agendaRequired: "no", units: [existing(1), existing(2)], ...more });
+  assert.equal(unitAction(existing(1)).href, "agent:teaching/create-session?number=1", "no check without the ### subsection its report goes into");
+  assert.equal(nextOf(takenOver({ templates: { selection: "open", adopted: [], briefs: [] } })), "agent:teaching/suggest-templates");
+  assert.equal(nextOf(takenOver()), "agent:teaching/create-session?number=1");
+  assert.equal(nextOf(takenOver({ units: [existing(1), facts(2, { heading: { title: "B" }, material: true })] })), "agent:teaching/validate-course?number=2", "a unit with its sketch is the one worked on");
 });
 
 test("a unit's main action follows its state; a judgement call stays with the agent", () => {

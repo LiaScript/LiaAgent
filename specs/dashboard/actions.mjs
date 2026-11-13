@@ -88,7 +88,9 @@ export function unitAction(unit) {
   // ("images 9 of 10"), the check runs, and afterwards it is the step that is left.
   const waiting = unit.images.waiting ?? 0;
   const imagesOpen = unit.images.open - waiting > 0;
-  if (!unit.heading && !unit.material) return action("plan-unit", "teaching", "create-session", { number: n });
+  // No planning sketch yet: plan it first, also when material already exists (an existing course taken over
+  // by :analyze-existing) – the check stores its report in the unit's ### subsection.
+  if (!unit.heading) return action("plan-unit", "teaching", "create-session", { number: n });
   // "Let it be prepared" is running (confirmed with the sketch, no report yet): the button says so and leads
   // back to the same run, never to the joint way (SK58).
   if (unit.buildRequested && !report?.result) return action("build-running", "teaching", "build-session", { number: n }, "⏳");
@@ -128,10 +130,11 @@ export function courseNext(journal, states, selected) {
   if (!journal.filled.Outline) return action("create-outline", "teaching", "create-outline");
   if (!journal.filled.Didactics) return action("create-didactics", "teaching", "create-didactics");
   // The unit being worked on: the recommended one (also before its planning sketch) while it is not done,
-  // else the first begun unit that is not done.
+  // else the first begun unit that is not done. Begun = it has its planning sketch; existing material without
+  // one (improve-existing) does not hold the course steps back.
   const open = unit => states.get(unit.n) !== "done" && !awaitsOwnMedia(unit);
   const working = journal.units.find(unit => unit.n === String(selected) && open(unit))
-    ?? journal.units.find(unit => (unit.heading || unit.material) && open(unit));
+    ?? journal.units.find(unit => unit.heading && open(unit));
   const { selection, adopted, briefs } = journal.templates;
   const brief = briefs.find(item => !adopted.includes(item.id));
   if (brief && (!working || names(brief.usedIn, working.n))) {
@@ -142,7 +145,7 @@ export function courseNext(journal, states, selected) {
   if (working) return unitAction(working);
   if (selection === "open" && !brief && !journal.hasAgenda) return action("suggest-templates", "teaching", "suggest-templates");
   if (journal.agendaRequired === "yes" && !journal.hasAgenda) return action("create-agenda", "teaching", "create-agenda");
-  const unplanned = journal.units.find(unit => !unit.heading && !unit.material);
+  const unplanned = journal.units.find(unit => !unit.heading);
   if (unplanned) {
     const approvedOne = journal.units.some(unit => unit.approved);
     return { ...unitAction(unplanned), also: approvedOne ? [`agent:teaching/build-session?number=${unplanned.n}`] : [] };

@@ -24,6 +24,7 @@ Each session/unit is its own LiaScript document in its own folder.
 - `{slug}` is a kebab-case slug derived from the session title: lowercase, strip punctuation, spaces → hyphens, keep the first ~5 words if the title is long (e.g. "Are You in Scope? Essential vs. Important Entities" → `are-you-in-scope-essential-vs-important`). Umlauts and ß are transliterated (ä→ae, ö→oe, ü→ue, ß→ss); only punctuation is dropped, no filler words; keep the first ~5 words.
 - **Compute the slug once**, when the material path is first recorded — in the technical table of `## Agenda` if an agenda exists, otherwise when the material document is first created. Every later task reuses the recorded path. If the session title changes afterward, do not silently rename the folder — flag the mismatch and ask before renaming, since links and assets may reference the existing path.
 - Typical for: `lecture-series`, `self-paced`, `workshop`, or any course with multiple sessions.
+- **Recorded paths:** an existing course whose folders keep their own names (e.g. git submodules `materials/carpentry-joints/`, found by `:analyze-existing`) records each unit's path in the Material cell of the `## Sessions` technical table: `` ✅ `materials/carpentry-joints/README.md` ``. Every task resolves a unit's material (and its `assets/`) from that recorded path first, then from `## Agenda`, then `materials/{number}-{slug}/`; never rename such a folder. `validate-journal.mjs` checks that the recorded file exists.
 
 ## Creating the material document
 

@@ -18,7 +18,7 @@ template:
         (2) `<details><summary>{"Technical overview", translated}</summary>`, then `<!-- data-type="none" -->`
         and the table `| # | Title | Type | Method | Skeleton | Material | Done | Notes |` (the Method
         column only if `__Default Session Method:__` is not `none`), then `</details>`.
-        Columns: Skeleton ✅ = the `###` subsection exists; Material ✅ = the material document exists (set by
+        Columns: Skeleton ✅ = the `###` subsection exists; Material ✅ = the material document exists, for an existing folder with its own name followed by its path (`data/file-structure-modes.md` → Recorded paths) (set by
         whichever task first writes it — instructor approval does not change it); Done ✅ = the latest
         `#### Validation Report` says `Result: PASS` (not "with concerns") with no open ⏳ item — set and
         reset by `:validate-course` in session and course mode alike.
