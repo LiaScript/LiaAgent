@@ -19,9 +19,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { stepsOf, sectionSlug, laterHidden } from "./tracks.mjs";
+import { stepsOf, sectionSlug, laterHidden, englishLightStepTitles } from "./tracks.mjs";
 import { readJournal, englishUnitSteps, englishTerms, englishOutdatedTerms, usableState, loadPacks, anchorOf, statusText, patchSessions, courseStepKeys, englishCourseSteps, trackSteps, modeOf } from "./journal-model.mjs";
-import { courseNext, outlineShort, unitIsCourseCheck, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote } from "./actions.mjs";
+import { courseNext, outlineShort, unitIsCourseCheck, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote, designUnitAction } from "./actions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -145,15 +145,25 @@ export function derive(journal, input, { date, previous } = {}) {
   const existing = new Map((data.units ?? []).map(unit => [String(unit.id), unit]));
   // A new unit, or one without steps, gets the same material steps as the others, all still to come; while
   // no unit has steps yet, the steps of the language pack (`unitSteps`, English built in).
-  const template = (data.units ?? []).find(unit => unit.process?.steps?.length)?.process.steps
+  // The design track: each unit has its own steps by scope – look, images (the pack's `lightStepTitles`), then the
+  // unit check step of the pack's `unitSteps`; null without words in the course language.
+  const design = journal.track === "design";
+  const packUnitSteps = journal.pack?.unitSteps ?? (journal.language === "en" ? englishUnitSteps : null);
+  const lightTitles = journal.pack?.lightStepTitles ?? (journal.language === "en" ? englishLightStepTitles : null);
+  const unitCheck = packUnitSteps && unitStepOf({ key: "check-unit" }, packUnitSteps);
+  const designKeys = stepsOf("design", modeOf(journal)).filter(key => key === "look" || key === "images");
+  const designTemplate = design && unitCheck && designKeys.every(key => lightTitles?.[key])
+    ? [...designKeys.map(key => ({ title: lightTitles[key] })), { title: unitCheck.title, ...(unitCheck.why ? { why: unitCheck.why } : {}) }] : null;
+  const template = design ? designTemplate : (data.units ?? []).find(unit => unit.process?.steps?.length)?.process.steps
     ?? journal.pack?.unitSteps ?? (journal.language === "en" ? englishUnitSteps : null);
   // A light track (mini, convert) has no planning sketch: its unit has no planning step (T5-21).
   const light = ["mini", "convert"].includes(journal.track);
   const planTitles = [journal.pack?.unitSteps?.[0]?.title, englishUnitSteps[0].title].filter(Boolean).map(title => title.toLowerCase());
   const isPlanStep = step => planTitles.includes(String(step?.title ?? "").toLowerCase());
   const freshSteps = () => template.filter(step => !(light && isPlanStep(step))).map(step => ({
-    title: step.title, state: isImageStep(step, terms) ? "optional" : "planned", ...(step.why ? { why: step.why } : {})
+    title: step.title, state: !design && isImageStep(step, terms) ? "optional" : "planned", ...(step.why ? { why: step.why } : {})
   }));
+  const titlesOf = list => (list ?? []).map(step => step.title).join("\n");
 
   // The next action decides the recommended unit; only "done" matters for it, which does not depend on it.
   const unitWord = journal.terminology ?? journal.pack?.unitWord?.one ?? data.unitLabel?.one ?? "unit";
@@ -188,6 +198,8 @@ export function derive(journal, input, { date, previous } = {}) {
     if (title) set(unit, "title", title, `${path}.title`, facts.heading ? "heading of the subsection" : facts.title ? "technical table in ## Sessions" : "agenda row");
     if (unit.process && title) set(unit.process, "title", title, `${path}.process.title`, "unit title");
     if (template && !unit.process?.steps?.length) set(unit, "process", { title: unit.title, steps: freshSteps() }, `${path}.process`, "every unit gets the same steps from the start");
+    // A design unit with steps of another kind (or of another scope) gets the design steps.
+    else if (designTemplate && titlesOf(unit.process.steps) !== titlesOf(designTemplate)) set(unit, "process", { title: unit.title, steps: freshSteps() }, `${path}.process`, "the design track's unit steps (look, images, check by scope)");
     if (light && unit.process?.steps?.some(isPlanStep)) set(unit.process, "steps", unit.process.steps.filter(step => !isPlanStep(step)), `${path}.process.steps`, "a light track has no planning sketch");
 
     const { state, why } = unitState(facts, { selected: light ? nextUnit : data.selected });
@@ -218,12 +230,23 @@ export function derive(journal, input, { date, previous } = {}) {
     // The image step follows the image entries: open while one is open, done once all are placed. Without
     // entries it keeps its state (older journals track images only as markers in the material).
     const imageStep = unit.process?.steps?.find(step => isImageStep(step, terms));
+    // Design: the look is done once the unit's course file carries the theme, the images once they are reviewed and
+    // no entry is open; a step is in progress while the unit's own next action belongs to it.
+    if (designTemplate) {
+      const own = designUnitAction(facts, journal)?.key;
+      const designState = (title, done, keys, why) => {
+        const step = unit.process?.steps?.find(item => item.title === title);
+        if (step) set(step, "state", done ? "done" : keys.includes(own) ? "current" : "planned", `${path} step "${title}".state`, done ? why : own ? `the unit's next action: ${own}` : "not reached yet");
+      };
+      designState(lightTitles.look, facts.themeApplied === true, ["design-look", "apply-theme"], "the course file carries the theme");
+      designState(lightTitles.images, facts.imagesReviewed && facts.images.open === 0, ["review-images", "insert-images", ...(designKeys.includes("look") ? [] : ["design-look"])], "images reviewed, none open");
+    }
     // Only own photos still missing: the step waits for the instructor ("planned") – it becomes current again
     // when it is the next action (after the check, SK41).
     const { total, placed, open, waiting = 0 } = facts.images;
     // When the next action inserts this unit's photo, the step stays current – no flip between two rules (R12c).
     const photoNext = expected?.key === "insert-images" && String(expected.params.number) === String(facts.n);
-    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material && !facts.report?.stale ? "current" : "planned") : open ? (photoNext ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
+    if (imageStep && total && !design) set(imageStep, "state", open > waiting ? (facts.material && !facts.report?.stale ? "current" : "planned") : open ? (photoNext ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
     // Only own photos missing: the step says it waits for them, with the count (SK60).
     const waitingWord = String(terms.imagesWaiting ?? englishTerms.imagesWaiting);
     const waitingLabel = imageStep && total && open && open === waiting ? waitingWord.replace("{n}", placed).replace("{m}", total) : undefined;
@@ -254,11 +277,11 @@ export function derive(journal, input, { date, previous } = {}) {
       set(checkStep, "statusLabel", undefined, `${path} step "${checkStep.title}".statusLabel`, facts.report?.stale ? "material changed after the check" : "not passed");
     }
     // The planning step is done once the planning sketch (### {n}. {title}) is saved.
-    const planStep = light ? null : unitStepOf({ key: "plan-unit" }, steps);
+    const planStep = light || design ? null : unitStepOf({ key: "plan-unit" }, steps);
     if (planStep && facts.heading && planStep.state !== "done") set(planStep, "state", "done", `${path} step "${planStep.title}".state`, "planning sketch saved");
     // The material step is done once the material exists and a check ran or the instructor approved it –
     // also after "let it be prepared", where no one approves the draft before the check (SK60).
-    const materialStep = unitStepOf({ key: "work-out" }, steps);
+    const materialStep = design ? null : unitStepOf({ key: "work-out" }, steps);
     // While "let it be prepared" runs, the material step does not promise the joint way (R12-SK76): the pack's
     // default why of that step is replaced; a why of the agent's own stays.
     const defaultWhy = (journal.pack?.unitSteps ?? englishUnitSteps)[1]?.why;
@@ -547,7 +570,7 @@ export function derive(journal, input, { date, previous } = {}) {
     const text = String(journal.terms?.asOf ?? englishTerms.asOf).replace("{date}", now);
     if (data.footer !== text) set(data, "footer", text, "footer", "date of the derived state");
   }
-  return { data, changes, sessions, missing, unitWord, unitsWord, trackChanged };
+  return { data, changes, sessions, missing, unitWord, unitsWord, trackChanged, states: doneStates };
 }
 
 // The lines of ## Sessions that follow the derived data: status lines, Notes cells and the units' action
@@ -557,7 +580,7 @@ export function patchJournal(source, journal, derived) {
   const steps = [
     text => patchSessions(text, derived.sessions),
     text => patchUnitActions(text, journal, wordsFor),
-    text => patchSectionActions(text, journal, wordsFor),
+    text => patchSectionActions(text, journal, wordsFor, derived.states),
     text => patchSessionsNote(text, journal, wordsFor)
   ];
   let text = source;

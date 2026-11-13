@@ -3860,7 +3860,8 @@ const deriveDesign = (opts = {}) => {
   const theme = opts.theme ?? [];
   const files = Object.fromEntries((opts.applied ?? []).map((applied, i) => [["course/a.md", "course/b.md"][i], `<!--\nauthor: A\n${applied ? `${theme.join("\n")}\n` : ""}-->\n# T\n`]));
   const journal = readJournal(designJournalText(opts).replace("sessions-called: unit", "sessions-called: Einheit"), { projectDir: tmpProject(files) });
-  return derive(journal, { title: "Design course", process: { steps: structuredClone(englishCourseSteps()) } }, { date: "2026-11-13" });
+  const text = designJournalText(opts).replace("sessions-called: unit", "sessions-called: Einheit");
+  return { ...derive(journal, { title: "Design course", process: { steps: structuredClone(englishCourseSteps()) }, ...(opts.data ?? {}) }, { date: "2026-11-13" }), journal, text };
 };
 
 test("design next: look before images, images before the check, scope respected", () => {
@@ -3946,4 +3947,72 @@ test("design words: the German pack and English have the three actions and the t
   assert.equal(de.terms.imagesReviewed, "Bilder durchgesehen");
   assert.equal(de.terms.licenseUnclearKept, "Lizenz ungeklärt – von der Lehrkraft behalten");
   assert.ok(englishTerms.licenseUnclearKept);
+});
+
+// ---- T4 fix round 1: design units have their own steps and actions; no course-check link once the unit check counts ----
+
+import { designUnitAction } from "./actions.mjs";
+
+const unitSteps = unit => unit.process.steps.map(step => [step.title, step.state]);
+test("design units: own steps by scope – look, images, check – with states from the journal", () => {
+  const { data } = deriveDesign({ scope: "both", theme: ["x"], applied: [true, false], reviewed: [true, false], images: [[{ status: "existing" }], [{ status: "wanted" }]] });
+  assert.deepEqual(unitSteps(data.units[0]), [["Aussehen", "done"], ["Bilder", "done"], ["Prüfen und freigeben", "planned"]]);
+  assert.deepEqual(unitSteps(data.units[1]), [["Aussehen", "current"], ["Bilder", "planned"], ["Prüfen und freigeben", "planned"]]);
+  const look = deriveDesign({ scope: "look", theme: ["x"], applied: [true, true] }).data;
+  assert.deepEqual(look.units[0].process.steps.map(step => step.title), ["Aussehen", "Prüfen und freigeben"]);
+  assert.equal(look.units[0].process.steps[1].state, "current", "the check of unit 1 is next");
+  const images = deriveDesign({ scope: "images", theme: ["x"], reviewed: [true, false], images: [[{ status: "wanted" }], []] }).data;
+  assert.deepEqual(unitSteps(images.units[0]), [["Bilder", "current"], ["Prüfen und freigeben", "planned"]], "reviewed, an image still open");
+  assert.deepEqual(unitSteps(images.units[1]), [["Bilder", "current"], ["Prüfen und freigeben", "planned"]], "not reviewed yet");
+  // Steps of another kind (the pack's four unit steps) give way to the design steps.
+  const old = deriveDesign({ scope: "look", theme: ["x"], applied: [true, true], data: { units: [{ id: 1, title: "Unit A", state: "draft", process: { title: "Unit A", steps: structuredClone(steps) } }] } }).data;
+  assert.deepEqual(old.units[0].process.steps.map(step => step.title), ["Aussehen", "Prüfen und freigeben"]);
+  // English words: the light step titles and the unit check step.
+  const english = derive(readJournal(designJournal({ scope: "both", theme: ["x"] }), { projectDir: tmpProject({}) }), { title: "D" }).data;
+  assert.deepEqual(english.units[0].process.steps.map(step => step.title), ["Look", "Images", "Check and approve"]);
+  // Old tracks keep the pack's unit steps.
+  assert.deepEqual(derive(readJournal(deriveJournal({})), { ...deriveData(), units: [] }).data.units[0].process.steps.map(step => step.title), englishUnitSteps.map(step => step.title));
+});
+test("design units: the action line follows the design order – look, images, open images, then the check", () => {
+  const journal = designCourse({ scope: "both", theme: ["x"] });
+  const unit = more => ({ ...journal.units[0], ...more });
+  assert.equal(designUnitAction(unit({ themeApplied: false }), journal).href, "agent:artist/apply-theme");
+  assert.equal(designUnitAction(unit({ themeApplied: true }), journal).href, "agent:artist/review-images?number=1");
+  assert.equal(designUnitAction(unit({ themeApplied: true, imagesReviewed: true, images: imageFacts([{ status: "wanted" }]) }), journal).href, "agent:artist/create-image?number=1");
+  assert.equal(designUnitAction(unit({ themeApplied: true, imagesReviewed: true }), journal).href, "agent:teaching/validate-course?number=1");
+  assert.equal(designUnitAction(unit({}), designCourse({ scope: "both", theme: [] })).href, "agent:artist/create-visuals", "no look yet");
+  assert.equal(designUnitAction(unit({ themeApplied: false }), designCourse({ scope: "images", visualIdentity: true })).href, "agent:artist/review-images?number=1", "images only: the theme is not this track's");
+  // In the journal: a unit whose course file lacks the theme offers apply-theme, never the check.
+  const derived = deriveDesign({ scope: "look", theme: ["x"], applied: [true, false] });
+  const { source } = patchJournal(derived.text, derived.journal, derived);
+  assert.match(actionLineOf(source, "### 2. Unit B"), /agent:artist\/apply-theme/);
+  assert.doesNotMatch(actionLineOf(source, "### 2. Unit B"), /validate-course/);
+  assert.match(actionLineOf(source, "### 1. Unit A"), /agent:teaching\/validate-course\?number=1/);
+});
+test("no course-check link in the Sessions action line once the unit check is the course check", () => {
+  const text = readFileSync(fixture("journal-mini-approved.md"), "utf8");
+  const journal = readJournal(text);
+  const derived = derive(journal, dashboardOf(text), { date: "2026-11-13" });
+  const { source } = patchJournal(text, journal, derived);
+  // The part between the heading and the first note comment: where the action line stands.
+  const sessions = source.split(/^## Sessions[^\n]*\n/m)[1].split("<!---")[0];
+  assert.match(text.split(/^## Sessions[^\n]*\n/m)[1].split("<!---")[0], /:validate-course/, "the fixture still has the old line");
+  assert.doesNotMatch(sessions, /:validate-course/, sessions);
+  assert.doesNotMatch(sessions, /<!-- class="journal-actions" -->\n\s*\n/, "no empty action line is left behind");
+  const again = readJournal(source);
+  assert.equal(patchJournal(source, again, derive(again, dashboardOf(source), { date: "2026-11-13" })).source, source, "a second run changes nothing");
+  // Before the unit is done the line still offers the check.
+  const open = miniState({ report: true, done: true });
+  const openJournal = readJournal(open);
+  assert.match(patchJournal(open, openJournal, derive(openJournal, dashboardOf(open), { date: "2026-11-13" })).source.split(/^## Sessions[^\n]*\n/m)[1].split("<!---")[0], /:validate-course`/);
+  // Design: every unit done → no check link; one open → the check stays.
+  const design = (done, files) => {
+    const text = designJournal({ scope: "look", theme: ["x"], files }).replace("## Sessions\n", "## Sessions\n\n<!-- class=\"journal-actions\" -->\n[🔍 Check units](agent:teaching/validate-course) `:validate-course`\n");
+    const marked = done ? text.replace(/\| ✅ \| ✅ `course\/(a|b)\.md` \| \|/g, "| ✅ | ✅ `course/$1.md` | ✅ |") : text;
+    const journal = readJournal(marked, { projectDir: tmpProject({ "course/a.md": "<!--\nx\n-->\n# A\n", "course/b.md": "<!--\nx\n-->\n# B\n" }) });
+    const states = new Map(journal.units.map(unit => [unit.n, done ? "done" : "draft"]));
+    return patchSectionActions(marked, journal, expected => wordsOf(expected, journal, { unit: "unit", units: "units" }), states).source.split(/^## Sessions\n/m)[1].split(/^### /m)[0];
+  };
+  assert.doesNotMatch(design(true), /validate-course/);
+  assert.match(design(false), /validate-course/);
 });

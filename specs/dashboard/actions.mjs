@@ -227,9 +227,20 @@ function designNext(journal, states) {
     if (unreviewed) return action("review-images", "artist", "review-images", { number: unreviewed.n });
   }
   const open = journal.units.find(unit => states.get(unit.n) !== "done" && !awaitsOwnMedia(unit));
-  if (open) return unitAction(open);
+  if (open) return designUnitAction(open, journal);
   if (unitIsCourseCheck(journal, states) && ["link", "platform", "open"].includes(journal.delivery) && !journal.published) return publishOrDecide(journal);
   return null;
+}
+
+// A design unit's main action, in the order of designNext: the look (set, then applied to its course file), its
+// images reviewed, then as on every track – its open images, the check, the approval.
+export function designUnitAction(unit, journal) {
+  const scope = journal.designScope ?? "both";
+  if (scope !== "images" && !journal.visualTheme?.length) return action("design-look", "artist", "create-visuals");
+  if (scope === "images" && !journal.filled?.["Visual Identity"]) return action("design-look", "artist", "create-visuals");
+  if (scope !== "images" && unit.themeApplied === false) return action("apply-theme", "artist", "apply-theme");
+  if (scope !== "look" && !unit.imagesReviewed) return action("review-images", "artist", "review-images", { number: unit.n });
+  return unitAction(unit);
 }
 
 // On a light track unit 1 is the course: an action that writes the material (or inserts images before a
@@ -285,6 +296,7 @@ export function unitStepOf(expected, steps = []) {
     "work-out": steps.find(item => /materi/i.test(item.title)) ?? steps[1],
     "build-running": steps.find(item => /materi/i.test(item.title)) ?? steps[1],
     "insert-images": steps.find(item => /\b(bilder|images?|fotos?|photos?)\b/i.test(item.title)),
+    "review-images": steps.find(item => /\b(bilder|images?|fotos?|photos?)\b/i.test(item.title)),
   }[expected.key] ?? (["check-unit", "recheck-unit", "revise-unit", "resolve-concerns", "concerns-waiting", "approve-unit", "approve-waiting"].includes(expected.key)
     ? steps.find(item => /prüf|check|review|revis/i.test(item.title)) ?? steps.at(-1) : null);
 }
@@ -358,7 +370,7 @@ export function patchUnitActions(source, journal, wordsFor) {
     const hasLine = lines[marker]?.trim() === '<!-- class="journal-actions" -->';
     const old = hasLine ? lines[marker + 1] ?? "" : "";
     const links = [...old.matchAll(linkPattern)].map(match => ({ text: match[0].trim(), href: match[2] }));
-    const expected = unitAction(unit);
+    const expected = journal.track === "design" ? designUnitAction(unit, journal) : unitAction(unit);
     const preview = `agent:teaching/preview?file=${unit.n}`;
     let main = expected && links[0] && accepts(expected, links[0].href) ? relabel(links[0].text, expected.icon, wordsFor(expected, { n: unit.n })) : null;
     if (!expected) main = links[0]?.text ?? null;
@@ -382,15 +394,18 @@ export function patchUnitActions(source, journal, wordsFor) {
 
 // The action lines of the core sections (data/journal-links.md → Action lines): ▶️ create while a section is
 // empty, ✏️ revise once it is saved. `extras`: further links the table allows there (kept when present).
-function sectionLines(journal, nextUnplanned, approvedOne) {
+// `states`: unit number → derived state; once the unit check is the course check (unitIsCourseCheck), ## Sessions
+// offers no course check.
+function sectionLines(journal, nextUnplanned, approvedOne, states = new Map()) {
   const revise = (key, create, cmd, filled) => filled ? action(`revise-${key}`, "teaching", cmd, {}, "✏️") : action(create, "teaching", cmd);
   // Light tracks (mini, convert): exactly unit 1 – written by the track's own task, then checked; a second unit
   // is a track switch (tasks/activate-section.md), so no create-session here. The design track's units are the
   // existing course files: only the check.
   const light = journal.track === "mini" || journal.track === "convert";
   const firstWritten = journal.units.some(unit => unit.n === "1" && unit.material);
-  const sessions = journal.track === "design" ? [action("check-units", "teaching", "validate-course", {}, "🔍")]
-    : light ? (firstWritten ? [action("check-units", "teaching", "validate-course", {}, "🔍")]
+  const checkUnits = unitIsCourseCheck(journal, states) ? [] : [action("check-units", "teaching", "validate-course", {}, "🔍")];
+  const sessions = journal.track === "design" ? checkUnits
+    : light ? (firstWritten ? checkUnits
       : [journal.track === "mini" ? action("write-mini-course", "teaching", "create-mini-course") : action("convert-course", "teaching", "convert-course")])
     : !journal.filled.Didactics ? [action("didactics-first", "teaching", "create-didactics")]
     : journal.agendaRequired === "yes" && !journal.hasAgenda ? [action("agenda-first", "teaching", "create-agenda")]
@@ -415,14 +430,15 @@ const relabel = (text, icon, words) => words?.label ? text.replace(/^\[[^\]]*\]/
 
 // Rewrites the action lines of the core sections. A link that is already right – same command, same kind of
 // icon – keeps its command and takes the button word of the language pack (an older form of its icon is renewed); links the table does not allow go.
-export function patchSectionActions(source, journal, wordsFor) {
+// A line left without any link goes with its marker (an empty line would pass the marker on to the next block).
+export function patchSectionActions(source, journal, wordsFor, states = new Map()) {
   const lines = source.split("\n");
   const changes = [];
   const missing = [];
   const linkPattern = /\[([^\]]+)\]\(([^)\s]+)\)(\s*`[^`]*`(?:\s*→\s*`[^`]*`)?)?/g;
   const nextUnplanned = journal.units.find(unit => !unit.heading && !unit.material);
   const approvedOne = journal.units.some(unit => unit.approved);
-  for (const { key, links, extras } of sectionLines(journal, nextUnplanned, approvedOne)) {
+  for (const { key, links, extras } of sectionLines(journal, nextUnplanned, approvedOne, states)) {
     const at = lines.findIndex(line => new RegExp(`^## ${key}\\b`).test(line));
     if (at < 0) continue;
     let marker = at + 1;
@@ -443,8 +459,9 @@ export function patchSectionActions(source, journal, wordsFor) {
     parts.push(...present.filter(link => extras.some(href => link.href.startsWith(href))).map(link => link.text));
     const next = parts.join(" · ");
     if (next === old) continue;
-    changes.push({ path: `## ${key} action line`, from: old, to: next, why: "actions that fit the state of the section" });
-    lines[marker + 1] = next;
+    changes.push({ path: `## ${key} action line`, from: old, to: next || undefined, why: next ? "actions that fit the state of the section" : "no action fits the state of the section" });
+    if (next) lines[marker + 1] = next;
+    else lines.splice(marker, lines[marker + 2]?.trim() === "" ? 3 : 2);
   }
   return { source: lines.join("\n"), changes, missing };
 }
