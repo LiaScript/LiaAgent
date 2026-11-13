@@ -370,6 +370,8 @@ Details: [`specs/data/skills.md`](specs/data/skills.md).
 | `:create-visuals` | Define colors, logo & image style → Visual Identity |
 | `:create-logo` | Generate a detailed logo prompt |
 | `:create-image {description}` | Create an image prompt on demand |
+| `:apply-theme` | Write the theme of Visual Identity into the header of all course files |
+| `:review-images {number?}` | Review a unit's existing images: keep, make new, replace or remove |
 
 ### Learner-Agent 🧑‍🎓
 

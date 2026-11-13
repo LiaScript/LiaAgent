@@ -1,6 +1,6 @@
 # Leichte Stränge: Mini-Kurs, Umwandeln, Template – und der Chat als Gedächtnis
 
-Stand: 2026-11-12 · Status: Etappe 1 umgesetzt (in `main`); Überarbeitung für Etappe 2 und 3 freigegeben
+Stand: 2026-11-12 · Status: Etappe 2a umgesetzt (Branch feature/leichte-straenge-2a); Etappe 1 in `main`; Überarbeitung für Etappe 2b und 3 freigegeben
 
 > **Überarbeitung 2026-11-12:** neuer Strang **Gestaltung** (7.4), gemeinsame Bausteine für Umwandeln und
 > Gestaltung (7.5), geschärfte Abläufe für Umwandeln (7.2) und Template (7.3), neue Etappenfolge (12).
@@ -512,6 +512,16 @@ Etappe 2 und 3 (neu oder geändert):
 - Abgrenzung des Theme-Teils im Dateikopf.
 - Ort und Form des Quellen-Auszugs.
 - Darstellung von „Lizenz unklar“ in der Übersicht.
+- In Etappe 2a entschieden:
+  - Kursdatei = der in der Material-Zelle vermerkte Pfad (nicht `__File:__`).
+  - `Design scope` ist Zeile 4 des Strang-Blocks; `Convert mode` bleibt.
+  - Theme-Erkennung über die Theme-Zeilen der Visual Identity im Dateikopf (keine Marker-Kommentare).
+  - „Bilder geprüft“ ist eine datierte Entscheidungszeile.
+  - Veröffentlichen im Gestaltungsstrang, wenn alle Einheiten fertig sind; Kursbericht aus den Einheitenberichten.
+  - Quellen lesen überspringt `_*`-, Backup- und Archivordner.
+  - Theme-Imports und Font-Links zählen als fremde Gestaltung.
+  - Restriktive Lizenzen sind für veröffentlichte Kurse mit „ersetzen“ vorbelegt.
+  - `teaching-agent.yaml` ist in Kern + Navigation geteilt (Startlast ≤ 64 kB).
 
 ## 11. Entscheidungen dieses Entwurfs
 
