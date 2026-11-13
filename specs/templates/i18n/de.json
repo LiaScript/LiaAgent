@@ -347,7 +347,7 @@
   {"title": "Bilder einfügen", "why": "Die markierten Stellen bekommen ihre Bilder."},
   {"title": "Prüfen und freigeben", "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt; danach geben Sie es frei."}
  ],
- "lightStepTitles": {"frame": "Rahmen und Lernziele", "outline": "Gliederung und Lernziele", "look": "Aussehen", "material": "Material schreiben", "check": "Prüfen", "publish": "Veröffentlichen", "brief": "Wunsch und Steckbrief", "build": "Bauen und testen", "try": "Ausprobieren und freigeben"},
+ "lightStepTitles": {"frame": "Rahmen und Lernziele", "outline": "Gliederung und Lernziele", "look": "Aussehen", "material": "Material schreiben", "check": "Prüfen", "publish": "Veröffentlichen", "brief": "Wunsch und Steckbrief", "build": "Bauen und testen", "try": "Ausprobieren und freigeben", "images": "Bilder", "frameDesign": "Rahmen"},
  "terms": {
   "skeleton": "Planungsskizze",
   "skeletonOnly": "Planungsskizze ✅ · Material offen",
@@ -393,7 +393,9 @@
   "seePlanning": "Planung ansehen",
   "approveAsk": "Passt {unit} {n} so?",
   "approve": "Freigeben",
-  "changeSomething": "Noch etwas ändern"
+  "changeSomething": "Noch etwas ändern",
+  "imagesReviewed": "Bilder durchgesehen",
+  "licenseUnclearKept": "Lizenz ungeklärt – von der Lehrkraft behalten"
  },
  "wrongForms": [
   ["(?<!\\p{L})(eine Bedenke|ein Bedenken|1 Bedenken?)(?!\\p{L})", "ein Punkt"]
@@ -446,6 +448,9 @@
   "convert-course": {"title": "Material schreiben", "label": "Umwandeln starten", "why": "Das vorhandene Material wird in einen LiaScript-Kurs übertragen."},
   "start-template": {"title": "Wunsch und Steckbrief", "label": "Baustein beginnen", "why": "Beschreibe, was der Baustein können soll; der Steckbrief ist die Grundlage für den Bau."},
   "publish-template": {"title": "Veröffentlichen", "label": "Baustein {id} veröffentlichen", "why": "Der Baustein ist freigegeben; durch das Veröffentlichen steht er anderen zur Verfügung."},
+  "design-look": {"title": "Aussehen", "label": "Aussehen festlegen", "why": "Farben, Schriften und der Stil der Bilder – was der Kurs schon hat und wie er wirken soll."},
+  "apply-theme": {"title": "Aussehen", "label": "Aussehen übernehmen", "why": "Das neue Aussehen kommt in alle Kursdateien; vorher sehen Sie Vorher und Nachher."},
+  "review-images": {"label": "Bilder durchsehen", "why": "Sie entscheiden für jedes Bild: behalten, neu machen, ersetzen oder entfernen."},
   "activate-section": {"label": "hinzunehmen"},
   "note-ready": {"label": "_{n} von {N} {units} angelegt; {unit} {k} ist freigegeben – {unit} {m} kann jetzt beginnen._"}
  }

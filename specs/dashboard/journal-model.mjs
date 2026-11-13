@@ -56,7 +56,8 @@ export const englishTerms = {
   recheckShort: "{n} point(s) changed since – short re-check open",
   correctionOpen: "correction needed: {open} of {n} points open",
   usableYes: "yes", usableLimited: "yes, with limits: {what}", usableNo: "not yet: {why}",
-  imagesReviewed: "images reviewed"
+  imagesReviewed: "images reviewed",
+  licenseUnclearKept: "license unclear – kept by the instructor"
 };
 
 // LiaScript slide anchor: full heading text, lower case, spaces and "-" collapse to one "-", punctuation stays.
@@ -164,7 +165,7 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
     language, terms, pack, headings, terminology, delivery, hasAgenda: agenda.length > 0, units: list, projectDir,
     track, convertMode, designScope, trackMode, source: source_, later, personasSuffix, visualTheme,
     unitsPlanned: Number.isInteger(unitsPlanned) && unitsPlanned > 0 ? unitsPlanned : null, unitsInOutline: later.includes("Outline") ? null : unitsInOutline,
-    filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
+    filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda", "Visual Identity"].map(key => [key, filled(key)])),
     agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
     templates: readTemplates(section("Templates")),
     validation: { mode: validationSummary.match(/\bMode:\s*(\w+)/)?.[1] ?? null, result: validationSummary.match(/\bResult:\s*(PASS with concerns|PASS|FAIL)/)?.[1] ?? null },
@@ -198,7 +199,7 @@ function outlineUnits(outline, slideWords) {
 
 // The track mode for stepsOf: readJournal's trackMode; a facts object without that field (built by hand, older
 // callers) falls back to its convertMode.
-const modeOf = journal => journal.trackMode !== undefined ? journal.trackMode : journal.convertMode ?? null;
+export const modeOf = journal => journal.trackMode !== undefined ? journal.trackMode : journal.convertMode ?? null;
 
 // The keys (tracks.mjs → stepsOf) of the overview's course steps. The full track may drop a step (the agenda step
 // with `Agenda required: no`, the template step in older journals): when every title is a known title of the

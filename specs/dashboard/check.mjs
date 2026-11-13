@@ -3833,3 +3833,117 @@ test("validate: a design journal with scope look and its 4 steps has no step-cou
   const run = validateText(`${designJournal({ scope: "look" })}\n## Dashboard\n\n${dashJson({ title: "Design course", process: { steps } })}\n`);
   assert.doesNotMatch(run.output, /process\.steps has/, run.output);
 });
+
+// ---- Stage 2a, T4: next step and overview steps of the design track ----
+
+import { englishCourseSteps } from "./journal-model.mjs";
+import { unitIsCourseCheck } from "./actions.mjs";
+
+// Facts of a design course as readJournal gives them: two units whose course files exist (heading, material ✅).
+// Options: scope, theme (Visual Identity theme lines), applied/reviewed (per unit), images (per unit: [{ status }]),
+// visualIdentity (## Visual Identity filled; default: a theme exists), done (per unit: checked, Done ✅, approved),
+// delivery, published.
+const placedImage = ["inserted", "generated", "existing"];
+const imageFacts = (list = []) => ({ total: list.length, placed: list.filter(item => placedImage.includes(item.status)).length, open: list.filter(item => !placedImage.includes(item.status)).length, waiting: 0 });
+const designCourse = ({ scope = "both", theme = [], applied = [null, null], reviewed = [false, false], images = [[], []], visualIdentity = theme.length > 0, done = [false, false], delivery = null, published = false } = {}) => course({
+  track: "design", designScope: scope, trackMode: scope, convertMode: null, visualTheme: theme, delivery, published,
+  filled: { "Course Context": true, Outline: false, Didactics: false, Agenda: false, "Visual Identity": visualIdentity },
+  agendaRequired: null, hasAgenda: false, later: ["Outline", "Didactics", "Agenda"],
+  units: [0, 1].map(i => facts(i + 1, {
+    heading: { title: `Unit ${i + 1}` }, material: true, file: `course/${i + 1}.md`, themeApplied: applied[i] ?? null, imagesReviewed: Boolean(reviewed[i]), images: imageFacts(images[i]),
+    ...(done[i] ? { done: true, approved: true, report: { result: "PASS", changedSince: 0, deferred: false } } : {})
+  }))
+});
+// Derives the overview of a German design journal whose course files carry the theme as `applied` says (true: in the
+// header, false: not); the Dashboard still has the empty journal's steps (a course just set up on this track).
+const deriveDesign = (opts = {}) => {
+  const theme = opts.theme ?? [];
+  const files = Object.fromEntries((opts.applied ?? []).map((applied, i) => [["course/a.md", "course/b.md"][i], `<!--\nauthor: A\n${applied ? `${theme.join("\n")}\n` : ""}-->\n# T\n`]));
+  const journal = readJournal(designJournalText(opts).replace("sessions-called: unit", "sessions-called: Einheit"), { projectDir: tmpProject(files) });
+  return derive(journal, { title: "Design course", process: { steps: structuredClone(englishCourseSteps()) } }, { date: "2026-11-13" });
+};
+
+test("design next: look before images, images before the check, scope respected", () => {
+  const next = opts => nextOf(designCourse(opts));
+  assert.equal(next({ scope: "both", theme: [] }), "agent:artist/create-visuals");
+  assert.equal(next({ scope: "both", theme: ["@style", "x", "@end"], applied: [true, false] }), "agent:artist/apply-theme");
+  assert.equal(next({ scope: "both", theme: ["x"], applied: [true, true] }), "agent:artist/review-images?number=1");
+  assert.equal(next({ scope: "look", theme: ["x"], applied: [true, true] }), "agent:teaching/validate-course?number=1");
+  assert.equal(next({ scope: "images", visualIdentity: true, theme: [] }), "agent:artist/review-images?number=1");
+  assert.equal(next({ scope: "images", visualIdentity: false }), "agent:artist/create-visuals", "images only: the image style first");
+  assert.equal(next({ scope: null, theme: [] }), "agent:artist/create-visuals", "no scope: both");
+  assert.equal(nextOf({ ...designCourse(), filled: { "Course Context": false } }), "agent:teaching/init-course");
+  assert.equal(next({ scope: "images", visualIdentity: true, reviewed: [true, false] }), "agent:artist/review-images?number=2");
+  assert.equal(next({ scope: "images", visualIdentity: true, reviewed: [true, true], images: [[{ status: "wanted" }], []] }), "agent:artist/create-image?number=1", "reviewed: the open images before the check");
+});
+test("design next: a unit without images is not reviewed twice", () => {
+  assert.equal(nextOf(designCourse({ scope: "images", visualIdentity: true, reviewed: [true, true], images: [[], []] })), "agent:teaching/validate-course?number=1");
+});
+test("design: overview steps follow the scope and the actions move them", () => {
+  const { data } = deriveDesign({ scope: "look", theme: ["x"], applied: [true, false] });
+  assert.deepEqual(data.process.steps.map(step => step.title), ["Rahmen", "Aussehen", "Prüfen", "Veröffentlichen"]);
+  assert.equal(data.process.steps.find(step => step.state === "current").title, "Aussehen");
+  assert.equal(data.process.steps[0].state, "done", "the frame is saved");
+  assert.equal(data.next.href, "agent:artist/apply-theme");
+  assert.equal(data.next.label, "Aussehen übernehmen");
+  assert.equal(data.next.title, "Aussehen");
+  const both = deriveDesign({ scope: "both", theme: ["x"], applied: [true, true] }).data;
+  assert.deepEqual(both.process.steps.map(step => [step.title, step.state]), [["Rahmen", "done"], ["Aussehen", "done"], ["Bilder", "current"], ["Prüfen", "planned"], ["Veröffentlichen", "optional"]]);
+  assert.equal(both.next.href, "agent:artist/review-images?number=1");
+  assert.equal(both.next.label, "Bilder durchsehen");
+  assert.equal(both.next.title, "Bilder – Einheit 1");
+  assert.equal(deriveDesign({ scope: "images", reviewed: [true, true] }).data.next.title, "Bilder", "images only, no image style yet: the style belongs to the images step");
+  const images = deriveDesign({ scope: "images", theme: ["x"], reviewed: [true, true] });
+  assert.deepEqual(images.data.process.steps.map(step => [step.title, step.state]), [["Rahmen", "done"], ["Bilder", "done"], ["Prüfen", "current"], ["Veröffentlichen", "optional"]]);
+  assert.equal(images.data.next.title, "Prüfen – Einheit 1");
+  assert.deepEqual(images.missing, [], "no words left for the agent");
+});
+test("design: the actions advance their course step", () => {
+  const steps = stepsOf("design", "both").map(key => ({ title: key }));
+  const step = (expected, mode = "both") => courseStepOf(expected, steps.filter(item => stepsOf("design", mode).includes(item.title)), { track: "design", mode })?.title ?? null;
+  const act = (key, cmd, params = {}, agent = "artist") => makeAction(key, agent, cmd, params);
+  assert.equal(step(act("init-course", "init-course", {}, "teaching")), "frame");
+  assert.equal(step(act("design-look", "create-visuals")), "look");
+  assert.equal(step(act("apply-theme", "apply-theme")), "look");
+  assert.equal(step(act("design-look", "create-visuals"), "images"), "images", "images only: the image style belongs to the images");
+  assert.equal(step(act("review-images", "review-images", { number: 1 })), "images");
+  assert.equal(step(act("insert-images", "create-image", { number: 1 })), "images");
+  for (const key of ["check-unit", "recheck-unit", "revise-unit", "resolve-concerns", "concerns-waiting", "approve-unit", "approve-waiting"]) {
+    assert.equal(step(act(key, "validate-course", { number: 1 }, "teaching")), "check", key);
+  }
+  assert.equal(step(act("publish", "create-project", {}, "development")), "publish");
+  assert.equal(courseStepOf(act("convert-course", "convert-course", {}, "teaching"), [{ title: "f" }, { title: "l" }, { title: "m" }], { track: "convert", convertMode: "transfer" })?.title, "m", "convertMode stays an alias");
+});
+test("design: publishing waits for every unit, no separate course check", () => {
+  assert.equal(nextOf(designCourse({ scope: "look", theme: ["x"], applied: [true, true], done: [true, false], delivery: "link" })), "agent:teaching/validate-course?number=2");
+  assert.equal(nextOf(designCourse({ scope: "look", theme: ["x"], applied: [true, true], done: [true, true], delivery: "link" })), "agent:development/create-project");
+  assert.equal(nextOf(designCourse({ scope: "look", theme: ["x"], applied: [true, true], done: [true, true], delivery: "print" })), null);
+  const states = journal => new Map(journal.units.map(unit => [unit.n, unitState(unit).state]));
+  const all = designCourse({ done: [true, true] });
+  assert.equal(unitIsCourseCheck(all, states(all)), true);
+  const one = designCourse({ done: [true, false] });
+  assert.equal(unitIsCourseCheck(one, states(one)), false);
+  const none = { ...designCourse(), units: [] };
+  assert.equal(unitIsCourseCheck(none, new Map()), false, "at least one unit");
+});
+test("design: the Sessions action line offers the check, never the didactics", () => {
+  const text = `${designJournal()}`.replace("## Sessions\n", "## Sessions\n\n<!-- class=\"journal-actions\" -->\n[▶️ Didactics first](agent:teaching/create-didactics) `:create-didactics`\n");
+  const journal = readJournal(text, { projectDir: tmpProject({}) });
+  const { source } = patchSectionActions(text, journal, expected => wordsOf(expected, journal, { unit: "unit", units: "units" }));
+  assert.match(source, /## Sessions\n\n<!-- class="journal-actions" -->\n\[🔍 Check units\]\(agent:teaching\/validate-course\) `:validate-course`\n/);
+});
+test("design words: the German pack and English have the three actions and the two terms", () => {
+  const de = JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8"));
+  assert.equal(de.actions["design-look"].label, "Aussehen festlegen");
+  assert.equal(de.actions["apply-theme"].label, "Aussehen übernehmen");
+  assert.equal(de.actions["review-images"].label, "Bilder durchsehen");
+  for (const key of ["design-look", "apply-theme", "review-images"]) {
+    assert.ok(de.actions[key].why, `de: ${key}.why`);
+    assert.ok(englishActions[key]?.label && englishActions[key]?.why, `english: ${key}`);
+  }
+  assert.equal(de.lightStepTitles.images, "Bilder");
+  assert.equal(de.lightStepTitles.frameDesign, "Rahmen");
+  assert.equal(de.terms.imagesReviewed, "Bilder durchgesehen");
+  assert.equal(de.terms.licenseUnclearKept, "Lizenz ungeklärt – von der Lehrkraft behalten");
+  assert.ok(englishTerms.licenseUnclearKept);
+});
