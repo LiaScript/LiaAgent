@@ -125,7 +125,7 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 // growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b, measured durations and agreements after R12c).
 const budgets = {
   "tasks/update-dashboard.md": 3275, /* +110 over 3005: process steps per track, the two new triggers; +145 over 3115 (tandem test 5): decide only for now, no approval item for an approved unit, report actions → prepare, old Course Context words in the cache; +15 over 3260 (stage 2a T8): the design track's step list with its titles "Frame" and "Images" and the scope rule */ "data/agent-links.md": 4110, /* +23: chat-memory sheet row and pointer; +15 over 3898: the pick-up replaces the due greeting; +177 over 3913 (tandem test 5): idle watch, nudge, status after a form answer, "your answer has arrived", read_chat without arguments; +20 over 4090 (stage 2a T8): git_clone of the design frame in the terminal tier and before the save */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1480, /* +35 over 1191: the save marker rule; +3 over 1226: marker in the preview chat only; +251 over 1229 (tandem test 5): no ruled-out options, saved state from the journal, to-do answer = overview, side questions without a new form, no number columns, removeBlock */
-  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4420, /* +89 over 4198: one unit, one run on a light track; +31 over 4287: light-track unit 1 in session mode, short re-check refreshes the summary; +102 over 4318 (tandem test 5): the unit check is the course check, the summary follows every later report change */ "tasks/quick-fix.md": 1750, /* +8 over 1613: light track, the whole README is unit 1; +129 over 1621 (tandem test 5): "look at it later", re-check sets Done, approval refreshes the summary, removeBlock */
+  "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4760, /* +89 over 4198: one unit, one run on a light track; +31 over 4287: light-track unit 1 in session mode, short re-check refreshes the summary; +102 over 4318 (tandem test 5): the unit check is the course check, the summary follows every later report change; +340 over 4420 (stage 2a T11): the design track checks design only – its file, the four design checks, content as overview hints, no course check of its own and the summary publishing reads */ "tasks/quick-fix.md": 1800, /* +8 over 1613: light track, the whole README is unit 1; +129 over 1621 (tandem test 5): "look at it later", re-check sets Done, approval refreshes the summary, removeBlock; +50 over 1750 (stage 2a T11): design-track suggestions run as quick-fix, larger ones are the track switch */
   "tasks/review-images.md": 1600, /* new in stage 2a T10: the image inventory with its entry format, form rules and three writes; +260 over 1340 (T10 review): Decisions above the image block, quiz option lines, restrictive licences, later changes, inline images, time announcement */
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
@@ -333,6 +333,16 @@ test("review-images: existing images, unclear licence preselected replace, quiz 
   for (const file of ["tasks/review-images.md", "tasks/create-image.md", "tasks/generate-image.md"]) assert.ok(read(file).includes("keeping the option prefix"), `${file} does not keep the quiz option line when an option image is replaced`);
   assert.ok(image.includes("\"{n} images in place\""), "create-image: the details summary does not fit kept existing images");
   assert.match(read("data/chat-memory.md"), /\*\*Protected\s+states\*\*[^.]*a decision about an existing\s+image \(keep, replace, remove\), a licence the instructor keeps/, "chat-memory lost the protected image decisions");
+});
+
+test("validate-course: the design track checks design only", () => {
+  const t = read("tasks/validate-course.md");
+  for (const phrase of ["Design track: design check only", "never makes the check FAIL", "no learner review", "recorded path"]) assert.ok(t.includes(phrase), phrase);
+  // Stage 2a T11: content observations become one overview item per unit, like the layout ideas of review-images;
+  // no course check of its own, the summary that publishing reads follows the unit reports.
+  for (const phrase of ["`content-hints-{n}`", "`source: {check: n}`", "No separate course check runs", "`tasks/create-project.md`", "`contrast {ratio}:1 < {need}:1`"]) assert.ok(t.includes(phrase), `validate-course lacks: ${phrase}`);
+  const fix = read("tasks/quick-fix.md");
+  for (const phrase of ["`layout-suggestions-{n}`", "`content-hints-{n}`", "never `:coauthor-materials`"]) assert.ok(fix.includes(phrase), `quick-fix lacks: ${phrase}`);
 });
 
 test("preview is a navigation command of every agent", () => {
