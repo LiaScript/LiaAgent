@@ -319,6 +319,8 @@ agent_coordination:
     - "After :create-didactics is done and visual identity is the next step → suggest `:agent artist` for :create-visuals"
     - "During :coauthor-materials when the instructor asks for images, logos, or diagrams — the Coauthor only records image spots (`wanted`); finding free photos or making images is the Artist-Agent's image step (`:create-image {number}`), never a search by the Coauthor"
     - "When visual design questions arise that go beyond content"
+    - "After the design frame is saved (`tasks/init-course.md` → Design Track, D4) → hand over with `agent:artist/switch`; the Dashboard's `next` names the look or the image step"
+    - "After :create-visuals when course files with material exist (design track, or material documents in the full way) and one lacks the theme → suggest `agent:artist/apply-theme` `:apply-theme`"
 
   suggest_development_when:
     - "After :validate-course passes → suggest `:agent development` for :create-project or :update-project"
@@ -569,6 +571,7 @@ persona:
     - "Every link and image target is percent-encoded (`(` → `%28`, `)` → `%29`, space → `%20`), and answer images get a display limit (`tasks/create-image.md` → Free photos step 6)"
     - "Use color theory and composition principles"
     - "Reference the style guide for all visual decisions"
+    - "Design track: change only the file header, image lines, alt texts and the image credits chapter — never teaching text or layout; layout ideas go to a suggestion list (slide + one sentence) for the Teaching-Agent's `:quick-fix {n}`"
     - "STAY IN CHARACTER!"
 
 agent_coordination:
@@ -657,6 +660,8 @@ commands:
     run task `tasks/generate-image.md`.
     With slug: execute that single saved prompt (from the matching `#### Images` `<section>`) via the image route — own image tool, or the browser (`tasks/generate-image.md` Phase 0).
     Without slug: show mode selection (single / sequential batch / automated batch) over all pending image entries across the sessions' `#### Images` blocks.
+  :apply-theme: "run task `tasks/apply-theme.md` — the theme of `## Visual Identity` into the header of all course files (every way)"
+  :review-images {number?}: "run task `tasks/review-images.md` — a unit's existing images: keep, make new, replace or remove"
   :preview {file?} {slide?}: "run task `tasks/preview.md` — navigation only: show a course file in the LiaScript DevServer preview; runs in this persona, never switches the agent (`data/agent-links.md` → URI Convention)"
   :open-chat: "run task `tasks/open-chat.md` — navigation only: open the browser chat of the LiaScript DevServer preview and greet with the next step; runs in this persona, never switches the agent"
   :agent {character}: "take over the persona of agents/{character}-agent.yaml"
@@ -670,6 +675,8 @@ dependencies:
     - create-logo.md
     - create-image.md
     - generate-image.md
+    - apply-theme.md
+    - review-images.md
     - preview.md
     - open-chat.md
   templates:
@@ -1042,6 +1049,55 @@ Offers two paths for each missing core section:
 10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
 
 ==================== END: specs/tasks/analyze-existing.md ====================
+
+
+==================== START: specs/tasks/apply-theme.md ====================
+
+# Task: apply-theme
+
+## Purpose
+
+Writes the theme of `## Visual Identity` into the header of **all** course files and replaces an older theme there.
+A building block of every way: the design track's look step, and in the full or mini way the only route by which a
+new or changed look reaches files that already exist (the theme is otherwise copied only when a file is created,
+`data/file-structure-modes.md` → "Creating the material document"). It writes only the header and never changes
+teaching text.
+
+## Command
+
+`:apply-theme` — no parameters; always all course files.
+
+## Inputs
+
+- The theme: `journal.md` → `## Visual Identity` → `__LiaScript Theme:__` — the non-empty lines of its ```text block (`templates/visuals.yaml`). Without the block: say so in one line, offer `:create-visuals` (`agent:artist/create-visuals`) and stop.
+- The course files, each once: design track — each unit's recorded path in the Material cell of `## Sessions`; full and mini way — the material documents as `data/file-structure-modes.md` resolves them (recorded path, then `## Agenda`, then `materials/{number}-{slug}/README.md`; single-file and mini: the root `README.md`). Only units whose material exists.
+- `node specs/dashboard/read-source.mjs <file>` per course file (one command each): header styling as `theme-import`, `link-css` and `style` entries, imports as template or theme, slides.
+- Course language from `## Course Context`
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
+
+## Output
+
+- The header (the first HTML comment at the top) of every course file that lacks a theme line — only the header.
+- `journal.md` → `## Dashboard`. No journal line records "theme applied": a file carries the theme when every theme line stands in its header, and the overview computes that.
+
+## Steps
+
+1. Read the theme lines and the course files (Inputs). A file whose header already holds every theme line and no foreign styling (step 2) is left out; if none is left, say that every course file already carries the look and stop — nothing is written.
+2. **Foreign styling:** from the `read-source.mjs` output, every `style`, `link-css` and `theme-import` entry that is not a line of the new theme — also an older theme of an earlier `## Visual Identity`. A header line with the same one-value key as a theme line (e.g. `logo:`) counts too. Imports of macro templates always stay (`import (template)`): never listed, never removed. Every other header line (author, language, narrator, version, macros) stays as it is.
+3. **Before and after:** one example slide in the chat — the first slide of the first course file, sent twice: "Before" with its current header, "After" with the new header (each message starts with that header comment, so the chat shows the look). Without the preview chat show the old and the new header as two code blocks. If the chat cannot show the look, say so and offer `:preview` of the file after the write.
+4. **Summary and one confirmation** (`data/chat-dialog.md` §1, in future tense): the files that will change, per file the lines added and the lines removed, that template imports stay and that nothing outside the header changes. Then one form — the one confirmation, nothing is written before it: one question per kind of foreign styling with its files ("replace — two themes overlap" · "keep"; preselected: replace), at most three; with more kinds, one checkbox question "keep this styling" listing all, none ticked; and the last question "Apply the look to {n} files" · "Change something" (translated).
+5. **Write:** per file one write, only the header: replaced styling lines out, the theme lines in where the old theme stood, otherwise before the closing `-->`; a file without a header gets one at the top with only the theme lines. Use the file-edit tool on the header, or one map for `node specs/dashboard/localize-journal.mjs <map.json> <file>` — never one edit per line (every write reloads the preview). Then "✅ Saved: …" with the marker (`data/chat-dialog.md` §1).
+6. **Contrast:** `node specs/dashboard/check-material.mjs <file>` per written file, each on its own. Every line `contrast {ratio}:1 < {need}:1 on slide {n} ({selector})` is reported in plain words (slide, which text) with a proposed colour; never change it silently — on yes, the colour changes in `## Visual Identity` and the files with one new confirmation, then this step runs again. Other findings of the script go to the suggestion list (Rules). "Rendered check not possible": `data/chat-checks.md` → Offering the Rendered Check; say how you checked.
+7. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+8. Finish with a short summary and 1–3 next-step links: the Dashboard's `next` (design track e.g. `agent:artist/review-images?number=1` or the unit check), `agent:artist/preview?file={file}`, and the suggestion list if it has entries.
+
+## Rules
+
+- **Guard rail:** this task changes only the header and never changes teaching text — no slide, no image line, no layout. Layout ideas seen on the way (columns, boxes, a slide too full) go into a suggestion list (slide + one sentence), offered at the end as the Teaching-Agent's `:quick-fix {n} …` (`agent:teaching/quick-fix?number={n}`).
+- Imports of macro templates always stay; foreign styling is replaced only as decided in step 4.
+- One confirmation for all files; a contrast fix is a new one.
+
+==================== END: specs/tasks/apply-theme.md ====================
 
 
 ==================== START: specs/tasks/build-session.md ====================
@@ -2219,6 +2275,7 @@ Ensures all visual materials across courses maintain a consistent brand identity
 - Difficulty level from `journal.md` → `## Didactics` (`__Difficulty Level:__` bullet)
 - Course type from `journal.md` → `## Didactics` (`__Course Type:__` bullet)
 - Additional preferences (optional): color schemes, visual style, brand guidelines
+- Variant **From the course or a source** (below) instead of the outline and didactics: `## Course Context`, the output of `read-source.mjs` and two to three questions
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/journal-links.md`
 
 ## Output
@@ -2228,6 +2285,7 @@ Ensures all visual materials across courses maintain a consistent brand identity
 
 ## Steps
 
+0. `## Course Context` → Track `design` (`## Outline` and `## Didactics` are marked when needed), or the instructor wants the look taken from an existing course or a source (a PowerPoint, a web page, a design guide): run the variant below instead of steps 1–13. The full way stays as written.
 1. Read title and abstract from `journal.md` → `## Outline`.
 2. Read professor persona, teaching style, difficulty level, and course type from `journal.md` → `## Didactics`.
 3. Align visual identity with professor persona and teaching style.
@@ -2251,7 +2309,21 @@ Ensures all visual materials across courses maintain a consistent brand identity
 11b. **Optional — LiaScript theme.** Only if the skill `liascript-theming` is available (see `data/skills.md`): 🎛️ offer to turn the website palette and typography into a tested LiaScript theme header — or to apply one of its bundled designs by name — (1. yes · 2. no). On yes, follow the skill to build and contrast-check the block, but do not inject it into any file yourself: store it as the `__LiaScript Theme:__` bullet (see `templates/visuals.yaml`); `promote-session` copies it into the material headers. Without the skill, skip this step silently.
 12. Fill the `templates/visuals.yaml` template with the results.
 13. Save the visual style guide by creating or replacing `journal.md` → `## Visual Identity`.
-14. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+14. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place; then "After saving".
+
+## Variant: From the course or a source
+
+No `## Outline`, no `## Didactics` — the look comes from what the course already brings and the instructor's answers.
+
+1. Read `## Course Context`: language, target group, delivery, Track and `Design scope`.
+2. Read the course with `node specs/dashboard/read-source.mjs <file>` per course file (design track: the recorded path in the Material cell of `## Sessions`), or the source (`.pptx`, web page, design guide); a source excerpt `.cache/source/notes.md` is read instead of the source. Note what it brings: header styling (theme imports, CSS links, `@style` blocks — read only their colour and font values with the file-reading tool), theme colours and fonts of a `.pptx`, a logo (`logo:` in the header, a picture on the title slide).
+3. One form, two to three questions, prefilled from step 2 (`data/chat-dialog.md`): the effect it should have (e.g. calm, lively, formal — options plus free text) · requirements (corporate design, school colours, a given logo, or none) · what should stay (checkbox of the colours, fonts and logo found).
+4. Scope `images`: write only the image style — Course Image Generation Guidelines, Image Consistency Rules and the example image prompt — so new pictures fit; no palette, typography or theme. Scope `look` or `both` (and a source in the full way): all blocks of `templates/visuals.yaml` from the answers and what stays; an existing logo is recorded, not redesigned. The `__LiaScript Theme:__` block is required here — the overview counts the look as set only with it: build it with `liascript-theming` as in step 11b, without the skill write the header lines from the website palette and typography by hand and say they are checked after `:apply-theme`.
+5. Show the whole section before saving and save with one confirmation (steps 6 and 9 apply: `@color(#HEXCODE)`, and the `@color` macro of step 4 in the journal header); then step 14.
+
+## After saving
+
+If course files with material exist — design track, or the full way with material documents — and the section holds a `__LiaScript Theme:__` block: offer `:apply-theme` (`agent:artist/apply-theme`) once; a new or changed look never reaches existing files otherwise, since the theme is copied only when a file is created.
 
 ## Usage
 
@@ -3648,6 +3720,40 @@ Rules:
 ==================== END: specs/tasks/review-as-persona.md ====================
 
 
+==================== START: specs/tasks/review-images.md ====================
+
+# Task: review-images
+
+## Purpose
+
+Reviews the images a unit already has, as a building block of every way (design track, full way). Every existing
+image becomes an entry in the unit's `#### Images` block with the status `existing` (slide, alt text, source, licence
+known or unclear). For each image the instructor chooses in one form: keep · make new in the course's style · replace
+with a free photo · remove; an image with an unclear licence is preselected on "replace", never silently kept. New
+image spots are added where the instructor says so on a slide in the preview. Afterwards `:create-image {number}`
+works through the open entries; missing alt texts are added. Like `:apply-theme`, it never changes teaching text.
+
+## Command
+
+`:review-images {number?}` — `{number}` identifies the unit; omitted with exactly one unit, that unit; otherwise ask
+which (numbered list).
+
+## Inputs
+
+- The unit: `journal.md` → `## Sessions` → `### {number}. {title}` and its `#### Images` block
+- The unit's course file: its recorded path in the Material cell of `## Sessions` (`data/file-structure-modes.md` → Recorded paths), else the material document as that file resolves it
+- `node specs/dashboard/read-source.mjs <file>`: each image with slide, alt text, target and whether it is credited
+- Image style from `journal.md` → `## Visual Identity` (`__Course Image Generation Guidelines:__`)
+- Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
+
+## Steps
+
+The steps follow in the next version. Until then say so in one line and offer `:create-image {number}`
+(`agent:artist/create-image?number={number}`) for the unit's open image entries.
+
+==================== END: specs/tasks/review-images.md ====================
+
+
 ==================== START: specs/tasks/save-notes.md ====================
 
 # Task: save-notes
@@ -4223,7 +4329,7 @@ Run this task automatically after any task that changes project state:
 - `:save-notes` or `:save-decision`
 - `:create-project` or `:update-project`
 - Development-Agent: `:develop-template` (its `__State:__` changes) and `:publish-template`
-- Artist-Agent: `:create-visuals`, `:create-logo`, `:create-image`, `:generate-image`
+- Artist-Agent: `:create-visuals`, `:create-logo`, `:create-image`, `:generate-image`, `:apply-theme`
 - `:try-as-learner` when it saved changes (they go through `:quick-fix`, which triggers this task)
 
 ## Steps
@@ -10596,6 +10702,8 @@ workflow:
       - :create-logo
       - :create-image {number?} {description?}
       - :generate-image {slug?}
+      - :apply-theme
+      - :review-images {number?}
       - :preview {file?} {slide?}
       - :open-chat
 

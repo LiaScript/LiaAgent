@@ -42,7 +42,7 @@ Run this task automatically after any task that changes project state:
 - `:save-notes` or `:save-decision`
 - `:create-project` or `:update-project`
 - Development-Agent: `:develop-template` (its `__State:__` changes) and `:publish-template`
-- Artist-Agent: `:create-visuals`, `:create-logo`, `:create-image`, `:generate-image`
+- Artist-Agent: `:create-visuals`, `:create-logo`, `:create-image`, `:generate-image`, `:apply-theme`
 - `:try-as-learner` when it saved changes (they go through `:quick-fix`, which triggers this task)
 
 ## Steps

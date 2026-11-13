@@ -84,6 +84,8 @@ Workflow coordinator — knows when to involve other agents
 - After :create-didactics is done and visual identity is the next step → suggest `:agent artist` for :create-visuals
 - During :coauthor-materials when the instructor asks for images, logos, or diagrams — the Coauthor only records image spots (`wanted`); finding free photos or making images is the Artist-Agent's image step (`:create-image {number}`), never a search by the Coauthor
 - When visual design questions arise that go beyond content
+- After the design frame is saved (`tasks/init-course.md` → Design Track, D4) → hand over with `agent:artist/switch`; the Dashboard's `next` names the look or the image step
+- After :create-visuals when course files with material exist (design track, or material documents in the full way) and one lacks the theme → suggest `agent:artist/apply-theme` `:apply-theme`
 
 **Suggest `:agent learner`:**
 - After :create-learner-persona is done and personas exist → suggest `:agent learner` for :review-as-persona

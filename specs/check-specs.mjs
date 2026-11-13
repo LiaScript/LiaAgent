@@ -284,6 +284,27 @@ test("design track: the follow-up question, the frame and its markers (stage 2a)
   assert.match(read("tasks/update-dashboard.md"), /design: Frame → Look → Images → Check → Publish/);
 });
 
+test("apply-theme: one confirmation, foreign styling asked, macro imports kept, contrast checked", () => {
+  const t = read("tasks/apply-theme.md");
+  for (const phrase of ["one confirmation", "preselected: replace", "Imports of macro templates always stay", "node specs/dashboard/check-material.mjs", "only the header", "never changes teaching text"]) assert.ok(t.includes(phrase), phrase);
+  const artist = read("agents/artist-agent.yaml");
+  assert.match(artist, /:apply-theme: "run task `tasks\/apply-theme\.md`/);
+  assert.match(artist, /:review-images \{number\?\}: "run task `tasks\/review-images\.md`/);
+  assert.match(read("tasks/create-visuals.md"), /From the course or a source/);
+  // Stage 2a T9: the inputs and the overview, the Leitplanke of the design track, and the coordination lines.
+  assert.match(t, /`node specs\/dashboard\/read-source\.mjs <file>`/, "apply-theme lists foreign styling with read-source.mjs");
+  assert.ok(t.includes("tasks/update-dashboard.md"), "apply-theme does not run update-dashboard");
+  for (const file of ["apply-theme.md", "review-images.md"]) assert.match(artist, new RegExp(`^ {4}- ${file.replace(".", "\\.")}$`, "m"), `artist-agent.yaml dependencies lack ${file}`);
+  assert.match(artist, /only the file header, image lines, alt texts and the image credits chapter/, "artist-agent.yaml lacks the guard rail of the design track");
+  const coordination = read("agents/teaching-agent.nav.yaml").split(/^agent_coordination:\s*$/m)[1].split(/^\S/m)[0];
+  assert.match(coordination, /design frame[^\n]*`agent:artist\/switch`/, "no handover to the artist after the design frame");
+  assert.match(coordination, /:create-visuals[^\n]*material[^\n]*`:apply-theme`/, "no :apply-theme after :create-visuals with existing material");
+  const visuals = read("tasks/create-visuals.md").split("From the course or a source").slice(1).join("");
+  assert.match(visuals, /read-source\.mjs/, "the variant reads the course with read-source.mjs");
+  assert.match(visuals, /`images`[^\n]*only the image style/, "scope images: only the image style");
+  assert.match(visuals, /offer `:apply-theme`/, "create-visuals does not offer :apply-theme");
+});
+
 test("preview is a navigation command of every agent", () => {
   for (const agent of ["teaching", "artist", "learner", "development"]) {
     assert.match(agentYaml(agent), /^  :preview \{file\?\} \{slide\?\}:/m, `${agent} has no :preview`);
@@ -306,7 +327,7 @@ test("open-chat is a navigation command of every agent and opens a collapsed cha
 
 test("Artist tasks that write journal.md refresh the dashboard and are listed as its triggers", () => {
   const triggers = read("tasks/update-dashboard.md").split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
-  for (const task of ["create-visuals", "create-logo", "create-image", "generate-image"]) {
+  for (const task of ["create-visuals", "create-logo", "create-image", "generate-image", "apply-theme"]) {
     assert.ok(read(`tasks/${task}.md`).includes("tasks/update-dashboard.md"), `${task} does not run update-dashboard`);
     assert.ok(triggers.includes(`:${task}`), `${task} is missing in the update-dashboard trigger list`);
   }

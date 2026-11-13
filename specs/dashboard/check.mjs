@@ -4138,9 +4138,9 @@ test("validate: a kept image with an unclear licence needs the credit line in th
   assert.doesNotMatch(validateDesign(designJournalText({ images: [[{ status: "existing", license: "CC BY 4.0" }], []] }), files("# A\n")).output, /unclear licence/);
   assert.doesNotMatch(validateDesign(designJournalText({ images: [[{ status: "existing", license: "Lizenz ungeklärt – von der Lehrkraft behalten" }], []] }), files("# A\n\nLizenz ungeklärt – von der Lehrkraft behalten\n")).output, /unclear licence/);
 });
-test("validate: the design track's entry commands are the artist's (warning until they exist)", () => {
+test("validate: the design track's entry commands are the artist's (available since stage 2a T9: no warning)", () => {
   const out = validateText(withDash(designJournalText({}))).output;
-  assert.match(out, /Track: design is not available yet \(no :apply-theme in specs\/agents\/artist-agent\.yaml\)/);
+  assert.doesNotMatch(out, /Track: design is not available yet/);
 });
 
 // ---- Stage 2a, T6: read-source.mjs – compact excerpts of a source ----
