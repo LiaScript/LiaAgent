@@ -83,6 +83,12 @@ export const trackChangedText = "Track changed: steps replaced from the language
 export function stepsOfOtherTrack(journal, steps = []) {
   if (!steps.length) return false;
   const keys = stepsOf(journal.track, modeOf(journal));
+  // Design: a scope change look ↔ images keeps the step count – a step of the other scope (by its title) is foreign.
+  if (journal.track === "design" && steps.length === keys.length) {
+    const foreign = ["look", "images"].filter(key => !keys.includes(key));
+    const titles = [journal.pack?.lightStepTitles, englishLightStepTitles].filter(Boolean).flatMap(list => foreign.map(key => norm(list[key])));
+    return steps.some(step => titles.includes(norm(step.title)));
+  }
   if ((journal.track ?? "full") !== "full") return steps.length !== keys.length;
   const own = ["didactics", "blocks", "agenda"].map(key => keys.indexOf(key));
   const fullOnly = [englishCourseSteps(), journal.pack?.dashboard?.process?.steps].filter(list => list?.length === keys.length)
@@ -154,7 +160,13 @@ export function derive(journal, input, { date, previous } = {}) {
   const designKeys = stepsOf("design", modeOf(journal)).filter(key => key === "look" || key === "images");
   const designTemplate = design && unitCheck && designKeys.every(key => lightTitles?.[key])
     ? [...designKeys.map(key => ({ title: lightTitles[key] })), { title: unitCheck.title, ...(unitCheck.why ? { why: unitCheck.why } : {}) }] : null;
-  const template = design ? designTemplate : (data.units ?? []).find(unit => unit.process?.steps?.length)?.process.steps
+  // Steps of the design track (look, images, the unit check – pack or English titles): outside that track never a
+  // template, and a unit that still has them (after the switch design → full) gets the track's own steps.
+  const lookImages = [journal.pack?.lightStepTitles, englishLightStepTitles].filter(Boolean).flatMap(list => [list.look, list.images]).map(norm).filter(Boolean);
+  const checkTitles = [unitCheck?.title, unitStepOf({ key: "check-unit" }, englishUnitSteps)?.title].map(norm).filter(Boolean);
+  const isDesignSteps = list => Boolean(list?.length) && list.every(step => [...lookImages, ...checkTitles].includes(norm(step.title)))
+    && list.some(step => lookImages.includes(norm(step.title)));
+  const template = design ? designTemplate : (data.units ?? []).find(unit => unit.process?.steps?.length && !isDesignSteps(unit.process.steps))?.process.steps
     ?? journal.pack?.unitSteps ?? (journal.language === "en" ? englishUnitSteps : null);
   // A light track (mini, convert) has no planning sketch: its unit has no planning step (T5-21).
   const light = ["mini", "convert"].includes(journal.track);
@@ -200,6 +212,12 @@ export function derive(journal, input, { date, previous } = {}) {
     if (template && !unit.process?.steps?.length) set(unit, "process", { title: unit.title, steps: freshSteps() }, `${path}.process`, "every unit gets the same steps from the start");
     // A design unit with steps of another kind (or of another scope) gets the design steps.
     else if (designTemplate && titlesOf(unit.process.steps) !== titlesOf(designTemplate)) set(unit, "process", { title: unit.title, steps: freshSteps() }, `${path}.process`, "the design track's unit steps (look, images, check by scope)");
+    // Off the design track (a switch design → full): the design steps give way to the track's unit steps; a done unit
+    // has them all done.
+    else if (!design && template && isDesignSteps(unit.process.steps)) {
+      const done = doneStates.get(facts.n) === "done";
+      set(unit, "process", { title: unit.title, steps: freshSteps().map(step => done ? { ...step, state: "done" } : step) }, `${path}.process`, "the track's own unit steps replace those of the design track");
+    }
     if (light && unit.process?.steps?.some(isPlanStep)) set(unit.process, "steps", unit.process.steps.filter(step => !isPlanStep(step)), `${path}.process.steps`, "a light track has no planning sketch");
 
     const { state, why } = unitState(facts, { selected: light ? nextUnit : data.selected });

@@ -38,7 +38,7 @@ the visible area – from the top of an image directly above the question, measu
 with the question or that image at the top; text contrast per WCAG 2.x – up to 20 elements h1, h2, h3,
 p, li, a, label with visible text per slide, against the first solid background colour of their
 ancestors, else white, in the colour mode the page is in; text over a background image or gradient
-is skipped; below 4.5:1, or 3:1 for text from 24 px or bold from 18.66 px, is an error:
+is skipped and counted in the report line; below 4.5:1, or 3:1 for text from 24 px or bold from 18.66 px, is an error:
 "contrast {ratio}:1 < {need}:1 on slide {n} ({element})"). Page photos wider than 500 px (?width=…)
 are warned about from the source, whatever their file size.
 The windows are desktop browser windows of that size, not devices (no touch, no browser bars).
@@ -492,7 +492,11 @@ export function contrastFindings(samples) {
 }
 
 // One finding as the error line of the report.
-export const describeContrast = finding => `contrast ${finding.ratio.toFixed(2)}:1 < ${finding.need}:1 on slide ${finding.slide} (${finding.selector})`;
+// The ratio is cut to two decimals, never rounded up: 4.4999 reads "4.49:1 < 4.5:1", not "4.50:1 < 4.5:1".
+export const describeContrast = finding => `contrast ${(Math.floor(finding.ratio * 100) / 100).toFixed(2)}:1 < ${finding.need}:1 on slide ${finding.slide} (${finding.selector})`;
+// The report line of the contrast check: samples measured, findings below the minimum and the text skipped over a
+// background image or gradient (not judged – a reader looks at those).
+export const describeContrastSamples = (samples, below, skipped = 0) => `Text contrast (WCAG 2.x, ${samples} text sample${samples === 1 ? "" : "s"}, the page's colour mode): ${below} below the minimum${skipped ? `; ${skipped} skipped over a background image or gradient` : ""}`;
 
 // ---------------------------------------------------------------------------
 // Rendered check
@@ -668,7 +672,7 @@ function report(file, analysis, rendered, reason) {
   if (rendered) warnings.push(...rendered.warnings);
   // Text below the WCAG contrast minimum is an error: learners cannot read it (e.g. after a new theme).
   const contrast = rendered ? contrastFindings(rendered.contrast).map(describeContrast) : [];
-  if (rendered) console.log(`Text contrast (WCAG 2.x, ${rendered.contrast.length} text sample${rendered.contrast.length === 1 ? "" : "s"}, the page's colour mode): ${contrast.length} below the minimum`);
+  if (rendered) console.log(describeContrastSamples(rendered.contrast.length, contrast.length, rendered.contrastSkipped ?? 0));
   const errors = [...problems, ...contrast, ...(rendered ? [...new Set(rendered.errors)] : []), ...(failure?.kind === "unreadable" ? [failure.text] : [])];
   console.log(`Errors (without missing images and the known interpreter error fetchError): ${errors.length}`);
   errors.slice(0, 8).forEach(error => console.log(`- ${error}`));
@@ -784,6 +788,7 @@ async function main() {
     const warnings = [];
     const fit = new Map();
     const contrast = [];
+    let contrastSkipped = 0;
     // Opens a slide and waits until every image has loaded or failed (at most 10 s; external images may
     // take a while). Lazy images below the window are loaded too, so that the fit uses their real height.
     const open = async index => {
@@ -873,6 +878,7 @@ async function main() {
           return `rgb(${r}, ${g}, ${b})`;
         };
         const contrast = [];
+        let skipped = 0;
         for (const element of document.querySelectorAll("h1, h2, h3, p, li, a, label")) {
           if (contrast.length >= 20) break;
           const box = element.getBoundingClientRect();
@@ -880,21 +886,24 @@ async function main() {
           if (element.checkVisibility && !element.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
           const style = getComputedStyle(element);
           const [r, g, b, a] = rgba(style.color);
-          const bg = a > 0 && background(element);
-          if (!bg) continue;
+          if (!(a > 0)) continue;
+          const bg = background(element);
+          if (!bg) { skipped++; continue; }
           contrast.push({ selector: element.tagName.toLowerCase(), fg: `rgba(${r}, ${g}, ${b}, ${a})`, bg, size: parseFloat(style.fontSize), weight: Number(style.fontWeight) || 400 });
         }
         return {
           quizzes: count(".lia-quiz"),
           blocks: count(".lia-effect__playback-controls button .icon-play"),
           inline: count(".lia-effect--inline button .icon-play-circle"),
-          contrast
+          contrast,
+          skipped
         };
       });
       counts.quizzes += slide.quizzes;
       counts.blocks += slide.blocks;
       counts.inline += slide.inline;
       contrast.push(...slide.contrast.map(sample => ({ ...sample, slide: index })));
+      contrastSkipped += slide.skipped;
     }
     // The other windows: only the slides with quizzes, each opened anew (slide-open position).
     for (const size of sizes.slice(1)) {
@@ -906,7 +915,7 @@ async function main() {
       }
     }
     for (const [url, size] of large) warnings.push(`large image (${size} KB): ${short(url, 100)} – use a smaller thumbnail (Wikimedia Commons standard widths: 330 px for answer options, 500 px for page photos)`);
-    return report(file, analysis, { titles, counts, missing, broken, warnings, errors, fit: [...fit.values()], sizes, contrast });
+    return report(file, analysis, { titles, counts, missing, broken, warnings, errors, fit: [...fit.values()], sizes, contrast, contrastSkipped });
   } finally {
     await browser?.close();
     server.kill();

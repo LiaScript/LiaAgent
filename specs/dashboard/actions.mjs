@@ -243,7 +243,11 @@ export function designUnitAction(unit, journal) {
   if (!lookSet(journal)) return action("design-look", "artist", "create-visuals");
   if (scope !== "images" && unit.themeApplied === false) return action("apply-theme", "artist", "apply-theme");
   if (scope !== "look" && !unit.imagesReviewed) return action("review-images", "artist", "review-images", { number: unit.n });
-  return unitAction(unit);
+  const next = unitAction(unit);
+  // A failed design check found points in the header, image lines, alt texts or credits: a targeted fix, never
+  // co-authoring the content (tasks/validate-course.md → Design track: design check only).
+  if (next?.key === "revise-unit") return action("revise-unit", "teaching", "quick-fix", { number: unit.n }, "✏️");
+  return next;
 }
 
 // On a light track unit 1 is the course: an action that writes the material (or inserts images before a
@@ -347,8 +351,11 @@ export function courseStepOf(expected, steps = [], { track = "full", mode, conve
 export function nextTitle(expected, data, unitWord, { track = "full", mode, convertMode = null, keys = null } = {}) {
   const n = expected.params.number ?? expected.params.file;
   if (track && track !== "full" && (n == null || track === "design")) {
+    // The design track's units have their own steps (look, images, the unit check): a unit action names its unit's
+    // step, as on the full track – the title the validator expects; else the course step with the unit it concerns.
+    const own = n != null && unitStepOf(expected, data.units?.find(unit => String(unit.id) === String(n))?.process?.steps ?? []);
+    if (own) return `${own.title} – ${unitWord} ${n}`;
     const light = courseStepOf(expected, data.process?.steps ?? [], { track, mode, convertMode });
-    // The design track's units have no material steps of their own: the course step, with the unit it concerns.
     return light?.title ? (n == null ? light.title : `${light.title} – ${unitWord} ${n}`) : null;
   }
   if (expected.key in stepKeys) return courseStepOf(expected, data.process?.steps ?? [], { track: "full", keys })?.title ?? null;
@@ -407,7 +414,11 @@ function sectionLines(journal, nextUnplanned, approvedOne, states = new Map()) {
   const light = journal.track === "mini" || journal.track === "convert";
   const firstWritten = journal.units.some(unit => unit.n === "1" && unit.material);
   const checkUnits = unitIsCourseCheck(journal, states) ? [] : [action("check-units", "teaching", "validate-course", {}, "🔍")];
-  const sessions = journal.track === "design" ? checkUnits
+  // Design: `:validate-course` without a number checks each unit not done – offered only once each of them is at its
+  // check (look applied, images reviewed and inserted), never from the frame on.
+  const notDone = journal.units.filter(unit => states.get(unit.n) !== "done");
+  const designChecks = journal.track === "design" && notDone.length > 0 && notDone.every(unit => designUnitAction(unit, journal)?.cmd === "validate-course");
+  const sessions = journal.track === "design" ? (designChecks ? checkUnits : [])
     : light ? (firstWritten ? checkUnits
       : [journal.track === "mini" ? action("write-mini-course", "teaching", "create-mini-course") : action("convert-course", "teaching", "convert-course")])
     : !journal.filled.Didactics ? [action("didactics-first", "teaching", "create-didactics")]

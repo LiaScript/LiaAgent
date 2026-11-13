@@ -528,6 +528,7 @@ if (/^\s*\d+\.\s*Track:\s*design\b/m.test(section("Course Context"))) {
   const wanted = scope === "look" || scope === "images" ? entry[scope] : [...entry.look, ...entry.images];
   for (const command of wanted) if (agentCommands && !agentCommands.artist?.has(command)) warnings.push(`Track: design is not available yet (no :${command} in specs/agents/artist-agent.yaml) – switch to full or mini (tasks/activate-section.md → Track switch)`);
   const creditTerms = [journal.terms.licenseUnclearKept, modelEnglishTerms.licenseUnclearKept].filter(Boolean).map(term => term.toLowerCase());
+  const reviewedWords = [...new Set([journal.terms.imagesReviewed, modelEnglishTerms.imagesReviewed].filter(Boolean))].map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const parts = new Map([...section("Sessions").matchAll(/^### (\d+)\.\s[\s\S]*?(?=^### \d+\.\s|(?![\s\S]))/gm)].map(match => [match[1], match[0]]));
   for (const unit of journal.units) {
     if (!unit.material && !unit.tableTitle) continue;
@@ -537,6 +538,10 @@ if (/^\s*\d+\.\s*Track:\s*design\b/m.test(section("Course Context"))) {
     const unclear = [...(parts.get(unit.n) ?? "").matchAll(/^\s*[*-]\s+__License:__[ \t]*(.+)$/gm)].some(match => creditTerms.some(term => match[1].toLowerCase().includes(term.split(" ").slice(1).join(" "))));
     const text = unit.file && existsSync(join(projectDir, unit.file)) ? readFileSync(join(projectDir, unit.file), "utf8").toLowerCase() : null;
     if (unclear && text !== null && !creditTerms.some(term => text.includes(term))) warnings.push(`unit ${unit.n} keeps an image with an unclear licence, but its file lacks the credit text "${journal.terms.licenseUnclearKept}" – add it to the image credits`);
+    // The decision "images reviewed" counts only in the unit's Decisions before the first #### heading (journal-model.mjs):
+    // a dated line below a report or #### Images leaves the unit unreviewed, and :review-images comes back.
+    const below = (parts.get(unit.n) ?? "").replace(/<!--[\s\S]*?-->/g, "").split(/^#### /m).slice(1).join("\n");
+    if (!unit.imagesReviewed && reviewedWords.some(word => new RegExp(`^\\s*[-*]\\s+\\*\\*[^*\\n]+\\*\\*:?\\s*${word}`, "im").test(below))) warnings.push(`unit ${unit.n}: the decision "images reviewed" stands below a #### heading – the overview reads decision lines only before the first ####; move it into the unit's Decisions (tasks/review-images.md step 6)`);
   }
 }
 // An agreement with the instructor ("wishes … next time") is theirs to see: a prepare item, never internal (R12c-SP121).
@@ -854,7 +859,10 @@ for (const [where, text] of countTexts) {
   const journal = readJournal(source, { packs: loadPacks() });
   const states = new Map(journal.units.map(unit => [unit.n, unitState(unit).state]));
   const lightCheckDone = unitIsCourseCheck(journal, states) && journal.validation.mode === "course" && journal.validation.result === "FAIL";
-  if (lightCheckDone) {
+  if (lightCheckDone && journal.track === "design") {
+    // The design track: every unit done is the course check; the write that made the last unit done writes the summary.
+    warnings.push(`design track: course summary FAIL, but every unit is done (the last: unit ${journal.units.at(-1).n}) – refresh the summary in the approval write (tasks/validate-course.md → Design track: design check only)`);
+  } else if (lightCheckDone) {
     warnings.push("light track: course summary FAIL, but unit 1 is checked and approved – refresh the summary in the approval write (tasks/validate-course.md → One unit, one run)");
   }
   // On every track (T5-68): the course summary says a unit waits for the approval that its decisions record.

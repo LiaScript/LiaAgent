@@ -3926,7 +3926,8 @@ test("design: overview steps follow the scope and the actions move them", () => 
   assert.equal(deriveDesign({ scope: "images", reviewed: [true, true] }).data.next.title, "Bilder", "images only, no image style yet: the style belongs to the images step");
   const images = deriveDesign({ scope: "images", theme: ["x"], reviewed: [true, true] });
   assert.deepEqual(images.data.process.steps.map(step => [step.title, step.state]), [["Rahmen", "done"], ["Bilder", "done"], ["Prüfen", "current"], ["Veröffentlichen", "optional"]]);
-  assert.equal(images.data.next.title, "Prüfen – Einheit 1");
+  // A unit action names the unit's own step (final review fix 3), the course step stays in the process bar.
+  assert.equal(images.data.next.title, "Prüfen und freigeben – Einheit 1");
   assert.deepEqual(images.missing, [], "no words left for the agent");
 });
 test("design: the actions advance their course step", () => {
@@ -3958,8 +3959,9 @@ test("design: publishing waits for every unit, no separate course check", () => 
   assert.equal(unitIsCourseCheck(none, new Map()), false, "at least one unit");
 });
 test("design: the Sessions action line offers the check, never the didactics", () => {
-  const text = `${designJournal()}`.replace("## Sessions\n", "## Sessions\n\n<!-- class=\"journal-actions\" -->\n[▶️ Didactics first](agent:teaching/create-didactics) `:create-didactics`\n");
-  const journal = readJournal(text, { projectDir: tmpProject({}) });
+  // Look applied and images reviewed: every unit is at its check (final review fix 10 – before that, no check link).
+  const text = `${designJournal({ theme: ["x"], reviewed: [true, true] })}`.replace("## Sessions\n", "## Sessions\n\n<!-- class=\"journal-actions\" -->\n[▶️ Didactics first](agent:teaching/create-didactics) `:create-didactics`\n");
+  const journal = readJournal(text, { projectDir: tmpProject({ "course/a.md": "<!--\nx\n-->\n# A\n", "course/b.md": "<!--\nx\n-->\n# B\n" }) });
   const { source } = patchSectionActions(text, journal, expected => wordsOf(expected, journal, { unit: "unit", units: "units" }));
   assert.match(source, /## Sessions\n\n<!-- class="journal-actions" -->\n\[🔍 Check units\]\(agent:teaching\/validate-course\) `:validate-course`\n/);
 });
@@ -4370,4 +4372,125 @@ test("design → full: images and look stay, no approval round, outline next", (
   assert.match(sessions, /^_The units exist; the next step is the outline\._$/m);
   const check = validateFile(path, compostFiles);
   assert.equal(check.status, 0, check.output);
+});
+
+// ---- Stage 2a, final review fixes: the design → full fixture switched back to the design track (scope both) ----
+
+import { stepsOfOtherTrack } from "./derive-dashboard.mjs";
+import { describeContrastSamples } from "./check-material.mjs";
+
+// The fixture as it stood on the design track: Track design, scope both (look and images reviewed, both units done).
+const designFixture = () => readFileSync(fixture("journal-design-to-full.md"), "utf8")
+  .replace("1. Track: full", "1. Track: design").replace("4. Design scope: n/a", "4. Design scope: both");
+// Unit 2 of a design fixture changed: "check" – not checked yet (no report, no approval, Done empty) and without
+// overview steps of its own; "fail" – its check found points (Result FAIL), not approved.
+const designUnit2 = (text, kind) => {
+  const at = text.indexOf("### 2. Building a compost bin");
+  let [head, rest] = [text.slice(0, at), text.slice(at)];
+  head = head.replace("| 2 | Building a compost bin | existing | ✅ | ✅ `course/compost-practice.md` | ✅ |", "| 2 | Building a compost bin | existing | ✅ | ✅ `course/compost-practice.md` | |");
+  rest = rest.replace("- **2026-11-13:** material approved\n", "");
+  if (kind === "check") rest = rest.replace(/#### Validation report – unit 2\n[\s\S]*?<\/section>\n\n/, "");
+  if (kind === "fail") rest = rest.replace("- __Result:__ PASS", "- __Result:__ FAIL").replace("**Outcome:** passed (13 Nov 2026)", "**Outcome:** needs correction (13 Nov 2026)");
+  const data = dashboardOf(head);
+  delete data.units[1].process;
+  return head.replace(/```json @Dashboard\.View\n[\s\S]*?\n```/, dashJson(data)) + rest;
+};
+const warningsOf = output => (output.split("Warnings:\n")[1] ?? "").split(/\n(?:ERRORS:|Exit code)/)[0].split("\n").filter(Boolean);
+
+test("final fix 1: an \"images reviewed\" decision below a #### heading is a warning (the overview does not read it)", () => {
+  const files = { "course/a.md": "# A\n", "course/b.md": "# B\n" };
+  const report = "#### Validation report – unit 1\n\n<section data-key=\"validation-report\">\n\n**Outcome:** passed (2026-11-13)\n\n</section>\n";
+  const below = designJournal().replace("### 2. Unit B", `${report}\n- **2026-11-13:** images reviewed\n\n### 2. Unit B`);
+  assert.match(validateDesign(below, files).output, /unit 1: the decision "images reviewed" stands below a #### heading/);
+  assert.doesNotMatch(validateDesign(designJournal({ reviewed: [true, false] }), files).output, /stands below a #### heading/);
+});
+test("final fix 2: a failed design check leads to :quick-fix, never to co-authoring the content", () => {
+  const journal = designCourse({ scope: "both", theme: ["x"] });
+  const failed = { ...journal.units[0], themeApplied: true, imagesReviewed: true, report: { result: "FAIL", changedSince: 0 } };
+  const next = designUnitAction(failed, journal);
+  assert.equal(next.href, "agent:teaching/quick-fix?number=1");
+  assert.equal(next.icon, "✏️");
+  assert.ok(accepts(next, "agent:teaching/quick-fix?number=1&description=alt%20text"), "a description keeps the action");
+  const text = designUnit2(designFixture(), "fail");
+  inMiniProject(text, compostFiles, ({ derive: write, read }) => {
+    const run = write();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.equal(dashboardOf(read()).next.href, "agent:teaching/quick-fix?number=2");
+    const line = actionLineOf(read(), "### 2. Building a compost bin");
+    assert.match(line, /\[✏️ [^\]]+\]\(agent:teaching\/quick-fix\?number=2\) `:quick-fix 2`/);
+    assert.doesNotMatch(line, /coauthor-materials/);
+  });
+});
+test("final fix 3: a design journal at the check stage validates without warnings (next.title names the unit's step)", () => {
+  inMiniProject(designUnit2(designFixture(), "check"), compostFiles, ({ derive: write, validate, read }) => {
+    const run = write();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    const data = dashboardOf(read());
+    assert.equal(data.next.href, "agent:teaching/validate-course?number=2");
+    assert.equal(data.next.title, "Check and approve – unit 2");
+    const check = validate();
+    assert.equal(check.status, 0, check.stdout + check.stderr);
+    assert.deepEqual(warningsOf(check.stdout + check.stderr), []);
+  });
+  // German: the unit's check step "Prüfen und freigeben", not the course step "Prüfen".
+  assert.equal(deriveDesign({ scope: "look", theme: ["x"], applied: [true, true] }).data.next.title, "Prüfen und freigeben – Einheit 1");
+});
+test("final fix 4: design → full replaces the design unit steps; a new unit gets the full track's steps", () => {
+  // The fixture's overview as the switch found it: each unit still with its design steps, all done; plus a new unit 3.
+  const text = readFileSync(fixture("journal-design-to-full.md"), "utf8");
+  const data = dashboardOf(text);
+  for (const unit of data.units) unit.process.steps = ["Look", "Images", "Check and approve"].map(title => ({ title, state: "done" }));
+  const withUnit3 = text.replace(/```json @Dashboard\.View\n[\s\S]*?\n```/, dashJson(data))
+    .replace(/^(\| 2 \| Building a compost bin \|.*)$/m, "$1\n| 3 | Compost in winter | | | | | |");
+  const journal = readJournal(withUnit3);
+  const after = derive(journal, dashboardOf(withUnit3), { date: "2026-11-13" }).data;
+  const titles = englishUnitSteps.map(step => step.title);
+  assert.deepEqual(after.units.map(unit => unit.process.steps.map(step => step.title)), [titles, titles, titles]);
+  assert.deepEqual(after.units.slice(0, 2).map(unit => unit.process.steps.map(step => step.state)), [titles.map(() => "done"), titles.map(() => "done")], "done units: every step done");
+  assert.ok(after.units[2].process.steps.every(step => step.state !== "done"), "the new unit starts with planned steps");
+  // A second run keeps them.
+  assert.deepEqual(derive(journal, after, { date: "2026-11-13" }).changes.filter(change => /process/.test(change.path)), []);
+  // The fixture itself (already derived) stays as it is.
+  assert.deepEqual(derive(readJournal(text), dashboardOf(text), { date: "2026-11-13" }).changes, []);
+});
+test("final fix 8: on the design track the outdated course summary names the last unit and the design rule", () => {
+  const files = Object.fromEntries(Object.entries(compostFiles));
+  const check = inMiniProject(designFixture(), files, ({ validate }) => { const run = validate(); return run.stdout + run.stderr; });
+  assert.match(check, /design track: course summary FAIL, but every unit is done \(the last: unit 2\)[^\n]*Design track: design check only/);
+  assert.doesNotMatch(check, /light track: course summary FAIL/);
+});
+test("final fix 9: a scope change look ↔ images (same step count) gives the steps of the new scope", () => {
+  const steps = keys => keys.map(key => ({ title: englishLightStepTitles[stepTitleKey("design", key)], state: "planned" }));
+  const journal = scope => ({ track: "design", trackMode: scope, language: "en" });
+  assert.equal(stepsOfOtherTrack(journal("images"), steps(stepsOf("design", "look"))), true, "look steps, scope now images");
+  assert.equal(stepsOfOtherTrack(journal("look"), steps(stepsOf("design", "images"))), true, "images steps, scope now look");
+  assert.equal(stepsOfOtherTrack(journal("look"), steps(stepsOf("design", "look"))), false);
+  assert.equal(stepsOfOtherTrack(journal("both"), steps(stepsOf("design", "both"))), false);
+  const derived = deriveDesign({ scope: "images", theme: ["x"], data: { process: { steps: [["Rahmen", "done"], ["Aussehen", "done"], ["Prüfen", "planned"], ["Veröffentlichen", "optional"]].map(([title, state]) => ({ title, state })) } } });
+  assert.deepEqual(derived.data.process.steps.map(step => step.title), ["Rahmen", "Bilder", "Prüfen", "Veröffentlichen"]);
+});
+test("final fix 10: the design Sessions line offers the check only once every open unit's next action is its check", () => {
+  const line = (opts, files) => {
+    const text = designJournal(opts);
+    const journal = readJournal(text, { projectDir: tmpProject(files) });
+    const states = new Map(journal.units.map(unit => [unit.n, unitState(unit).state]));
+    return sessionsLine(patchSectionActions(text, journal, expected => wordsOf(expected, journal, { unit: "unit", units: "units" }), states).source);
+  };
+  const themed = { "course/a.md": "<!--\nx\n-->\n# A\n", "course/b.md": "<!--\nx\n-->\n# B\n" };
+  assert.equal(line({ scope: "both" }, {}), null, "frame only: the look comes first");
+  assert.equal(line({ scope: "both", theme: ["x"], reviewed: [true, false] }, themed), null, "unit 2 still waits for its image review");
+  assert.match(line({ scope: "both", theme: ["x"], reviewed: [true, true] }, themed) ?? "", /agent:teaching\/validate-course\) `:validate-course`/);
+});
+test("final fix 15: contrast ratio cut, not rounded; skipped samples named; theme imports by repository, not owner", () => {
+  assert.equal(describeContrast({ slide: 1, selector: "p", ratio: 4.4999, need: 4.5 }), "contrast 4.49:1 < 4.5:1 on slide 1 (p)");
+  assert.equal(describeContrastSamples(12, 1, 3), "Text contrast (WCAG 2.x, 12 text samples, the page's colour mode): 1 below the minimum; 3 skipped over a background image or gradient");
+  assert.equal(describeContrastSamples(1, 0, 0), "Text contrast (WCAG 2.x, 1 text sample, the page's colour mode): 0 below the minimum");
+  const kinds = urls => readLiaScript(`<!--\n${urls.map(url => `import: ${url}`).join("\n")}\n-->\n# T\n`).header.imports.map(item => item.kind);
+  assert.deepEqual(kinds([
+    "https://raw.githubusercontent.com/Some-Design-Org/macros/main/README.md",
+    "https://raw.githubusercontent.com/LiaTemplates/my-theme/main/README.md",
+    "https://cdn.jsdelivr.net/gh/theme-people/quiz@1.0/README.md",
+    "https://example.org/design-x/README.md",
+    "https://design-org.github.io/macros/README.md"
+  ]), ["template", "theme", "template", "theme", "template"]);
 });

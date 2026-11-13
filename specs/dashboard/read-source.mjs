@@ -36,12 +36,23 @@ const cut = text => text.length > WIDTH ? `${text.slice(0, WIDTH - 1)}…` : tex
 // Header styling (link: to a stylesheet or font service, @style/@custom … @end, theme imports), imports, slides and
 // images of a LiaScript course. A theme block of ## Visual Identity is made of exactly these kinds.
 const STYLESHEET = /\.css([?#]|$)|\/css2?\?|^https?:\/\/(fonts\.googleapis\.com|fonts\.bunny\.net|use\.typekit\.net)\//i;
+// A theme import by its repository and file part: never the host or the owner (an organisation "…-design" also
+// holds templates). github.com, raw.githubusercontent.com, gitlab.com, codeberg.org: the owner is the first path
+// segment; jsDelivr /gh/{owner}/…: the second; a relative path is read whole.
+function themeImport(url) {
+  let parsed;
+  try { parsed = new URL(url); } catch { return /theme|design/i.test(url); }
+  let parts = parsed.pathname.split("/").filter(Boolean);
+  if (/^(github\.com|raw\.githubusercontent\.com|gitlab\.com|codeberg\.org)$/i.test(parsed.hostname)) parts = parts.slice(1);
+  else if (/^cdn\.jsdelivr\.net$/i.test(parsed.hostname) && parts[0] === "gh") parts = parts.slice(2);
+  return /theme|design/i.test(parts.join("/"));
+}
 export function readLiaScript(text) {
   const styling = [], imports = [];
   const entry = (key, values) => {
     const urls = values.join(" ").split(/\s+/).filter(Boolean);
     if (key === "import") for (const url of urls) {
-      const kind = /theme|design/i.test(url) ? "theme" : "template";
+      const kind = themeImport(url) ? "theme" : "template";
       imports.push({ url, kind });
       if (kind === "theme") styling.push({ kind: "theme-import", lines: [`import: ${url}`] });
     }

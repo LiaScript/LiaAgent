@@ -37,12 +37,19 @@ This is where your course plan grows. You bring your teaching idea; the assistan
         "title": "What goes into compost",
         "steps": [
           {
-            "title": "Look",
-            "state": "done"
+            "title": "Plan",
+            "state": "done",
+            "why": "The planning sketch sets contents, tasks and self-check before any material is written."
           },
           {
-            "title": "Images",
-            "state": "done"
+            "title": "Work out the material",
+            "state": "done",
+            "why": "Texts, tasks and self-check are written together; you see each part first."
+          },
+          {
+            "title": "Insert images",
+            "state": "done",
+            "why": "The marked spots get their pictures."
           },
           {
             "title": "Check and approve",
@@ -70,12 +77,19 @@ This is where your course plan grows. You bring your teaching idea; the assistan
         "title": "Building a compost bin",
         "steps": [
           {
-            "title": "Look",
-            "state": "done"
+            "title": "Plan",
+            "state": "done",
+            "why": "The planning sketch sets contents, tasks and self-check before any material is written."
           },
           {
-            "title": "Images",
-            "state": "done"
+            "title": "Work out the material",
+            "state": "done",
+            "why": "Texts, tasks and self-check are written together; you see each part first."
+          },
+          {
+            "title": "Insert images",
+            "state": "done",
+            "why": "The marked spots get their pictures."
           },
           {
             "title": "Check and approve",
