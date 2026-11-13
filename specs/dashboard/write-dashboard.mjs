@@ -8,7 +8,8 @@
 // Before writing, the fields that follow from the journal (unit list, state, href, view, usable,
 // statusLabel, image step, links, unit words, date) are derived from it (derive-dashboard.mjs) and
 // replace the draft's values, and each unit's status line, Notes cell and action line in ## Sessions
-// follow in the same write; the script prints every field it set. When no language pack has the words of
+// follow in the same write; the script prints every field it set, and the open points (decisions) the write
+// adds and removes. When no language pack has the words of
 // a changed action, it writes nothing and names the words to write. --no-derive writes the draft as it is.
 // Run from the course project root:
 //   node specs/dashboard/write-dashboard.mjs <draft.json> [journal.md] [--no-derive]
@@ -104,6 +105,15 @@ else {
   console.log(`Dashboard written to ${journal}.`);
   const budget = countWrite(process.cwd(), "write-dashboard", journal);
   if (budget) console.log(budget);
+  // The open points (decisions: decide, prepare, internal) this write adds and removes, by key and title (T5-91):
+  // each must have been named in the save preview.
+  const before = (() => { try { return JSON.parse(current).decisions ?? []; } catch { return []; } })();
+  const idOf = item => item?.key ?? `${item?.kind ?? ""}:${item?.title ?? ""}`;
+  const named = items => items.map(item => item?.key ? `${item.key} (${item.title ?? ""})` : `"${item?.title ?? ""}"`).join(", ") || "–";
+  const after = Array.isArray(data.decisions) ? data.decisions : [];
+  const addedItems = after.filter(item => !before.some(old => idOf(old) === idOf(item)));
+  const removedItems = before.filter(old => !after.some(item => idOf(item) === idOf(old)));
+  if (addedItems.length || removedItems.length) console.log(`decisions added: ${named(addedItems)} · removed: ${named(removedItems)}`);
 }
 // The cache now matches the journal block: next time change only the affected keys in it.
 writeFileSync(draftFile, JSON.stringify({ ...data, _journalHash: blockHash(json) }, null, 2) + "\n");

@@ -91,6 +91,9 @@ Run this task automatically after any task that changes project state:
    - Numbers that disagree between sections (number of units, lessons, minutes).
    - Preparation tasks recorded in a section (equipment, printouts, accounts), and agenda phases led by
      the instructor outside the material (opening, closing, one-to-one talks) → `prepare`, with `how`.
+   - Recommended actions of a unit's check report (the validator flags them `[report-action]`): what the
+     instructor does herself (look at it on the learners' device, try it with a learner, provide something)
+     → `prepare` with `source: {check: n}` and `how` in the report's words; what the assistant does → `internal`.
    - A brief under `## Templates` that the validator flags → `decide`, key `template-brief-{id}`; `how` says
      what is missing and who completes it (the brief together with the instructor, the folder through the
      development assistant). Plain words: German "Baustein", never "Template" or "Vorlage".
@@ -98,7 +101,10 @@ Run this task automatically after any task that changes project state:
    `{hint}-{topic}`; open priority issues of a persona review use `review-{unit}-{n}` (`decide`), prompt-only
    images and open `own` image spots `image-{unit}-{slug}` (`prepare`: create the image elsewhere or with
    `:generate-image` once an image route exists; for `own`: provide the photo). Each item has a `kind`:
-   - `decide` — the instructor must decide; `how` says where and how.
+   - `decide` — the instructor must decide **now**; `how` says where and how. A change that comes with a later
+     step (e.g. a new start-page title when the next unit is written) goes into that step's `next`, not here.
+     An approved unit (its decisions say `material approved`, no newer "Changed after the check" line) gets no
+     approval item and no step text asking for it.
    - `prepare` — the instructor must do or get something before using the material; `how` says how.
    - `internal` — cleanup the agent does itself at the next suitable write. No `how`; rendered collapsed.
      Resolve it at the next write and mention it in that task's completion message.
@@ -116,7 +122,10 @@ Run this task automatically after any task that changes project state:
    `node specs/dashboard/derive-dashboard.mjs --check` shows without writing what no longer matches.
    **Fresh cache:** if `.cache/dashboard.json` carries `_journalHash`, change only the keys the
    triggering write affects — plus every text the re-read of the Rules finds stale — and run the script;
-   it refuses a stale cache. Write the whole draft only when the cache is missing, has no `_journalHash`
+   it refuses a stale cache. A change to `## Course Context` (access, learners, time, language) affects
+   every text that names it: search the draft for the old wording
+   (`node specs/dashboard/find.mjs -i "<old word>" .cache/dashboard.json`) and rewrite those keys in the
+   same draft. Write the whole draft only when the cache is missing, has no `_journalHash`
    or was refused. Before a whole draft send a status with its duration.
    **`labels`:** if the course language is neither German nor English, fill all fixed texts of the library
    (`specs/dashboard/README.md` → `labels`); otherwise only `labels.decide` and `labels.prepare` with the

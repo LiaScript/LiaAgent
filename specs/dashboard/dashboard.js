@@ -10,6 +10,8 @@
     de: {
       "state.planned": "Noch offen", "state.current": "In Arbeit", "state.draft": "Entwurf liegt vor",
       "state.review": "Zur Durchsicht", "state.revision": "Korrektur nötig", "state.done": "Abgeschlossen", "state.optional": "Optional", "process.later": "Bei Bedarf",
+      // Collapsed line of the sections marked when needed (process.later): says that nothing is to do.
+      laterSummary: n => `Bei Bedarf – für Ihren Kurs nicht nötig (${n})`,
       // Derived, not a state of the data: a unit still "planned" with at least one required step done.
       "state.started": "Angefangen",
       // Derived as well: the current step without a result yet is the one that comes next, nobody works on it.
@@ -58,6 +60,7 @@
     en: {
       "state.planned": "Not started", "state.current": "In progress", "state.draft": "Draft ready",
       "state.review": "In review", "state.revision": "Correction needed", "state.done": "Done", "state.optional": "Optional", "process.later": "When needed",
+      laterSummary: n => `If needed – not required for your course (${n})`,
       "state.started": "Started", "state.waiting": step => `Waiting for: ${step}`,
       "state.next": "Up next", "state.later": "Later", "state.running": "Running now", unitNext: step => `Up next: ${step}`, unitRunning: step => `Running now: ${step}`,
       view: "Open", eyebrow: "Course plan", next: "Next:", running: "Running now:", why: "Why?",
@@ -92,7 +95,7 @@
   // Placeholders a label may use, in the order of the arguments of t(). Counted labels
   // may also be {one, many}, chosen by the first number.
   const ARGS = { progressText: ["done", "total"], steps: ["done", "total"], courseSteps: ["done", "total"], courseStepsMaterial: ["done", "total"],
-    internal: ["n"], progressStart: ["unit", "first"], progressStarted: ["unit", "first", "done", "total", "step"], unitNext: ["step"],
+    internal: ["n"], laterSummary: ["n"], progressStart: ["unit", "first"], progressStarted: ["unit", "first", "done", "total", "step"], unitNext: ["step"],
     fromCheckOn: ["date"], courseNow: ["step"], "state.waiting": ["step"], usableMissing: ["what"], usableUnits: ["units"], approvedUnits: ["units"] };
   const COUNTED = ["progressText", "steps", "courseSteps", "courseStepsMaterial", "internal"];
   const PLACEHOLDERS = { ...ARGS, progressText: ["done", "total", "unit"], courseStepsMaterial: ["done", "total", "unit"] };
@@ -299,10 +302,13 @@
     const courseSelected = selected === COURSE && globalProcess.steps.length > 0;
     if (selected !== null && !courseSelected && !ids.has(selected)) throw new Error("The selected unit does not exist.");
     const completed = units.filter(unit => unit.state === "done").length;
+    // Units the course plans but ## Sessions does not list yet count as well (unitsPlanned, computed, T5-86).
+    if (input.unitsPlanned != null && !(Number.isInteger(input.unitsPlanned) && input.unitsPlanned >= 0)) throw new Error("unitsPlanned must be a whole number.");
+    const total = Math.max(units.length, input.unitsPlanned ?? 0);
     return {
       ...input,
-      units, selected, completed, total: units.length,
-      percent: units.length ? Math.round(100 * completed / units.length) : 0,
+      units, selected, completed, total,
+      percent: total ? Math.round(100 * completed / total) : 0,
       process: globalProcess,
       next: actionData(input.next),
       explore: (input.explore ?? []).map(actionData),
@@ -338,6 +344,8 @@
       ${input.subtitle ? `<p class="dashboard-intro">${escape(input.subtitle)}</p>` : ""}
       ${input.notice ? `<p class="dashboard-notice">${escape(input.notice)}</p>` : ""}
       ${next?.running ? `<div class="dashboard-next dashboard-running"><p><strong>${escape(t("running"))}</strong> ${next.icon ? `${escape(next.icon)} ` : ""}${escape(next.label || next.title)}</p>${next.why ? `<p class="dashboard-why">${escape(next.why)}</p>` : ""}</div>`
+        // A decision of the instructor (next.decide, e.g. settling the access): the step and why to say it in the chat, no button.
+        : next?.decide ? `<div class="dashboard-next dashboard-decide"><p><strong>${escape(t("next"))}</strong> ${next.icon ? `${escape(next.icon)} ` : ""}${escape(next.label || next.title)}</p>${next.why ? `<p class="dashboard-why">${escape(next.why)}</p>` : ""}${alongside(input.explore, viewId)}</div>`
         : next ? `<div class="dashboard-next"><p><strong>${escape(t("next"))}</strong> ${escape(next.title || next.label)}</p>${next.why ? `<p class="dashboard-why"><strong>${escape(t("why"))}</strong> ${escape(next.why)}</p>` : ""}${actionLink(next, viewId, true)}${alongside(input.explore, viewId)}</div>` : ""}
     </header>`;
   }
@@ -476,7 +484,7 @@
 
   function units(input, viewId) {
     const items = input.units ?? [];
-    return `<section class="dashboard-units"><h3>${escape(input.unitsTitle || t("units"))}</h3>${items.length ? `<p class="dashboard-hint">${escape(input.unitsNote ? `${input.unitsNote} ${t("unitsHint")}` : t("unitsHint"))}</p>${courseEntry(input, viewId)}<ol class="dashboard-unit-list">${items.map(item => unit(item, item.id === input.selected, viewId)).join("")}</ol>` : (input.plan ? plan(input.plan) : `<div class="dashboard-empty"><p>${escape(input.emptyUnits || t("unitsEmpty", input.unitsTitle || t("units")))}</p><p>${escape(t("unitsEmptyNext"))}</p></div>`)}</section>`;
+    return `<section class="dashboard-units"><h3>${escape(input.unitsTitle || t("units"))}</h3>${items.length ? `<p class="dashboard-hint">${escape(input.unitsNote ? `${input.unitsNote} ${t("unitsHint")}` : t("unitsHint"))}</p>${courseEntry(input, viewId)}<ol class="dashboard-unit-list">${items.map(item => unit(item, item.id === input.selected, viewId)).join("")}</ol>` : (input.plan ? plan(input.plan) : `<div class="dashboard-empty"><p>${escape(input.emptyUnits || t("unitsEmpty", input.unitsTitle || t("units")))}</p><p>${escape(input.unitsNote || t("unitsEmptyNext"))}</p></div>`)}</section>`;
   }
 
   // unit: the selected unit, so that a unit without steps still shows its state and summary;
@@ -490,7 +498,7 @@
   function laterBlock(items) {
     const list = Array.isArray(items) ? items.filter(item => item?.label && item.href && item.command) : [];
     if (!list.length) return "";
-    return `<details class="dashboard-later"><summary>${escape(t("process.later"))} (${list.length})</summary><ul>${list.map(item => `<li>${actionLink({ label: item.label, href: item.href, icon: "➕", command: item.command })}</li>`).join("")}</ul></details>`;
+    return `<details class="dashboard-later"><summary>${escape(t("laterSummary", list.length))}</summary><ul>${list.map(item => `<li>${actionLink({ label: item.label, href: item.href, icon: "➕", command: item.command })}</li>`).join("")}</ul></details>`;
   }
 
   function process(input, unit = null, course = false) {

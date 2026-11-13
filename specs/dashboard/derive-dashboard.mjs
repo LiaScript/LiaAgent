@@ -20,8 +20,8 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { stepsOf, sectionSlug, laterHidden } from "./tracks.mjs";
-import { readJournal, englishUnitSteps, englishTerms, usableState, loadPacks, anchorOf, statusText, patchSessions } from "./journal-model.mjs";
-import { courseNext, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote } from "./actions.mjs";
+import { readJournal, englishUnitSteps, englishTerms, englishOutdatedTerms, usableState, loadPacks, anchorOf, statusText, patchSessions, courseStepKeys, englishCourseSteps, trackSteps } from "./journal-model.mjs";
+import { courseNext, outlineShort, unitIsCourseCheck, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote } from "./actions.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -37,6 +37,7 @@ export function unitState(unit, { selected } = {}) {
     ? { state: "review", why: "material approved, check open" }
     : { state: "draft", why: "material written, not approved yet" };
   if (report.changedSince) return { state: "review", why: `${report.changedSince} point(s) changed after the check, short re-check open` };
+  if (report.stale) return { state: "review", why: `the report names ${report.photosNamed} photo(s), ${unit.images.open} image entries are open: material changed after the check, re-check open` };
   if (report.result === "FAIL") return { state: "revision", why: "check: correction needed" };
   if (report.result === "PASS with concerns") return { state: "current", why: "passed with concerns, decision needed" };
   if (report.deferred) return { state: "current", why: "passed, ⏳ items still open" };
@@ -73,6 +74,52 @@ function today(language, sample) {
   return `${y}-${m}-${d}`;
 }
 
+const norm = text => String(text ?? "").trim().toLowerCase();
+export const trackChangedText = "Track changed: steps replaced from the language pack – write only: note, subtitle, why/result where needed";
+
+// Do the overview's course steps belong to another track (a track switch, T5-69)? A light track has exactly the
+// steps of its list; on the full track a list as long as a light track's (4 or 5 steps) without a step of the
+// full track's own (didactics, building blocks, agenda) is a light track's. Older full lists (6–8 steps) stay.
+export function stepsOfOtherTrack(journal, steps = []) {
+  if (!steps.length) return false;
+  const keys = stepsOf(journal.track, journal.convertMode);
+  if ((journal.track ?? "full") !== "full") return steps.length !== keys.length;
+  const own = ["didactics", "blocks", "agenda"].map(key => keys.indexOf(key));
+  const fullOnly = [englishCourseSteps(), journal.pack?.dashboard?.process?.steps].filter(list => list?.length === keys.length)
+    .flatMap(list => own.map(index => norm(list[index].title)));
+  const lightCounts = ["mini", "template"].map(track => stepsOf(track).length).concat(stepsOf("convert", "transfer").length);
+  return lightCounts.includes(steps.length) && !steps.some(step => fullOnly.includes(norm(step.title)) || /didakti|didactic/i.test(step.title ?? ""));
+}
+
+// The steps of the journal's track from the language pack (the empty journal's steps on the full track), with the
+// states that follow from the journal. Full track: the agenda step goes with `Agenda required: no` (or a marked
+// ## Agenda) and is planned with yes; light tracks get their states in derive's light block. null without words.
+export function freshCourseSteps(journal) {
+  const list = trackSteps(journal);
+  if (!list) return null;
+  if ((journal.track ?? "full") !== "full") return list.map(({ key, title }) => ({ title, state: key === "publish" ? "optional" : "planned" }));
+  const { templates, validation } = journal;
+  const done = {
+    frame: journal.filled["Course Context"],
+    outline: journal.filled.Outline && !outlineShort(journal),
+    didactics: journal.filled.Didactics,
+    blocks: journal.filled.Didactics && (templates.selection !== "open" || templates.adopted.length > 0) && !templates.briefs.some(brief => !templates.adopted.includes(brief.id)),
+    agenda: journal.hasAgenda,
+    material: journal.units.length > 0 && journal.units.every(unit => unit.material) && !(journal.unitsPlanned > journal.units.length),
+    check: validation.mode === "course" && validation.result === "PASS",
+    publish: journal.published
+  };
+  const noAgenda = journal.agendaRequired === "no" || (journal.later ?? []).includes("Agenda");
+  return list.filter(step => !(step.key === "agenda" && noAgenda && !journal.hasAgenda)).map(({ key, title, why }) => ({
+    title,
+    state: done[key] ? "done"
+      : key === "agenda" ? (journal.agendaRequired === "yes" ? "planned" : "optional")
+      : key === "publish" ? (["link", "platform", "open"].includes(journal.delivery) ? "planned" : "optional")
+      : "planned",
+    ...(why ? { why } : {})
+  }));
+}
+
 // Returns { data, changes }: the data with every derived field set, and one entry per changed field.
 export function derive(journal, input, { date, previous } = {}) {
   const data = clone(input);
@@ -84,12 +131,27 @@ export function derive(journal, input, { date, previous } = {}) {
     else target[key] = value;
   };
   const { terms } = journal;
+  const missing = [];
+  // A track switch: the course steps of the old track give way to the steps of the new one (T5-69); the agent
+  // writes only the texts that need its words (note, subtitle, a why or result of its own).
+  let trackChanged = false;
+  if (data.process && stepsOfOtherTrack(journal, data.process.steps ?? [])) {
+    const fresh = freshCourseSteps(journal);
+    if (fresh) {
+      set(data.process, "steps", fresh, "process.steps", trackChangedText);
+      trackChanged = true;
+    } else missing.push({ where: "track", track: journal.track, keys: stepsOf(journal.track, journal.convertMode) });
+  }
   const existing = new Map((data.units ?? []).map(unit => [String(unit.id), unit]));
   // A new unit, or one without steps, gets the same material steps as the others, all still to come; while
   // no unit has steps yet, the steps of the language pack (`unitSteps`, English built in).
   const template = (data.units ?? []).find(unit => unit.process?.steps?.length)?.process.steps
     ?? journal.pack?.unitSteps ?? (journal.language === "en" ? englishUnitSteps : null);
-  const freshSteps = () => template.map(step => ({
+  // A light track (mini, convert) has no planning sketch: its unit has no planning step (T5-21).
+  const light = ["mini", "convert"].includes(journal.track);
+  const planTitles = [journal.pack?.unitSteps?.[0]?.title, englishUnitSteps[0].title].filter(Boolean).map(title => title.toLowerCase());
+  const isPlanStep = step => planTitles.includes(String(step?.title ?? "").toLowerCase());
+  const freshSteps = () => template.filter(step => !(light && isPlanStep(step))).map(step => ({
     title: step.title, state: isImageStep(step, terms) ? "optional" : "planned", ...(step.why ? { why: step.why } : {})
   }));
 
@@ -102,10 +164,12 @@ export function derive(journal, input, { date, previous } = {}) {
   // A unit not begun yet (no subsection, no material) shows nothing of its own: the course view stays open.
   const begun = journal.units.some(unit => unit.n === String(nextUnit) && (unit.heading || unit.material));
   if (nextUnit && !begun && data.process?.steps?.length) set(data, "selected", "", "selected", "course view until the next unit is begun");
+  // A light track: unit 1 is the course – the course view with its steps and "when needed" stays selected,
+  // the unit stays reachable in the list (T5-20).
+  else if (light && data.process?.steps?.length) set(data, "selected", "", "selected", "light track: the course view stays selected");
   else if (nextUnit && String(data.selected) !== String(nextUnit)) {
     set(data, "selected", typeof data.selected === "number" ? Number(nextUnit) : String(nextUnit), "selected", "unit of the next action");
   }
-  const missing = [];
 
   // Units: agenda rows and subsections. Without an agenda the units the overview already lists stay as well
   // (a course without a separate agenda takes them from the outline).
@@ -124,24 +188,30 @@ export function derive(journal, input, { date, previous } = {}) {
     if (title) set(unit, "title", title, `${path}.title`, facts.heading ? "heading of the subsection" : facts.title ? "technical table in ## Sessions" : "agenda row");
     if (unit.process && title) set(unit.process, "title", title, `${path}.process.title`, "unit title");
     if (template && !unit.process?.steps?.length) set(unit, "process", { title: unit.title, steps: freshSteps() }, `${path}.process`, "every unit gets the same steps from the start");
+    if (light && unit.process?.steps?.some(isPlanStep)) set(unit.process, "steps", unit.process.steps.filter(step => !isPlanStep(step)), `${path}.process.steps`, "a light track has no planning sketch");
 
-    const { state, why } = unitState(facts, { selected: data.selected });
+    const { state, why } = unitState(facts, { selected: light ? nextUnit : data.selected });
     set(unit, "state", state, `${path}.state`, why);
     set(unit, "href", facts.heading?.anchor, `${path}.href`, facts.heading ? "anchor of the subsection" : "no subsection yet");
     set(unit, "view", facts.material ? { ...(unit.view?.label ? { label: unit.view.label } : {}), href: `agent:teaching/preview?file=${facts.n}`, command: `:preview ${facts.n}` } : undefined,
       `${path}.view`, facts.material ? "material exists (Material ✅)" : "no material yet");
     const status = statusText(facts, terms);
-    if (status) set(unit, "statusLabel", status, `${path}.statusLabel`, facts.report?.outcome ? "outcome of the check report" : "planning sketch, material and image entries");
+    if (status) set(unit, "statusLabel", status, `${path}.statusLabel`, facts.report?.stale ? "report of an older version: re-check open" : facts.report?.outcome ? "outcome of the check report" : "planning sketch, material and image entries");
     sessions.push({ n: facts.n, title: facts.title, status, begun: Boolean(facts.heading) });
 
-    // usable follows the report's line "usable with learners now"; keep the agent's short "missing" while the state
-    // holds – except for limits: every limit of the line is named, not only the ⏳ items (SK46).
+    // usable follows the report's line "usable with learners now" on every derive; the agent's short "missing"
+    // stays while the state holds and it names the same numbers ("9 photos" → "10 photos" is a change, T5-40)
+    // – for limits also the same count: every limit of the line is named, not only the ⏳ items (SK46).
     const reported = facts.report && usableState(facts.report.usableText);
     const limits = reported === "limited" ? limitsOf(facts.report.usableText) : [];
+    const numbers = list => (list ?? []).join(" ").match(/\d+/g)?.join(",") ?? "";
     if (!facts.report) set(unit, "usable", undefined, `${path}.usable`, "no check report yet");
-    else if (reported && (unit.usable?.state !== reported || (limits.length && (unit.usable?.missing?.length ?? 0) !== limits.length))) {
+    else if (reported) {
       const missing = limits.length ? limits : facts.report.missing.length ? facts.report.missing.slice(0, 3) : [missingOf(facts.report.usableText) || "–"];
-      set(unit, "usable", reported === "yes" ? { state: "yes" } : { state: reported, missing },
+      const own = unit.usable?.missing;
+      const keep = unit.usable?.state === reported && (reported === "yes"
+        || (own?.length && numbers(own) === numbers(missing) && (!limits.length || own.length === limits.length)));
+      if (!keep) set(unit, "usable", reported === "yes" ? { state: "yes" } : { state: reported, missing },
         `${path}.usable`, "line \"usable with learners now\" of the check report");
     }
 
@@ -153,7 +223,7 @@ export function derive(journal, input, { date, previous } = {}) {
     const { total, placed, open, waiting = 0 } = facts.images;
     // When the next action inserts this unit's photo, the step stays current – no flip between two rules (R12c).
     const photoNext = expected?.key === "insert-images" && String(expected.params.number) === String(facts.n);
-    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material ? "current" : "planned") : open ? (photoNext ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
+    if (imageStep && total) set(imageStep, "state", open > waiting ? (facts.material && !facts.report?.stale ? "current" : "planned") : open ? (photoNext ? "current" : "planned") : "done", `${path} step "${imageStep.title}".state`, `${placed} of ${total} image entries placed${waiting ? `, ${waiting} own photo${waiting === 1 ? "" : "s"} still to come` : ""}`);
     // Only own photos missing: the step says it waits for them, with the count (SK60).
     const waitingWord = String(terms.imagesWaiting ?? englishTerms.imagesWaiting);
     const waitingLabel = imageStep && total && open && open === waiting ? waitingWord.replace("{n}", placed).replace("{m}", total) : undefined;
@@ -165,18 +235,26 @@ export function derive(journal, input, { date, previous } = {}) {
     set(unit, "approved", facts.approved && facts.material ? true : undefined, `${path}.approved`, facts.approved ? "approval in the decisions of the unit" : "not approved");
     const steps = unit.process?.steps ?? [];
     const checkStep = unitStepOf({ key: "check-unit" }, steps);
-    const passed = facts.report?.result === "PASS" && !facts.report.changedSince;
+    const passed = facts.report?.result === "PASS" && !facts.report.changedSince && !facts.report.stale;
     const approvalWord = terms.approvalOpen ?? englishTerms.approvalOpen;
     if (checkStep && passed && facts.approved) {
       set(checkStep, "state", "done", `${path} step "${checkStep.title}".state`, "passed and approved by the instructor");
       if (checkStep.statusLabel === approvalWord) set(checkStep, "statusLabel", undefined, `${path} step "${checkStep.title}".statusLabel`, "approved");
+    } else if (checkStep && passed && light && open > waiting) {
+      // Light tracks: passed, but photos are still to be inserted: the approval comes after them (T5-42) – the image step is
+      // the one in progress, the check step follows; no "waiting for your approval" meanwhile.
+      set(checkStep, "state", "planned", `${path} step "${checkStep.title}".state`, "passed, the approval follows the images");
+      if (checkStep.statusLabel === approvalWord) set(checkStep, "statusLabel", undefined, `${path} step "${checkStep.title}".statusLabel`, "the approval follows the images");
     } else if (checkStep && passed) {
       // Passed, the approval is the instructor's: the step is up next and says what it waits for (SK60).
       set(checkStep, "state", "current", `${path} step "${checkStep.title}".state`, "passed, waiting for the instructor's approval");
       set(checkStep, "statusLabel", approvalWord, `${path} step "${checkStep.title}".statusLabel`, "terms.approvalOpen");
+    } else if (checkStep && checkStep.statusLabel === approvalWord) {
+      // Not (or no longer) passed for this version of the material: nothing waits for an approval.
+      set(checkStep, "statusLabel", undefined, `${path} step "${checkStep.title}".statusLabel`, facts.report?.stale ? "material changed after the check" : "not passed");
     }
     // The planning step is done once the planning sketch (### {n}. {title}) is saved.
-    const planStep = unitStepOf({ key: "plan-unit" }, steps);
+    const planStep = light ? null : unitStepOf({ key: "plan-unit" }, steps);
     if (planStep && facts.heading && planStep.state !== "done") set(planStep, "state", "done", `${path} step "${planStep.title}".state`, "planning sketch saved");
     // The material step is done once the material exists and a check ran or the instructor approved it –
     // also after "let it be prepared", where no one approves the draft before the check (SK60).
@@ -207,17 +285,20 @@ export function derive(journal, input, { date, previous } = {}) {
   // Section links the overview lists follow their heading line: its anchor, labelled with its translated
   // suffix (a translated heading changes the anchor). Which sections are linked stays the agent's choice.
   // Without links (missing or empty) the overview lists the core sections the journal has.
+  // A section marked when needed is no link of the bar: it waits under "When needed" (T5-74).
   const coreSections = ["Course Context", "Outline", "Didactics", "Agenda", "Sessions", "Notes Backup"];
+  const waiting = new Set(journal.later ?? []);
   if (!Array.isArray(data.links) || !data.links.length) {
-    const links = coreSections.map(key => journal.headings.find(heading => heading.key === key)).filter(Boolean)
+    const links = coreSections.filter(key => !waiting.has(key)).map(key => journal.headings.find(heading => heading.key === key)).filter(Boolean)
       .map(heading => ({ label: heading.suffix ?? heading.key, href: heading.anchor }));
     if (links.length) set(data, "links", links, "links", "section links of the journal (none were given)");
   } else {
     const links = data.links.map(link => {
       const href = String(link.href ?? "");
       const heading = journal.headings.find(item => href === anchorOf(item.key) || href.startsWith(`${anchorOf(item.key)}-–-`));
+      if (heading && waiting.has(heading.key)) return null;
       return heading ? { ...link, label: heading.suffix ?? link.label, href: heading.anchor } : link;
-    });
+    }).filter(Boolean);
     set(data, "links", links, "links", "anchors of the section headings");
   }
 
@@ -226,7 +307,7 @@ export function derive(journal, input, { date, previous } = {}) {
   const fillTerm = (key, values) => String(terms[key] ?? englishTerms[key] ?? "").replace(/\{(\w+)\}/g, (match, name) => values[name] ?? match);
   const courseSet = (step, field, value, why) => set(step, field, value, `process step "${step.title}".${field}`, why);
   // Building blocks: while no template is chosen or briefed, each planning sketch decides it for its unit.
-  const stepKeys = stepsOf(journal.track, journal.convertMode);
+  const stepKeys = courseStepKeys(courseSteps, journal);
   const stepFor = key => courseSteps[stepKeys.indexOf(key)];
   const blocksStep = stepFor("blocks");
   const { selection: blocksSelection, adopted: adoptedTemplates, briefs: templateBriefs } = journal.templates;
@@ -250,13 +331,80 @@ export function derive(journal, input, { date, previous } = {}) {
   const approvedUnits = journal.units.filter(unit => unit.approved && unit.material);
   if (checkCourseStep && ["planned", "optional"].includes(checkCourseStep.state)) {
     const label = approvedUnits.length ? fillTerm("checkCourseLater", { unit: unitWord, units: approvedUnits.map(unit => `${unitWord} ${unit.n}`).join(", ") }) : undefined;
-    if (label || String(checkCourseStep.statusLabel ?? "").startsWith(fillTerm("checkCourseLater", { unit: unitWord }).split("{")[0].split(" – ")[0])) courseSet(checkCourseStep, "statusLabel", label, "units approved so far");
+    // A label of its own, also in an older wording (T5-87), is replaced or goes with the last approval.
+    const own = String(checkCourseStep.statusLabel ?? "");
+    const ownPrefix = fillTerm("checkCourseLater", { unit: unitWord }).split("{")[0].split(/ [–·] /)[0];
+    const oldWording = [...englishOutdatedTerms, ...loadPacks().flatMap(pack => pack.outdatedTerms ?? [])]
+      .some(([pattern, term]) => term === "checkCourseLater" && new RegExp(pattern, "iu").test(own));
+    if (label || (own && (own.startsWith(ownPrefix) || oldWording))) courseSet(checkCourseStep, "statusLabel", label, "units approved so far");
   }
   // Publishing: required when learners open the course by link or platform (Course Profile → Delivery).
   const publishStep = stepFor("publish");
   if (publishStep && ["link", "platform"].includes(journal.delivery) && publishStep.state === "optional") {
     courseSet(publishStep, "state", "planned", `learners open the course by ${journal.delivery}`);
     courseSet(publishStep, "statusLabel", fillTerm("publishNeeded", { units: unitsWord }), `learners open the course by ${journal.delivery}`);
+  }
+  // Access not decided yet (Delivery: open, T5-54): publishing is required, its step says the access is open.
+  const accessOpen = fillTerm("accessOpen", {});
+  const markAccess = () => {
+    if (!publishStep || journal.published) return;
+    if (journal.delivery === "open" && publishStep.state !== "done") {
+      if (publishStep.state === "optional") courseSet(publishStep, "state", "planned", "the access is not decided yet");
+      courseSet(publishStep, "statusLabel", accessOpen, "Delivery: open – the access is not decided yet");
+    } else if (journal.delivery !== "open" && publishStep.statusLabel === accessOpen) courseSet(publishStep, "statusLabel", undefined, "the access is decided");
+  };
+  // A light track sets its course steps from the journal below, then marks the access.
+  if (!(light && courseSteps.length === stepKeys.length)) markAccess();
+
+  // A light track (mini, convert): its course steps follow the journal, not the agent's last write (T5-21).
+  // frame: Course Context (mini: and the short outline) filled; outline: Outline filled; material: unit 1's
+  // material exists – and before a check no image is open; check: the course summary (Mode: course) passed,
+  // without one the unit check; publish: published. In progress is the step the next action advances, else
+  // the first one not done. "look" (convert) stays the agent's. A step whose state was right keeps its words.
+  if (light && courseSteps.length === stepKeys.length) {
+    const first = journal.units.find(unit => unit.n === "1");
+    const report = first?.report;
+    const imagesOpen = first ? first.images.open - (first.images.waiting ?? 0) > 0 : false;
+    const done = {
+      frame: journal.filled["Course Context"] && (journal.track !== "mini" || journal.filled.Outline),
+      outline: journal.filled.Outline,
+      material: Boolean(first?.material) && !(first.buildRequested && !report?.result) && (Boolean(report?.result) || !imagesOpen),
+      // With its one unit done (checked, approved, unchanged since) the course check is passed (T5-53).
+      check: unitIsCourseCheck(journal, doneStates) || (!report?.stale && (journal.validation.mode === "course" ? journal.validation.result === "PASS" : report?.result === "PASS" && !report.changedSince)),
+      publish: journal.published
+    };
+    const target = expected ? courseStepOf(expected, courseSteps, { track: journal.track, convertMode: journal.convertMode, keys: stepKeys }) : null;
+    const derived = stepKeys.map((key, index) => key in done ? index : -1).filter(index => index >= 0);
+    const needed = ["link", "platform", "open"].includes(journal.delivery);
+    const open = index => !done[stepKeys[index]] && !(stepKeys[index] === "publish" && !needed);
+    const current = target ? courseSteps.indexOf(target) : derived.find(open) ?? -1;
+    for (const index of derived) {
+      const key = stepKeys[index];
+      const step = courseSteps[index];
+      const state = index === current ? "current" : done[key] ? "done" : key === "publish" && !needed ? "optional" : "planned";
+      if (step.state === state) continue;
+      const why = `${key}: ${state === "done" ? "done by the journal" : state === "current" ? "the step the next action advances" : "not reached yet"}`;
+      courseSet(step, "state", state, why);
+      // Words of the old state go: a done step has no next; a label belongs to the old state.
+      if (state === "done") courseSet(step, "next", undefined, "a done step has no next");
+      if (state !== "planned") courseSet(step, "statusLabel", undefined, "belonged to the old state");
+      // A step now in progress without words of its own names the button of the next action.
+      if (state === "current" && !step.next && expected) {
+        const label = wordsOf(expected, journal, { unit: unitWord, units: unitsWord, n: nextUnit, id: expected.params.id ?? expected.params.name })?.label;
+        if (label) courseSet(step, "next", label, "button word of the next action");
+      }
+    }
+    // The check step in progress after a check (its images, the approval, a re-check) names the unit's state
+    // instead of "up next" – its `next` is the button of the next action (T5-42).
+    const checkIndex = stepKeys.indexOf("check");
+    if (checkIndex >= 0 && checkIndex === current && report?.result) {
+      const label = statusText(first, terms);
+      // Never "checked ✅" on the step still in progress (T5-56).
+      const checked = label === (terms.checked ?? englishTerms.checked);
+      if (label && !checked) courseSet(courseSteps[checkIndex], "statusLabel", label, "state of unit 1 after its check");
+      else if (checked && courseSteps[checkIndex].statusLabel === label) courseSet(courseSteps[checkIndex], "statusLabel", undefined, "the step is still in progress");
+    }
+    markAccess();
   }
 
   // Sections marked "when needed" (tracks.mjs → laterMarker): one entry each, in the order of the journal.
@@ -301,24 +449,28 @@ export function derive(journal, input, { date, previous } = {}) {
         if (typeof step[field] === "string" && step[field].includes(before)) missing.push({ where: "step", step: step.title, field, old: before, action: expected });
       }
       const words = wordsOf(expected, journal, { unit: unitWord, units: unitsWord, n: nextUnit, id: expected.params.id ?? expected.params.name });
-      const title = nextTitle(expected, data, unitWord, { track: journal.track, convertMode: journal.convertMode }) ?? words?.title ?? words?.label;
+      const title = nextTitle(expected, data, unitWord, { track: journal.track, convertMode: journal.convertMode, keys: stepKeys }) ?? words?.title ?? words?.label;
       // A why the agent has just written for the new step (it differs from the one in the journal) stays (SP56).
       const fresh = typeof data.next?.why === "string" && data.next.why.trim() && previous && data.next.why !== previous.next?.why;
       if (!words || !title) missing.push({ where: "next", action: expected, title });
       else set(data, "next", { icon: expected.icon, title, why: fresh ? data.next.why : words.why, label: words.label, href: expected.href, command: expected.command },
-        "next", `next action by the journal: ${expected.command}`);
+        "next", `next action by the journal: ${commandOf(expected)}`);
     }
   }
 
   // A running "let it be prepared" is a state, not a button (R12-SK75): the view shows it without a link.
   if (data.next) set(data.next, "running", expected?.key === "build-running" ? true : undefined, "next.running", expected?.key === "build-running" ? "let it be prepared is running" : "nothing runs");
+  // A decision of the instructor (settling the access, T5-54) is a step, not a button: no command, no link shown.
+  if (data.next) set(data.next, "decide", expected?.decide ? true : undefined, "next.decide", expected?.decide ? "a decision the instructor says in the chat" : "an action with a command");
 
   // The step `next` advances is the one in progress – in the course and in its unit: a planned (or optional)
   // one becomes current; another current course step contradicts `next` and is the agent's to rewrite.
   if (expected) {
     const steps = data.process?.steps ?? [];
-    const target = courseStepOf(expected, steps, { track: journal.track, convertMode: journal.convertMode });
-    if (target && ["planned", "optional"].includes(target.state)) set(target, "state", "current", `process step "${target.title}".state`, "the step the next action advances");
+    const target = courseStepOf(expected, steps, { track: journal.track, convertMode: journal.convertMode, keys: stepKeys });
+    // Completing the outline reopens its step (T5-67): more units planned than the outline describes.
+    const reopens = expected.key === "complete-outline" && target?.state === "done";
+    if (target && (["planned", "optional"].includes(target.state) || reopens)) set(target, "state", "current", `process step "${target.title}".state`, reopens ? "the course frame plans more units than the outline describes" : "the step the next action advances");
     if (target) for (const step of steps) {
       if (step !== target && step.state === "current") missing.push({ where: "current", step: step.title, target: target.title, action: expected });
     }
@@ -356,7 +508,10 @@ export function derive(journal, input, { date, previous } = {}) {
   // The one-line note under ## Sessions ("planned in the agenda …", "{n} of {N} created …") also stands in
   // the overview, above the units; none once every unit is created or without an agenda.
   const note = sessionsNote(journal, (expected, values) => wordsOf(expected, journal, { unit: unitWord, units: unitsWord, ...values }));
-  const noteText = note?.words?.label?.replace(/^_|_$/g, "");
+  // A light track without a unit yet: its own note, not the full track's "after the didactics" (T5-01).
+  const lightNote = ["mini", "convert"].includes(journal.track) && !journal.units.some(unit => unit.heading)
+    ? String(journal.terms?.miniSessionsNote ?? englishTerms.miniSessionsNote) : undefined;
+  const noteText = note?.words?.label?.replace(/^_|_$/g, "") ?? lightNote;
   set(data, "unitsNote", noteText || undefined, "unitsNote", "one-line note under ## Sessions");
 
   // Unit words from the terminology and the ## Sessions suffix.
@@ -369,6 +524,10 @@ export function derive(journal, input, { date, previous } = {}) {
     const label = { one: journal.terminology ?? data.unitLabel?.one ?? sessionsSuffix, many: keepsOwn ? own : sessionsSuffix ?? own ?? journal.terminology };
     set(data, "unitLabel", label, "unitLabel", "terminology (sessions-called) and suffix of ## Sessions");
   }
+  // The units the course plans (course frame `Units:`, units the outline describes), while more than ## Sessions
+  // lists: the progress counts them too ("1 of 2", T5-86). Not readable: the units listed count, as before.
+  const planned = Math.max(journal.unitsPlanned ?? 0, journal.unitsInOutline ?? 0);
+  set(data, "unitsPlanned", planned > journal.units.length ? planned : undefined, "unitsPlanned", planned > journal.units.length ? "units planned in the course frame / outline" : "no more units planned than listed");
 
   // The footer dates the derived state ("As of {date}" from the pack), renewed only when something else
   // changed. An event in it ("planning sketch saved") would outlive the next step, so none is kept (SK31).
@@ -379,7 +538,7 @@ export function derive(journal, input, { date, previous } = {}) {
     const text = String(journal.terms?.asOf ?? englishTerms.asOf).replace("{date}", now);
     if (data.footer !== text) set(data, "footer", text, "footer", "date of the derived state");
   }
-  return { data, changes, sessions, missing, unitWord, unitsWord };
+  return { data, changes, sessions, missing, unitWord, unitsWord, trackChanged };
 }
 
 // The lines of ## Sessions that follow the derived data: status lines, Notes cells and the units' action
@@ -404,13 +563,17 @@ export function patchJournal(source, journal, derived) {
   return { source: text, changes, missing };
 }
 
+// The readable command of an action; a decision of the instructor (decide-access) has none.
+const commandOf = action => action.command ?? `${action.key} (a decision the instructor says in the chat, no command)`;
 // What the agent still has to write because no language pack has the words of an action.
-export const missingText = item => item.where === "current"
-  ? `- process step "${item.step}" is current, but the next action (${item.action.command}) advances "${item.target}" – rewrite "${item.step}" (state and words: done, or planned with when it comes) in the draft and run again`
+export const missingText = item => item.where === "track"
+  ? `- process.steps: the track is now ${item.track}, the overview still shows the steps of another track and no language pack has the words – write the steps of the track (${item.keys.join(", ")}) in the course language into the draft and run again`
+  : item.where === "current"
+  ? `- process step "${item.step}" is current, but the next action (${commandOf(item.action)}) advances "${item.target}" – rewrite "${item.step}" (state and words: done, or planned with when it comes) in the draft and run again`
   : item.where === "step"
-  ? `- process step "${item.step}".${item.field} still names the old next action "${item.old}", but the next action is now ${item.action.command} – rewrite that step (its state and words) in the draft and run again`
+  ? `- process step "${item.step}".${item.field} still names the old next action "${item.old}", but the next action is now ${commandOf(item.action)} – rewrite that step (its state and words) in the draft and run again`
   : item.where === "next"
-  ? `- next: the next action is ${item.action.href} (command "${item.action.command}", icon ${item.action.icon}${item.title ? `, title "${item.title}"` : ""}) – write its title, label and why in the course language into the draft's next and run again`
+  ? `- next: the next action is ${item.action.href} (${item.action.decide ? "a decision without command" : `command "${item.action.command}"`}, icon ${item.action.icon}${item.title ? `, title "${item.title}"` : ""}) – write its title, label and why in the course language into the draft's next and run again`
   : item.where === "explore" ? `- explore: add the card ${item.action.href} (command "${item.action.command}", icon ➕) with title, description and label in the course language to the draft and run again`
   : item.where.startsWith("one-line note") ? `- ${item.where}: write it in the course language (${item.action.key === "note-planned" ? "the units are planned in the agenda and created one after another, starting with unit 1" : "{n} of {N} units created; unit {m} follows once unit {k} is done"}) and run again`
   : `- ${item.where}: the action is [${item.action.icon} <label>](${item.action.href}) ${item.action.code} – write that link in the course language (keep the link and the command) and run again`;
@@ -457,7 +620,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2);
   }
   const { _journalHash, ...base } = input;
-  const { data, changes, missing } = deriveForJournal(journalFile, base);
+  const { data, changes, missing, trackChanged } = deriveForJournal(journalFile, base);
+  if (trackChanged) console.log(trackChangedText);
   if (missing.length) {
     console.log("Words still to write (no language pack has them, or a step contradicts the next action):");
     missing.forEach(item => console.log(missingText(item)));

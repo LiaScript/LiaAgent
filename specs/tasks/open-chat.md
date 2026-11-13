@@ -38,7 +38,7 @@ works in the terminal and wants to move to the browser.
 3. **Connect this session** — only the parts of the start order of
    `CLAUDE.md` → Agent Links that have not run in this session yet: `set_agent`
    with the roster (`data/agent-links.md` → Agent Roster), the event
-   subscription, `read_chat`. An open message or form in `read_chat` is answered
+   subscription, `read_chat` without arguments. An open message or form in `read_chat` is answered
    first; then skip step 4.
 4. **Greeting:** post one `chat` message, signed by the active agent, in the
    course language: one sentence that the chat is open, plus exactly the

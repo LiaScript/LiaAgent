@@ -1073,6 +1073,38 @@ test("validate-journal compares the changes after a check in outcome line, dated
   assert.doesNotMatch(inRun.output, /dated line/, inRun.output);
 });
 
+test("validate-journal asks for an open point with source {check: n} when a unit's report recommends actions (T5-104)", () => {
+  const units = [{ id: 1, title: "E1", state: "done", href: "#1.-e1", process: { steps: [{ title: "Material", state: "done" }] } }];
+  const report = (actions, label = "Recommended Actions:") => `#### Prüfbericht – Einheit 1\n\n<section data-key="validation-report">\n\n**Ergebnis:** bestanden (23.10.2026)\n\n<details>\n\n__Result:__ PASS\n\n**Templates:** keine\n\n**${label}**\n${actions.map((text, index) => `${index + 1}. ${text}`).join("\n")}\n\n</details>\n\n</section>\n\n`;
+  const sessions = (actions, label) => `## Sessions – Einheiten\n\n### 1. E1\n\nText\n\n${report(actions, label)}`;
+  const device = ["Einmal auf einem Tablet der Klasse durchblättern, quer und hochkant."];
+  const open = validate({ title: "Kurs", next, units }, sessions(device));
+  // A warning, not an error: older courses keep such points without a source.
+  assert.equal(open.status, 0, open.output);
+  assert.match(open.output, /Warnings?:[\s\S]*report-action/, open.output);
+  assert.match(open.output, /^Hints:\n- \[report-action\] the check report of unit 1 recommends 1 action \("Einmal auf einem Tablet/m);
+  assert.match(open.output, /add a prepare item with source \{"check": 1\}.*or an internal item with source \{"check": 1\} if the assistant does it/);
+  // Once per unit, also with several actions; the label in the course language counts as well.
+  const two = validate({ title: "Kurs", next, units }, sessions([...device, "Quellen ergänzen."], "Empfohlene Schritte:"));
+  assert.equal(two.output.match(/\[report-action\]/g)?.length, 1, two.output);
+  assert.match(two.output, /recommends 2 actions/);
+  // Covered by any open point of that check: prepare (instructor) or internal (assistant).
+  const prepare = { key: "device-check", kind: "prepare", title: "Auf dem Tablet ansehen", how: "Einmal durchblättern.", label: "Zum Prüfbericht", href: "#prüfbericht-–-einheit-1", source: { check: 1 } };
+  const covered = validate({ title: "Kurs", next, units, decisions: [prepare] }, sessions(device));
+  assert.doesNotMatch(covered.output, /report-action/, covered.output);
+  const internal = validate({ title: "Kurs", next, units, decisions: [{ key: "sources", kind: "internal", title: "Quellen ergänzen", source: { check: 1 } }] }, sessions(device));
+  assert.doesNotMatch(internal.output, /report-action/, internal.output);
+  // Actions already done, or none, need no open point; a partly done one still does.
+  const done = validate({ title: "Kurs", next, units }, sessions(["✅ erledigt: Lösungsknopf ausgeblendet.", "Erledigt am 23.10.2026: Fotos verkleinert.", "Done: hints read aloud."]));
+  assert.doesNotMatch(done.output, /report-action/, done.output);
+  assert.doesNotMatch(validate({ title: "Kurs", next, units }, sessions(["keine"])).output, /report-action/);
+  assert.doesNotMatch(validate({ title: "Kurs", next, units }, sessions(["—"])).output, /report-action/);
+  assert.match(validate({ title: "Kurs", next, units }, sessions(["Erledigt am 23.10.2026: Fotos verkleinert. Noch offen: das Foto auf Seite 2."])).output, /\[report-action\]/);
+  // The course summary under ## Validation is no unit report.
+  const summary = validate({ title: "Kurs", next, units }, `## Sessions – Einheiten\n\n### 1. E1\n\nText\n\n## Validation – Prüfung\n\n**Empfohlene Schritte:**\n1. Einheit 2 schreiben.\n\n`);
+  assert.doesNotMatch(summary.output, /report-action/, summary.output);
+});
+
 test("write-dashboard stores the journal hash in the cache and refuses a stale cache (R9-D2)", () => {
   const dir = mkdtempSync(join(tmpdir(), "dashboard-write-"));
   const journal = join(dir, "journal.md");
@@ -2014,7 +2046,8 @@ test("the status wording follows sketch, material, images and – once checked �
   assert.equal(statusText(unit({ report: report({ result: "FAIL", outcome: "correction needed (2) (2026-11-01)" }) }), t), "check: correction needed (2)", "the date goes, \"check:\" comes before a FAIL");
   assert.equal(statusText(unit({ report: report({ result: "FAIL", outcome: "check: correction needed (2) (01.11.2026)" }) }), t), "check: correction needed (2)", "never twice");
   assert.equal(statusText(unit({ report: report({ outcome: "passed – still missing: 1 photo (2026-11-01)" }), images: { total: 2, placed: 1, open: 1 } }), t), "passed – still missing: 1 photo – images 1 of 2");
-  assert.equal(statusText(unit({ done: true, report: report() }), t), "checked ✅");
+  assert.equal(statusText(unit({ done: true, approved: true, report: report() }), t), "checked ✅");
+  assert.equal(statusText(unit({ done: true, report: report() }), t), "passed – waiting for your approval", "Done ✅ without the approval waits for it (T5-55)");
   assert.equal(statusText(unit({ done: true, report: report({ outcome: "passed (2026-11-01) – 1 point changed since – short re-check open", changedSince: 1 }) }), t), "passed – 1 point changed since – short re-check open");
   const de = JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8")).terms;
   assert.equal(statusText(unit({ material: false }), { ...englishTerms, ...de }), "Planungsskizze ✅ · Material offen");
@@ -2299,7 +2332,7 @@ test("course steps that follow from the journal: building blocks per sketch, the
   assert.equal(journal.delivery, "link");
   const steps = derive(journal, { ...deriveData(), process: { steps: courseSteps() } }).data.process.steps;
   assert.equal(steps[3].statusLabel, "checked per Lesson – none needed so far (1 of 3)");
-  assert.equal(steps[6].statusLabel, "after the last Lesson – approved: Lesson 1");
+  assert.equal(steps[6].statusLabel, "course check after the last Lesson · approved so far: Lesson 1");
   assert.equal(steps[7].state, "planned", "learners open the course by link: publishing is required");
   assert.equal(steps[7].statusLabel, "needed – after all Lessons are checked");
   const local = derive(readJournal(source.replace("Delivery: link", "Delivery: print")), { ...deriveData(), process: { steps: courseSteps() } }).data.process.steps;
@@ -2676,15 +2709,22 @@ test("view: process.later shows as one collapsed 'When needed' line and is not c
   const model = dashboard.buildModel(input);
   assert.equal(model.process.steps.length, 2);
   const html = dashboard.renderComponent("View", "later-view", { lang: "en", selected: "", ...input, units: [{ id: "1", title: "U", state: "planned" }] });
-  assert.match(html, /<details class="dashboard-later"><summary>When needed \(1\)<\/summary>/);
+  assert.match(html, /<details class="dashboard-later"><summary>If needed – not required for your course \(1\)<\/summary>/);
   assert.match(html, /Didaktik/);
   assert.match(html, /1 of 2 planning step/);
 });
 test("view: German state words – optional is 'Optional', later is 'Bei Bedarf'", () => {
   const html = dashboard.renderComponent("View", "later-de", { lang: "de", selected: "", title: "T", process: { steps: [{ title: "A", state: "optional" }], later: [{ label: "X", href: "agent:teaching/activate-section?section=agenda", command: ":activate-section agenda" }] }, units: [{ id: "1", title: "U", state: "planned" }] });
-  assert.match(html, /<summary>Bei Bedarf \(1\)/);
+  assert.match(html, /<summary>Bei Bedarf – für Ihren Kurs nicht nötig \(1\)<\/summary>/);
   assert.match(html, /Optional/);
   assert.doesNotMatch(html, />Bei Bedarf</);
+});
+test("view: the collapsed when-needed line reads its text from laterSummary with {n}, also as an own label (T5-109)", () => {
+  const later = [{ label: "X", href: "agent:teaching/activate-section?section=agenda", command: ":activate-section agenda" }, { label: "Y", href: "agent:teaching/activate-section?section=didactics", command: ":activate-section didactics" }];
+  const input = { lang: "fr", selected: "", title: "T", process: { steps: [{ title: "A", state: "planned" }], later }, units: [{ id: "1", title: "U", state: "planned" }] };
+  assert.match(dashboard.renderComponent("View", "later-fr", { ...input, labels: { laterSummary: "Au besoin – pas nécessaire ({n})" } }), /<summary>Au besoin – pas nécessaire \(2\)<\/summary>/);
+  assert.match(dashboard.renderComponent("View", "later-en", input), /<summary>If needed – not required for your course \(2\)<\/summary>/, "English is the fallback");
+  assert.throws(() => dashboard.buildModel({ labels: { laterSummary: "Au besoin ({count})" } }), /unknown placeholder \{count\}/);
 });
 test("nextTitle: on a light track without a matching step there is no title (no fall-through to the full-track index)", () => {
   const steps = ["Frame", "Write", "Check", "Publish"].map(title => ({ title }));
@@ -2851,10 +2891,13 @@ test("mini course end to end: after :create-mini-course the whole README.md is u
 
 test("validate-journal: a light track's Dashboard has exactly the steps of its track", () => {
   inMiniProject(miniInitJournal({ steps: stepsOf("full") }), {}, ({ derive, validate }) => {
-    derive();
     const run = validate();
     assert.equal(run.status, 2, run.stdout + run.stderr);
     assert.match(run.stdout + run.stderr, /process\.steps has 8 steps, the mini track has 4 \(frame, material, check, publish\)/);
+    // derive replaces them with the steps of the track (T5-69).
+    derive();
+    const after = validate();
+    assert.equal(after.status, 0, after.stdout + after.stderr);
   });
 });
 
@@ -2920,12 +2963,16 @@ test("validate-journal warns when a journal is on a track whose command is not a
   inMiniProject(miniInitJournal(), {}, ({ validate }) => assert.doesNotMatch(validate().stdout, /not available yet/));
 });
 
-test("light track: a done unit needs a passed course check before publishing (one unit, one run)", () => {
+test("light track: with its one unit done (checked and approved) the course check is passed (one unit, one run, T5-53)", () => {
   const base = { track: "mini", filled: { "Course Context": true, Outline: true }, templates: { selection: "open", adopted: [], briefs: [] }, published: false };
   const unit = facts(1, { heading: { title: "A" }, material: true, done: true, approved: true, report: { result: "PASS", changedSince: 0 } });
   const done = new Map([["1", "done"]]);
-  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "FAIL" }, delivery: "link" }, done).key, "check-course");
-  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: null, result: null }, delivery: null }, done).key, "check-course");
+  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "FAIL" }, delivery: "link" }, done).key, "publish");
+  assert.equal(courseNext({ ...base, units: [unit], validation: { mode: null, result: null }, delivery: null }, done), null);
+  // Approved, only an own photo still to come (not done): the course check still decides.
+  const media = new Map([["1", "current"]]);
+  const waiting = facts(1, { heading: { title: "A" }, material: true, approved: true, report: { result: "PASS", changedSince: 0 }, images: { total: 1, placed: 0, open: 1, waiting: 1 } });
+  assert.equal(courseNext({ ...base, units: [waiting], validation: { mode: "course", result: "FAIL" }, delivery: "link" }, media).key, "check-course");
   assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "PASS" }, delivery: "link" }, done).key, "publish");
   assert.equal(courseNext({ ...base, units: [unit], validation: { mode: "course", result: "PASS" }, delivery: null }, done), null);
 });
@@ -2950,4 +2997,655 @@ test("Analysis Status stays marked on a light track but is no entry of process.l
     assert.equal(run.status, 0, run.stdout + run.stderr);
     assert.ok(!dashboardOf(read()).process.later.some(item => item.command === ":activate-section analysis-status"));
   });
+});
+
+// ---- Tandem test 5, round 1 (T5-20, T5-21, T5-22): the overview of a light track ----
+
+// The mini course after :create-mini-course, optionally with a check report of unit 1 (PASS, photos still
+// missing), open image entries and a course summary (Mode: course).
+function miniState({ report = false, images = 0, course = null, approved = false, done = false, extra = 0 } = {}) {
+  let text = miniUnitSave(miniInitJournal());
+  if (done) text = text.replace("| 1 | Reading a timetable | n/a | ✅ | ✅ | ❌ | |", "| 1 | Reading a timetable | n/a | ✅ | ✅ | ✅ | |");
+  const missing = images ? `passed – still missing: ${images} photos` : "passed";
+  const parts = [];
+  if (approved) parts.push(`<!-- data-key="decisions" -->\n**Decisions:**\n\n- Approved by the instructor on 2026-11-12.\n`);
+  if (report) parts.push(`#### Validation report – Lesson 1\n\n<section data-key="validation-report">\n\n**Outcome:** ${missing} (2026-11-12)\n\n**Usable with learners now:** ${images ? `yes, with limits: ${images} photos` : "yes"}\n\n${images ? `**Still missing:**\n\n- ⏳ ${images} photos: at the step "Insert images".\n\n` : ""}<details><summary>Technical report</summary>\n\n__Result:__ PASS\n__Mode:__ session\n\n</details>\n\n</section>\n`);
+  if (images + extra) parts.push(`#### Images\n\n${Array.from({ length: images + extra }, (_, i) => `<section>\n\n#### photo-${i}\n\n* __Status:__ wanted\n* __Source:__ free-photo\n\n</section>\n`).join("\n")}`);
+  if (parts.length) text = text.replace("Learners find a departure time and tell how long a trip takes.\n", match => `${match}\n${parts.join("\n")}`);
+  if (course) text = text.replace(/(### Latest Validation Summary\n)[\s\S]*?(?=\n---)/, (_, head) => `${head}\n**Outcome:** x\n\n<details><summary>Technical part</summary>\n\n- Mode: course\n- Result: ${course}\n\n</details>\n`);
+  return text;
+}
+const deriveMini = (text, change = data => data) => {
+  const journal = readJournal(text);
+  return derive(journal, change(dashboardOf(text)), { date: "2026-11-12" });
+};
+const stepStates = data => data.process.steps.map(step => step.state);
+
+test("T5-20: on a light track the overview keeps the course view selected while the next action concerns unit 1", () => {
+  const { data } = deriveMini(miniState(), data => ({ ...data, selected: "1" }));
+  assert.equal(data.next.command, ":validate-course 1");
+  assert.equal(data.selected, "", "the course view with the mini steps and the when-needed line stays in view");
+  assert.ok(data.units.some(unit => String(unit.id) === "1"), "unit 1 stays reachable in the list");
+  assert.ok(data.process.later?.length, "process.later is shown with the course view");
+  // The full track still selects the unit of the next action.
+  const full = derive(readJournal(deriveJournal({})), { ...deriveData(), selected: "", process: { steps: [{ title: "A", state: "done" }] } }).data;
+  assert.notEqual(full.selected, "");
+});
+
+test("T5-21: the mini course steps follow the journal – frame, material, check, publish – not the agent's last write", () => {
+  // Written, no check yet: the check is next; the agent's stale "material: current" goes.
+  let result = deriveMini(miniState());
+  assert.deepEqual(stepStates(result.data), ["done", "done", "current", "planned"]);
+  assert.equal(result.data.process.steps[1].next, undefined, "a done step has no next");
+  assert.ok(!result.missing.some(item => item.where === "current"), JSON.stringify(result.missing));
+  // Written with open images, no check yet: the images belong to the material step.
+  result = deriveMini(miniState({ images: 2 }));
+  assert.equal(result.data.next.command, ":agent artist → :create-image 1");
+  assert.deepEqual(stepStates(result.data), ["done", "current", "planned", "planned"]);
+  assert.ok(!result.missing.some(item => item.where === "current"), JSON.stringify(result.missing));
+  // Checked (PASS), photos still open, course summary FAIL because of them: the check is in progress.
+  result = deriveMini(miniState({ report: true, images: 2, course: "FAIL" }));
+  assert.equal(result.data.next.command, ":agent artist → :create-image 1");
+  assert.deepEqual(stepStates(result.data), ["done", "done", "current", "planned"]);
+  assert.ok(!result.missing.some(item => item.where === "current"), JSON.stringify(result.missing));
+  // Passed, approved, Done, course summary PASS, delivery by link: publishing is next.
+  result = deriveMini(miniState({ report: true, course: "PASS", approved: true, done: true }));
+  assert.equal(result.data.next.command, ":agent development → :create-project");
+  assert.deepEqual(stepStates(result.data), ["done", "done", "done", "current"]);
+  // Without delivery by link or platform nothing is left: publishing stays optional.
+  result = deriveMini(miniState({ report: true, course: "PASS", approved: true, done: true }).replace("6. Delivery: link", "6. Delivery: print"));
+  assert.deepEqual(stepStates(result.data), ["done", "done", "done", "optional"]);
+});
+
+test("T5-21: a light course step keeps the agent's words while its state is right; a frame without outline is not done", () => {
+  const own = data => ({ ...data, process: { ...data.process, steps: data.process.steps.map((step, i) => i === 2 ? { ...step, state: "current", why: "Own why.", next: "Own next." } : i === 1 ? { ...step, state: "done", result: "Own result." } : step) } });
+  const { data, changes } = deriveMini(miniState(), own);
+  assert.equal(data.process.steps[2].why, "Own why.");
+  assert.equal(data.process.steps[2].next, "Own next.");
+  assert.equal(data.process.steps[1].result, "Own result.");
+  const own_ = change => /^process step "(Write the material|Check)"/.test(change.path);
+  assert.ok(!changes.some(own_), JSON.stringify(changes.filter(own_)));
+  // A step that becomes current without words of its own gets the button word of the next action.
+  const fresh = deriveMini(miniState()).data;
+  assert.equal(fresh.process.steps[2].next, fresh.next.label);
+  // Mini: the frame needs the outline as well.
+  const noOutline = miniInitJournal().replace(/(## Outline\n)[\s\S]*?(?=\n---\n\n## )/, "$1\n_Still empty._\n");
+  const early = deriveMini(noOutline).data;
+  assert.equal(early.next.command, ":create-outline");
+  assert.deepEqual(stepStates(early), ["current", "planned", "planned", "planned"]);
+});
+
+test("T5-21: a mini unit has no planning step – mini has no planning sketch", () => {
+  const { data } = deriveMini(miniState());
+  const titles = data.units.find(unit => String(unit.id) === "1").process.steps.map(step => step.title);
+  assert.ok(!titles.includes(englishUnitSteps[0].title), titles.join(", "));
+  assert.ok(titles.length === englishUnitSteps.length - 1, titles.join(", "));
+  // A unit that still carries the planning step (written before) loses it.
+  const withPlan = deriveMini(miniState(), data => ({ ...data, units: [{ id: 1, title: "Reading a timetable", state: "draft", process: { title: "Reading a timetable", steps: englishUnitSteps.map(step => ({ ...step, state: "planned" })) } }] })).data;
+  assert.ok(!withPlan.units[0].process.steps.some(step => step.title === englishUnitSteps[0].title));
+  // The full track keeps it.
+  const full = derive(readJournal(deriveJournal({})), deriveData()).data;
+  assert.equal(full.units[0].process.steps[0].title, "Plan the lesson");
+});
+
+test("T5-22: the status names missing photos once – no 'images missing' after an outcome that already names them", () => {
+  const unit = (facts = {}) => ({ n: "1", heading: { title: "T" }, material: true, done: false, report: null, images: { total: 9, placed: 0, open: 9 }, ...facts });
+  const report = outcome => ({ result: "PASS", outcome, changedSince: 0 });
+  const de = { ...englishTerms, ...JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8")).terms };
+  assert.equal(statusText(unit({ report: report("bestanden – es fehlt noch: 9 Fotos (12.11.2026)") }), de), "bestanden – es fehlt noch: 9 Fotos");
+  assert.equal(statusText(unit({ report: report("passed – still missing: 9 photos (2026-11-12)") }), englishTerms), "passed – still missing: 9 photos");
+  // An outcome that does not name the images keeps the tail.
+  assert.equal(statusText(unit({ report: report("passed – still missing: a sound file (2026-11-12)") }), englishTerms), "passed – still missing: a sound file – images missing");
+});
+
+// ---- Tandem test 5, round 2 (T5-40, T5-41, T5-42): usable text, stale reports, images before approval ----
+
+const miniUnitData = (more = {}) => data => ({ ...data, units: [{ id: 1, title: "Reading a timetable", ...more }] });
+
+test("T5-40: usable follows the report's line when only its text changes; the agent's short form stays only with the same numbers", () => {
+  // The report says "2 photos"; the overview still shows the count of an older report.
+  const old = deriveMini(miniState({ report: true, images: 2, course: "FAIL" }), miniUnitData({ usable: { state: "limited", missing: ["3 photos"] } }));
+  assert.deepEqual(old.data.units[0].usable, { state: "limited", missing: ["2 photos"] });
+  assert.ok(old.changes.some(change => change.path === "units[1].usable"), JSON.stringify(old.changes));
+  // The agent's own wording with the same number stays.
+  const own = deriveMini(miniState({ report: true, images: 2, course: "FAIL" }), miniUnitData({ usable: { state: "limited", missing: ["2 photos still to come"] } }));
+  assert.deepEqual(own.data.units[0].usable.missing, ["2 photos still to come"]);
+});
+
+test("T5-41: a check report that names fewer open photos than the journal holds belongs to an older version – re-check, not passed", () => {
+  const recheck = "changed after the check – short re-check open";
+  // The material got a third image spot after the check, whose report names 2 photos.
+  const text = miniState({ report: true, images: 2, extra: 1, course: "FAIL" });
+  const journal = readJournal(text);
+  const unit = journal.units.find(item => item.n === "1");
+  assert.equal(unit.report.stale, true);
+  assert.equal(unitState(unit).state, "review");
+  assert.equal(statusText(unit, journal.terms), recheck);
+  const { data } = deriveMini(text);
+  assert.equal(data.next.command, ":validate-course 1", "the check comes again first");
+  assert.equal(data.units[0].statusLabel, recheck);
+  assert.deepEqual(stepStates(data), ["done", "done", "current", "planned"]);
+  const checkStep = data.units[0].process.steps.find(step => /check/i.test(step.title));
+  assert.equal(checkStep.state, "current");
+  assert.notEqual(checkStep.statusLabel, englishTerms.approvalOpen);
+  // Placing photos after the check is no change: fewer open spots than the report named.
+  const placed = miniState({ report: true, images: 2, course: "FAIL" }).replace("* __Status:__ wanted", "* __Status:__ inserted");
+  assert.ok(!readJournal(placed).units[0].report.stale);
+  assert.ok(!readJournal(miniState({ report: true, images: 2, course: "FAIL" })).units[0].report.stale);
+  // A report without a counted photo item is never stale by this rule (conservative), nor the full-track fixture.
+  assert.ok(!readJournal(miniState({ report: true, extra: 1, course: "FAIL" })).units[0].report.stale);
+  assert.ok(readJournal(oldJournal).units.every(item => !item.report?.stale));
+  // validate-journal says it, and does not ask to copy the old outcome into the status.
+  inMiniProject(text, { "README.md": miniReadme }, ({ derive: write, validate }) => {
+    write();
+    const run = validate();
+    assert.match(run.stdout, /unit 1: the check report names 2 photos still missing, but 3 image entries are open/);
+    assert.doesNotMatch(run.stdout, /does not carry the report's outcome/);
+  });
+});
+
+test("T5-42: open photos after a passed check – the unit does not wait for approval, the course check step names the outcome", () => {
+  const steps = englishUnitSteps.slice(1).map((step, i) => ({ title: step.title, state: ["done", "current", "current"][i], ...(i === 2 ? { statusLabel: englishTerms.approvalOpen } : {}) }));
+  const { data } = deriveMini(miniState({ report: true, images: 2, course: "FAIL" }), miniUnitData({ process: { title: "Reading a timetable", steps } }));
+  assert.equal(data.next.command, ":agent artist → :create-image 1");
+  const unitSteps = data.units[0].process.steps;
+  assert.equal(unitSteps.filter(step => step.state === "current").length, 1, JSON.stringify(unitSteps));
+  assert.equal(unitSteps.find(step => step.state === "current").title, englishUnitSteps[2].title);
+  assert.ok(!unitSteps.some(step => step.statusLabel === englishTerms.approvalOpen), JSON.stringify(unitSteps));
+  // The course step "check" is the one the photos advance (courseKey); its chip names the outcome, not "up next".
+  const check = data.process.steps[2];
+  assert.equal(check.state, "current");
+  assert.equal(check.statusLabel, "passed – still missing: 2 photos");
+  assert.equal(check.next, data.next.label);
+  // Passed without open photos: the approval is what the check step waits for.
+  const plain = deriveMini(miniState({ report: true, course: "FAIL" })).data;
+  assert.equal(plain.units[0].process.steps.find(step => /check/i.test(step.title)).statusLabel, englishTerms.approvalOpen);
+});
+
+// ---------------------------------------------------------------------------
+// T5-57: {"removeBlock": "<heading line>"} in the line replacer's "replace" list removes a heading's block
+// (or the whole <section> the heading opens) with its surplus blank lines – no need to copy the old text.
+// ---------------------------------------------------------------------------
+const blockJournal = [
+  "# Kurs", "", "## Notizen", "", "### Erste Notiz", "", "Text eins.", "", "#### Detail", "", "Mehr.", "",
+  "### Zweite Notiz", "", "Text zwei.", "",
+  "#### Bilder", "", "<section>", "", "#### foto-eins", "", "* __Status:__ wanted", "* __Description:__ Ein Stuhl", "", "</section>", "",
+  "<section>", "", "#### foto-zwei", "", "* __Status:__ wanted", "* __Description:__ Ein Tisch", "", "</section>", "",
+  "## Anhang", "", "Ende.", ""
+].join("\n");
+
+test("removeBlock removes a heading with everything up to the next heading of the same or a higher level", () => {
+  const run = replaceIn(blockJournal, { replace: [{ removeBlock: "### Erste Notiz" }] });
+  assert.equal(run.status, 0, run.output);
+  assert.match(run.after, /## Notizen\n\n### Zweite Notiz\n\nText zwei\./);
+  assert.doesNotMatch(run.after, /Erste Notiz|Text eins|Detail|Mehr\./);
+  // A heading above sections takes them along, the blank lines stay single.
+  const all = replaceIn(blockJournal, { replace: [{ removeBlock: "#### Bilder" }] });
+  assert.equal(all.status, 0, all.output);
+  assert.match(all.after, /Text zwei\.\n\n## Anhang\n\nEnde\.\n$/);
+  assert.doesNotMatch(all.after, /section|foto-/);
+  // The chapter separator (---) before the next chapter stays.
+  const ruled = replaceIn(blockJournal.replace("## Anhang", "---\n\n## Anhang"), { replace: [{ removeBlock: "#### Bilder" }] });
+  assert.equal(ruled.status, 0, ruled.output);
+  assert.match(ruled.after, /Text zwei\.\n\n---\n\n## Anhang\n/);
+});
+
+test("removeBlock removes the whole <section> a heading opens, with its blank lines", () => {
+  const first = replaceIn(blockJournal, { replace: [{ removeBlock: "#### foto-eins" }] });
+  assert.equal(first.status, 0, first.output);
+  assert.match(first.after, /#### Bilder\n\n<section>\n\n#### foto-zwei\n/);
+  assert.doesNotMatch(first.after, /foto-eins|Ein Stuhl/);
+  assert.equal(first.after.match(/<section>/g).length, 1);
+  assert.equal(first.after.match(/<\/section>/g).length, 1);
+  const last = replaceIn(blockJournal, { replace: [{ removeBlock: "#### foto-zwei" }] });
+  assert.equal(last.status, 0, last.output);
+  assert.match(last.after, /Ein Stuhl\n\n<\/section>\n\n## Anhang\n/);
+  assert.doesNotMatch(last.after, /foto-zwei|Ein Tisch/);
+});
+
+test("removeBlock writes nothing when the heading is missing, not a heading or found twice", () => {
+  const missing = replaceIn(blockJournal, { replace: [["Ende.", "Schluss."], { removeBlock: "#### foto-drei" }] });
+  assert.equal(missing.status, 2, missing.output);
+  assert.match(missing.output, /removeBlock "#### foto-drei" matches 0 lines \(needs exactly 1\)/);
+  assert.equal(missing.after, blockJournal, "all or nothing");
+  const plain = replaceIn(blockJournal, { replace: [{ removeBlock: "Text eins." }] });
+  assert.equal(plain.status, 2, plain.output);
+  assert.match(plain.output, /removeBlock "Text eins\.": not a heading line/);
+  const twiceText = blockJournal.replace("Text zwei.", "Text zwei.\n\n#### Detail");
+  const twice = replaceIn(twiceText, { replace: [{ removeBlock: "#### Detail" }] });
+  assert.equal(twice.status, 2, twice.output);
+  assert.match(twice.output, /removeBlock "#### Detail" matches 2 lines/);
+  assert.equal(twice.after, twiceText, "all or nothing");
+});
+
+test("removeBlock combines with replacements in one write, in the order of the list", () => {
+  const run = replaceIn(blockJournal, { replace: [["Text zwei.", "Text 2."], { removeBlock: "#### foto-eins" }, { removeBlock: "#### foto-zwei" }, ["Ende.", "Schluss."]] });
+  assert.equal(run.status, 0, run.output);
+  assert.match(run.after, /Text 2\.\n\n#### Bilder\n\n## Anhang\n\nSchluss\.\n$/);
+  assert.match(run.output, /OK: 2 replacement\(s\), 2 block\(s\) removed in one write/);
+});
+
+test("localize-journal --help prints the map format with every operation, without a file", () => {
+  for (const flag of ["--help", "-h"]) {
+    const run = spawnSync(process.execPath, [localizeScript, flag], { encoding: "utf8" });
+    assert.equal(run.status, 0, run.stderr);
+    for (const key of ['"language"', '"replace"', '"all"', '"removeBlock"', '"append"', '"dashboard"', "--lang"]) assert.ok(run.stdout.includes(key), `${flag} names ${key}`);
+  }
+});
+
+// ---- Tandem test 5, round 3 (T5-53 … T5-56): one unit is the course check, open access, the approval state ----
+
+test("T5-53: on a light track with one unit, its passed and approved check is the course check – no course check as next", () => {
+  const text = miniState({ report: true, course: "FAIL", approved: true, done: true });
+  const { data } = deriveMini(text);
+  assert.equal(data.next.command, ":agent development → :create-project", "the stale course summary does not hold publishing back");
+  assert.deepEqual(stepStates(data), ["done", "done", "done", "current"]);
+  // Checked, not approved yet: the approval is next and the course step says so – not "checked ✅".
+  const waiting = deriveMini(miniState({ report: true, course: "FAIL", done: true })).data;
+  assert.equal(waiting.next.command, ":preview 1");
+  assert.equal(waiting.process.steps[2].state, "current");
+  assert.equal(waiting.process.steps[2].statusLabel, englishTerms.approvalOpen);
+  // Without delivery by link or platform nothing is left once the unit is approved.
+  assert.equal(courseNext(readJournal(text.replace("6. Delivery: link", "6. Delivery: print")), new Map([["1", "done"]])), null);
+  // validate-journal names the course summary that still says FAIL.
+  inMiniProject(text, { "README.md": miniReadme }, ({ derive: write, validate }) => {
+    write();
+    assert.match(validate().stdout, /light track: course summary FAIL, but unit 1 is checked and approved – refresh the summary in the approval write \(tasks\/validate-course\.md → One unit, one run\)/);
+  });
+  inMiniProject(miniState({ report: true, course: "PASS", approved: true, done: true }), { "README.md": miniReadme }, ({ derive: write, validate }) => {
+    write();
+    assert.doesNotMatch(validate().stdout, /course summary FAIL/);
+  });
+});
+
+test("T5-56: the course step 'check' never says 'checked ✅' while it is the step in progress", () => {
+  // Done ✅ and approved, but an ⏳ item is still open: the unit is not done, its step stays open.
+  const text = miniState({ report: true, course: "FAIL", approved: true, done: true })
+    .replace("**Usable with learners now:** yes\n", "**Usable with learners now:** yes\n\n**Still missing:**\n\n- ⏳ 1 sound file: at a later step.\n");
+  const { data } = deriveMini(text);
+  const check = data.process.steps[2];
+  assert.equal(check.state, "current");
+  assert.notEqual(check.statusLabel, englishTerms.checked);
+});
+
+test("T5-54: Delivery open – the publish step says the access is still open and settling it is next, without a command", () => {
+  const open = text => text.replace("6. Delivery: link", "6. Delivery: open").replace("| Open the material | by link |", "| Open the material | still open |");
+  assert.equal(readJournal(open(miniState())).delivery, "open");
+  // Before the check: publishing is required, its step names the open access.
+  const before = deriveMini(open(miniState())).data;
+  assert.equal(before.process.steps[3].state, "planned");
+  assert.equal(before.process.steps[3].statusLabel, englishTerms.accessOpen);
+  assert.equal(englishTerms.accessOpen, "access still open");
+  // After the check and the approval: settling the access is next – a step, not a button.
+  const after = deriveMini(open(miniState({ report: true, course: "PASS", approved: true, done: true }))).data;
+  assert.equal(after.next.decide, true);
+  assert.equal(after.next.label, englishActions["decide-access"].label);
+  assert.equal(after.next.command, undefined);
+  assert.doesNotMatch(after.next.href, /^agent:/);
+  assert.deepEqual(stepStates(after), ["done", "done", "done", "current"]);
+  assert.equal(after.process.steps[3].statusLabel, englishTerms.accessOpen);
+  const hero = dashboard.renderComponent("View", "t554", { ...after, lang: "en" }).split('class="dashboard-hero"')[1].split("</header>")[0];
+  assert.match(hero, new RegExp(englishActions["decide-access"].label));
+  assert.doesNotMatch(hero, /dashboard-button-primary|dashboard-command/, "no button and no command for a decision");
+  // Once decided (link), publishing is next again.
+  assert.equal(deriveMini(miniState({ report: true, course: "PASS", approved: true, done: true })).data.next.command, ":agent development → :create-project");
+  // The full track: open access replaces publishing after the passed course check; any other delivery keeps it.
+  const done = new Map([["1", "done"], ["2", "done"]]);
+  const units = [facts(1, { heading: { title: "A" }, material: true, done: true, approved: true }), facts(2, { heading: { title: "B" }, material: true, done: true, approved: true })];
+  const passed = { units, validation: { mode: "course", result: "PASS" } };
+  assert.equal(courseNext(course({ ...passed, delivery: "open" }), done).key, "decide-access");
+  assert.equal(courseNext(course({ ...passed, delivery: "platform" }), done).key, "publish");
+  assert.equal(courseNext(course({ ...passed, delivery: null }), done).key, "publish");
+  // validate-journal: the visible row and Delivery say the same.
+  inMiniProject(open(miniState()), { "README.md": miniReadme }, ({ derive: write, validate }) => {
+    write();
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.doesNotMatch(run.stdout, /says the access/);
+  });
+  inMiniProject(open(miniState({ report: true, course: "PASS", approved: true, done: true })), { "README.md": miniReadme }, ({ derive: write, validate }) => {
+    assert.equal(write().status, 0);
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+  });
+  inMiniProject(miniState().replace("| Open the material | by link |", "| Open the material | still open |"), {}, ({ validate }) => {
+    assert.match(validate().stdout, /course frame: the row "Open the material" says the access is still open, but Delivery is link/);
+  });
+  inMiniProject(miniState().replace("6. Delivery: link", "6. Delivery: open"), {}, ({ validate }) => {
+    assert.match(validate().stdout, /course frame: Delivery is open, but the row "Open the material" says "by link"/);
+  });
+  // German row label and value.
+  inMiniProject(miniState().replace("| Open the material | by link |", "| Zugang | noch offen – wird geklärt |"), {}, ({ validate }) => {
+    assert.match(validate().stdout, /the row "Zugang" says the access is still open, but Delivery is link/);
+  });
+});
+
+test("T5-55: checked but not approved waits for the approval; only the approval makes it 'checked'; an outcome line keeps no approval state", () => {
+  const unit = (facts = {}) => ({ n: "1", heading: { title: "T" }, material: true, done: true, approved: false, report: { result: "PASS", outcome: "passed (2026-11-12)", changedSince: 0 }, images: { total: 0, placed: 0, open: 0 }, ...facts });
+  assert.equal(statusText(unit(), englishTerms), englishTerms.approvalOpen);
+  assert.equal(statusText(unit({ approved: true }), englishTerms), englishTerms.checked);
+  // Older reports that carry the approval state: shown once while it waits, never after the approval.
+  const old = more => unit({ report: { result: "PASS", outcome: "passed – waiting for your approval (2026-11-12)", changedSince: 0 }, ...more });
+  assert.equal(statusText(old({ done: false }), englishTerms), englishTerms.approvalOpen);
+  assert.equal(statusText(old({ done: false, approved: true }), englishTerms), "passed");
+  assert.equal(statusText(old(), englishTerms), englishTerms.approvalOpen);
+  assert.equal(statusText(old({ approved: true }), englishTerms), englishTerms.checked);
+  const de = { ...englishTerms, ...JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8")).terms };
+  const oldDe = more => unit({ report: { result: "PASS", outcome: "bestanden – wartet auf Ihre Freigabe (13.11.2026)", changedSince: 0 }, ...more });
+  assert.equal(statusText(oldDe({ approved: true }), de), "geprüft ✅");
+  assert.equal(statusText(oldDe({ done: false, approved: true }), de), "bestanden");
+  assert.equal(statusText(oldDe({ done: false }), de), "bestanden – wartet auf Ihre Freigabe");
+  assert.equal(de.accessOpen, "Zugang noch offen");
+  // A passed report without it and not Done stays as before.
+  assert.equal(statusText(unit({ done: false }), englishTerms), "passed");
+  // validate-journal: the outcome line carries the approval state – approved or not.
+  const carrying = miniState({ report: true, approved: true, done: true, course: "PASS" }).replace("**Outcome:** passed (2026-11-12)", "**Outcome:** passed – waiting for your approval (2026-11-12)");
+  for (const text of [carrying, carrying.replace("- Approved by the instructor on 2026-11-12.\n", "- Looked at it on 2026-11-12.\n")]) {
+    inMiniProject(text, { "README.md": miniReadme }, ({ derive: write, validate }) => {
+      write();
+      const run = validate();
+      assert.match(run.stdout, /unit 1: the outcome line carries the approval state – the overview computes it; remove it in the next write/);
+      assert.doesNotMatch(run.stdout, /does not carry the report's outcome/);
+    });
+  }
+  inMiniProject(miniState({ report: true, approved: true, done: true, course: "PASS" }), { "README.md": miniReadme }, ({ derive: write, validate }) => {
+    write();
+    assert.doesNotMatch(validate().stdout, /carries the approval state/);
+  });
+});
+
+// ---- Round 4 of the light tracks: after a mini → full switch (T5-67, T5-68, T5-69, T5-74) ----
+import { courseStepKeys } from "./journal-model.mjs";
+
+const withUnits = (text, n) => text.replace("Units: 1 × 20 min", `Units: ${n} × 20 min`);
+// The switch as the journal write makes it (Track line, the mini markers go), the overview still from the mini track.
+function switchMarkersOnly(text) {
+  const template = readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8");
+  let result = text.replace(/^(\s*\d+\.\s*Track:\s*)mini\b/m, "$1full");
+  for (const key of laterOf("mini")) {
+    const pattern = key === "Learner Personas" ? /(### Learner Personas[^\n]*\n)([\s\S]*?)(?=\n---)/ : new RegExp(`(## ${key}[^\\n]*\\n)([\\s\\S]*?)(?=\\n---\\n\\n## |(?![\\s\\S]))`);
+    const body = template.match(pattern)[2];
+    result = result.replace(pattern, (_, head) => `${head}${body}`);
+  }
+  return result;
+}
+const markLater = (text, key) => text.replace(new RegExp(`(## ${key}[^\\n]*\\n)([\\s\\S]*?)(?=\\n---\\n\\n## )`), (_, head) => `${head}\n${laterBlock(key)}`);
+const templateSteps = () => JSON.parse(readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8").match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]).process.steps;
+const dePack = () => JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8"));
+const outlineJournal = (units, overview) => `<!--\nlanguage: en\n-->\n\n# K\n\n## Course Context\n\n* __Course Profile:__\n  1. Persona type: coach\n  5. Units: ${units}\n\n## Outline\n\n<!-- data-key="title" -->\n* __Title:__\n  K\n\n${overview}\n---\n\n## Didactics\n\n_Still empty._\n`;
+
+test("T5-67: the course profile's unit count and the units the outline describes", () => {
+  const switched = readJournal(switchToFull(withUnits(miniUnitSave(miniInitJournal()), 2)));
+  assert.equal(switched.unitsPlanned, 2);
+  assert.equal(switched.unitsInOutline, 1, "a slide list (label Slides) is the outline of one unit");
+  const numbered = `<!-- data-key="session-overview" -->\n* __Session Overview:__\n  1. First → objective 1 → quiz\n     - a detail\n  2. Second → objective 2 → quiz\n\n  Who does not finish catches up later.\n`;
+  assert.equal(readJournal(outlineJournal("3 × 45 min", numbered)).unitsInOutline, 2);
+  assert.equal(readJournal(outlineJournal("3 × 45 min", numbered)).unitsPlanned, 3);
+  const dashed = `<!-- data-key="session-overview" -->\n* __Units at a glance:__\n  - Unit 1 · A → objective 1\n  - Unit 2 · B → objective 2\n  - Unit 3 · C → objective 3\n\n  _Changed on 2026-11-05._\n`;
+  assert.equal(readJournal(outlineJournal("4 × 45 min (about, over two weeks)", dashed)).unitsInOutline, 3);
+  assert.equal(readJournal(outlineJournal("4 × 45 min (about, over two weeks)", dashed)).unitsPlanned, 4);
+  const table = `<!-- data-key="session-overview" -->\n* __Session Overview:__\n\n  | Unit | Objective | Self-check |\n  |---|---|---|\n  | A | 1 | quiz |\n  | B | 2 | quiz |\n`;
+  assert.equal(readJournal(outlineJournal("2 × 45 min", table)).unitsInOutline, 2);
+  // Not readable: nothing is compared.
+  assert.equal(readJournal(outlineJournal("[count × length, if known — e.g. 3 × 45 min]", numbered)).unitsPlanned, null);
+  assert.equal(readJournal(outlineJournal("about two weeks", numbered)).unitsPlanned, null);
+  assert.equal(readJournal(outlineJournal("3 × 45 min", "Text\n")).unitsInOutline, null);
+  // German slide label of the mini outline.
+  assert.equal(readJournal(outlineJournal("2 × 20 min", `<!-- data-key="session-overview" -->\n* __Folien:__\n  1. A\n  2. B\n  3. C\n`)).unitsInOutline, 1);
+});
+
+test("T5-67: more units planned than the outline describes – completing the outline is next, not the didactics; nothing changes otherwise", () => {
+  const full = (more = {}) => ({ track: "full", filled: { "Course Context": true, Outline: true, Didactics: false }, units: [], templates: { selection: "open", adopted: [], briefs: [] },
+    validation: {}, published: false, hasAgenda: false, unitsPlanned: 2, unitsInOutline: 1, ...more });
+  const next = courseNext(full(), new Map());
+  assert.equal(next.key, "complete-outline");
+  assert.equal(next.href, "agent:teaching/create-outline");
+  assert.equal(courseNext(full({ unitsInOutline: 2 }), new Map()).key, "create-didactics");
+  assert.equal(courseNext(full({ unitsInOutline: null }), new Map()).key, "create-didactics", "not readable: nothing changes");
+  assert.equal(courseNext(full({ unitsPlanned: null }), new Map()).key, "create-didactics");
+  // A full outline with fewer sessions created than planned is the normal case: the outline counts, not ## Sessions.
+  const sketched = facts(1, { heading: { title: "A" } });
+  assert.equal(courseNext(full({ unitsPlanned: 4, unitsInOutline: 4, filled: { "Course Context": true, Outline: true, Didactics: true }, units: [sketched] }), new Map([["1", "current"]])).key, "work-out");
+  // The overview: next and the outline step follow, the didactics step that was current is named for rewriting.
+  const text = switchToFull(withUnits(miniUnitSave(miniInitJournal()), 2));
+  const { data, missing } = derive(readJournal(text), dashboardOf(text), { date: "2026-11-13" });
+  assert.equal(data.next.href, "agent:teaching/create-outline");
+  assert.equal(data.next.label, englishActions["complete-outline"].label);
+  assert.match(data.next.why, /still missing for lesson 2\./);
+  assert.equal(data.process.steps[1].state, "current", "the outline step is the one in progress again");
+  assert.ok(missing.some(item => item.where === "current" && item.step === "Didactics"));
+  // validate-journal warns.
+  inMiniProject(text, { "README.md": restructureReadme(miniReadme, "Lesson: Reading a timetable") }, ({ validate }) => {
+    assert.match(validate().stdout, /course profile plans 2 units, the outline describes 1 – complete the outline \(:create-outline\)/);
+  });
+  inMiniProject(switchToFull(miniUnitSave(miniInitJournal())), { "README.md": restructureReadme(miniReadme, "Lesson: Reading a timetable") }, ({ validate }) => {
+    assert.doesNotMatch(validate().stdout, /course profile plans/);
+  });
+  assert.ok(dePack().actions["complete-outline"]?.label, "the German pack has the words");
+});
+
+test("T5-68: a course summary that says an approved unit waits for approval is a warning on every track", () => {
+  const approved = text => text.replace("Learners find a departure time and tell how long a trip takes.\n", match => `${match}\n<!-- data-key="decisions" -->\n**Decisions:**\n\n- **2026-11-12:** material approved\n`);
+  const summary = (comment, outcome) => text => text.replace(/(### Latest Validation Summary\n)[\s\S]*?(?=\n---)/, (_, head) => `${head}\n<!--- ${comment} --->\n\n**Outcome:** ${outcome} (2026-11-12)\n\n<details><summary>Technical part</summary>\n\n- Date: 2026-11-12\n- Mode: course\n- Result: FAIL\n- Sessions checked: 1\n\n</details>\n`);
+  const stale = summary("Written by :validate-course 1 (one unit, one run) on 2026-11-12.", "not ready to publish yet – lesson 1 is waiting for your approval, then the course check once more");
+  const readme = { "README.md": restructureReadme(miniReadme, "Lesson: Reading a timetable") };
+  inMiniProject(stale(approved(switchToFull(miniUnitSave(miniInitJournal())))), readme, ({ validate }) => {
+    const out = validate().stdout;
+    assert.match(out, /course summary says lesson 1 waits for the approval, but unit 1 is approved/);
+  });
+  // Not approved: the claim is true. Rewritten at the switch: no warning.
+  inMiniProject(stale(switchToFull(miniUnitSave(miniInitJournal()))), readme, ({ validate }) => {
+    assert.doesNotMatch(validate().stdout, /waits for the approval, but/);
+  });
+  const rewritten = summary("Written by :validate-course 1 on 2026-11-12. Rewritten by :activate-section on 2026-11-13 (track switch).", "not ready to publish yet – the check of the whole course follows after the last lesson");
+  inMiniProject(rewritten(approved(switchToFull(miniUnitSave(miniInitJournal())))), readme, ({ validate }) => {
+    const out = validate().stdout;
+    assert.doesNotMatch(out, /waits for the approval, but/);
+  });
+  // German wording.
+  const german = summary("Written by :validate-course (course mode) on 2026-11-12.", "noch nicht bereit – Lektion 1 wartet auf Ihre Freigabe");
+  inMiniProject(german(approved(switchToFull(miniUnitSave(miniInitJournal()))).replace("sessions-called: lesson", "sessions-called: Lektion")), readme, ({ validate }) => {
+    const out = validate().stdout;
+    assert.match(out, /course summary says Lektion 1 waits for the approval, but unit 1 is approved/);
+  });
+});
+
+test("T5-69: after a track switch derive replaces the overview's steps from the language pack and computes their states", () => {
+  const text = switchMarkersOnly(miniUnitSave(miniInitJournal()));
+  assert.equal(dashboardOf(text).process.steps.length, 4, "the overview still holds the mini track's steps");
+  const { data, changes, missing } = derive(readJournal(text), dashboardOf(text), { date: "2026-11-13" });
+  const titles = templateSteps().map(step => step.title).filter(title => title !== "Agenda");
+  assert.deepEqual(data.process.steps.map(step => step.title), titles, "Agenda required: no – no agenda step");
+  assert.deepEqual(stepStates(data), ["done", "done", "current", "planned", "done", "planned", "planned"]);
+  assert.equal(data.process.steps[0].next, undefined, "no 'Click Start course' from the empty journal");
+  assert.ok(changes.some(change => change.path === "process.steps" && /track changed/i.test(change.why)));
+  assert.deepEqual(missing, []);
+  assert.equal(data.next.href, "agent:teaching/create-didactics");
+  // German: the steps of the German pack.
+  const german = derive(readJournal(text.replace("language: en", "language: de")), dashboardOf(text), { date: "2026-11-13" }).data;
+  assert.deepEqual(german.process.steps.map(step => step.title), dePack().dashboard.process.steps.map(step => step.title).filter(title => title !== "Ablaufplan"));
+  // Agenda required: yes keeps the agenda step, planned.
+  const withAgenda = derive(readJournal(text.replace("Agenda required: no", "Agenda required: yes")), dashboardOf(text), { date: "2026-11-13" }).data;
+  assert.equal(withAgenda.process.steps.length, 8);
+  assert.equal(withAgenda.process.steps[4].state, "planned");
+  // full → mini: the light titles.
+  const back = miniUnitSave(miniInitJournal({ steps: stepsOf("full") }));
+  assert.deepEqual(derive(readJournal(back), dashboardOf(back), { date: "2026-11-13" }).data.process.steps.map(step => step.title), ["Frame and learning objectives", "Write the material", "Check", "Publish"]);
+  // The full track with its own steps (8, or 7 without the agenda step, or older lists) keeps them.
+  const kept = switchToFull(miniUnitSave(miniInitJournal()));
+  assert.ok(!derive(readJournal(kept), dashboardOf(kept), { date: "2026-11-13" }).changes.some(change => change.path === "process.steps"));
+  const seven = dashboardOf(kept);
+  seven.process.steps = seven.process.steps.filter(step => step.title !== "Agenda");
+  assert.ok(!derive(readJournal(kept), seven, { date: "2026-11-13" }).changes.some(change => change.path === "process.steps"));
+  // The script: one run, no rewrite of the whole overview.
+  inMiniProject(text, { "README.md": restructureReadme(miniReadme, "Lesson: Reading a timetable") }, ({ derive: write, validate, read }) => {
+    const run = write();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.match(run.stdout, /Track changed: steps replaced from the language pack – write only: note, subtitle, why\/result where needed/);
+    const check = validate();
+    assert.equal(check.status, 0, check.stdout + check.stderr);
+    assert.equal(dashboardOf(read()).process.steps.length, 7);
+  });
+});
+
+test("T5-74: on the full track 'Agenda required: no' lets ## Agenda wait when needed – no section link, never next, an entry under When needed", () => {
+  assert.deepEqual(laterOf("full", null, { agendaRequired: "no" }), ["Agenda"]);
+  assert.deepEqual(laterOf("full", null, { agendaRequired: "yes" }), []);
+  assert.deepEqual(laterOf("full"), []);
+  const text = markLater(switchToFull(miniUnitSave(miniInitJournal())), "Agenda");
+  const journal = readJournal(text);
+  assert.deepEqual(journal.later, ["Agenda"]);
+  const input = dashboardOf(text);
+  input.links = [{ label: "Course Context", href: "#course-context" }, { label: "Agenda", href: "#agenda" }, { label: "Sessions", href: "#sessions" }];
+  const { data } = derive(journal, input, { date: "2026-11-13" });
+  assert.deepEqual(data.links.map(link => link.href), ["#course-context", "#sessions"]);
+  assert.deepEqual(data.process.later.map(item => item.command), [":activate-section agenda"]);
+  assert.notEqual(data.next.href, "agent:teaching/create-agenda");
+  delete input.links;
+  assert.ok(!derive(journal, input, { date: "2026-11-13" }).data.links.some(link => link.href === "#agenda"), "the default links leave a section out that waits");
+  const readme = { "README.md": restructureReadme(miniReadme, "Lesson: Reading a timetable") };
+  inMiniProject(text, readme, ({ derive: write, validate }) => {
+    write();
+    const run = validate();
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.doesNotMatch(run.stdout, /Agenda/);
+  });
+  // Not marked although the profile says no: a warning names the marker.
+  inMiniProject(switchToFull(miniUnitSave(miniInitJournal())), readme, ({ validate }) => {
+    assert.match(validate().stdout, /Agenda required: no, but ## Agenda is not marked when needed/);
+  });
+  inMiniProject(switchToFull(miniUnitSave(miniInitJournal())).replace("Agenda required: no", "Agenda required: yes"), readme, ({ validate }) => {
+    assert.doesNotMatch(validate().stdout, /is not marked when needed/);
+  });
+});
+
+test("T5-74: a full-track step list without the agenda step finds its steps by title, not by position", () => {
+  const titles = templateSteps().map(step => step.title).filter(title => title !== "Agenda");
+  const steps = titles.map(title => ({ title, state: "planned" }));
+  const journal = { track: "full", convertMode: null, language: "en", pack: null };
+  const keys = courseStepKeys(steps, journal);
+  assert.deepEqual(keys, ["frame", "outline", "didactics", "blocks", "material", "check", "publish"]);
+  assert.equal(courseStepOf(makeAction("check-course", "teaching", "validate-course"), steps, { track: "full", keys }).title, "Check and revise");
+  assert.equal(courseStepOf(makeAction("publish", "development", "create-project"), steps, { track: "full", keys }).title, "Publish");
+  // Unknown titles: by position, as before.
+  const own = Array.from({ length: 7 }, (_, i) => ({ title: `S${i}` }));
+  assert.deepEqual(courseStepKeys(own, journal), stepsOf("full"));
+  // German pack titles.
+  const de = dePack().dashboard.process.steps.filter(step => step.title !== "Ablaufplan").map(step => ({ title: step.title }));
+  assert.deepEqual(courseStepKeys(de, { ...journal, language: "de", pack: dePack() }), ["frame", "outline", "didactics", "blocks", "material", "check", "publish"]);
+  // derive: the course-check label of approved units goes to the check step, not to publishing.
+  const text = switchToFull(miniUnitSave(miniInitJournal())).replace("Learners find a departure time and tell how long a trip takes.\n", match => `${match}\n<!-- data-key="decisions" -->\n**Decisions:**\n\n- **2026-11-12:** material approved\n`);
+  const input = dashboardOf(text);
+  input.process.steps = titles.map(title => ({ title, state: "planned" }));
+  const derived = derive(readJournal(text), input, { date: "2026-11-13" }).data.process.steps;
+  assert.match(derived[5].statusLabel ?? "", /after the last/);
+  assert.equal(/after the last/.test(derived[6].statusLabel ?? ""), false);
+});
+
+// ---- Round 5 of the light tracks: the overview after a mini → full switch (T5-86, T5-87, T5-88, T5-89, T5-91) ----
+
+// Unit 1 written, checked (PASS), approved and Done ✅; the course frame plans two units.
+const approvedFull = (units = 2) => switchToFull(withUnits(miniState({ report: true, approved: true, done: true }), units));
+const readmeFull = { "README.md": restructureReadme(miniReadme, "Lesson: Reading a timetable") };
+
+test("T5-86: the progress counts the units the course frame and the outline plan, not only those under ## Sessions", () => {
+  const text = approvedFull(2);
+  const { data } = derive(readJournal(text), dashboardOf(text), { date: "2026-11-13" });
+  assert.equal(data.unitsPlanned, 2, "computed from Units: 2 × … in the course profile");
+  const model = dashboard.buildModel(data);
+  assert.equal(model.completed, 1);
+  assert.equal(model.total, 2);
+  assert.equal(model.percent, 50);
+  assert.match(dashboard.view("p", data), /1 of 2/);
+  assert.match(dashboard.view("p", { ...data, lang: "de" }), /1 von 2/);
+  // As many units under ## Sessions as planned, or not readable: no field, the units count as before.
+  assert.equal(derive(readJournal(approvedFull(1)), dashboardOf(approvedFull(1)), { date: "2026-11-13" }).data.unitsPlanned, undefined);
+  const unreadable = text.replace("Units: 2 × 20 min", "Units: about two weeks");
+  assert.equal(derive(readJournal(unreadable), { ...dashboardOf(text), unitsPlanned: 5 }, { date: "2026-11-13" }).data.unitsPlanned, undefined, "a stale computed value goes");
+  // The library: the larger of both, never fewer than the units listed; a wrong type is rejected.
+  assert.equal(dashboard.buildModel({ units: [{ id: 1, title: "A", state: "done" }, { id: 2, title: "B" }], unitsPlanned: 1 }).total, 2);
+  assert.throws(() => dashboard.buildModel({ units: [], unitsPlanned: "2" }), /unitsPlanned/);
+  // The template documents it as computed.
+  assert.match(readFileSync(new URL("../templates/project-dashboard.yaml", import.meta.url), "utf8"), /unitsPlanned: '\(computed\)/);
+});
+
+test("T5-87: the course-check label says what it is; the old wording is recognised and replaced", () => {
+  assert.equal(englishTerms.checkCourseLater, "course check after the last {unit} · approved so far: {units}");
+  assert.equal(dePack().terms.checkCourseLater, "Kursprüfung nach der letzten {unit} · schon freigegeben: {units}");
+  const text = approvedFull(2);
+  const steps = derive(readJournal(text), dashboardOf(text), { date: "2026-11-13" }).data.process.steps;
+  assert.equal(steps.find(step => step.title === "Check").statusLabel, "course check after the last lesson · approved so far: lesson 1");
+  // No approved unit any more: a label in the old or the new wording goes.
+  const notApproved = switchToFull(withUnits(miniState({ report: true, done: true }), 2));
+  for (const old of ["after the last lesson – approved: lesson 1", "course check after the last lesson · approved so far: lesson 1"]) {
+    const input = dashboardOf(notApproved);
+    input.process.steps.find(step => step.title === "Check").statusLabel = old;
+    const check = derive(readJournal(notApproved), input, { date: "2026-11-13" }).data.process.steps.find(step => step.title === "Check");
+    assert.equal(check.statusLabel, undefined, old);
+  }
+  // German: the old pack wording is recognised as well.
+  const german = notApproved.replace("language: en", "language: de");
+  const input = dashboardOf(german);
+  input.process.steps.find(step => step.title === "Check").statusLabel = "nach der letzten Lektion – freigegeben: Lektion 1";
+  assert.equal(derive(readJournal(german), input, { date: "2026-11-13" }).data.process.steps.find(step => step.title === "Check").statusLabel, undefined);
+});
+
+test("T5-88: validate-journal warns when an approved unit is asked for its approval again in the overview", () => {
+  // The overview as derive computes it, then the agent's ask written into it.
+  const withAsk = (text, change) => { const { data } = derive(readJournal(text), dashboardOf(text), { date: "2026-11-13" }); change(data); return text.replace(/```json @Dashboard\.View\n[\s\S]*?\n```/, dashJson(data)); };
+  const ask = data => {
+    data.decisions = [...(data.decisions ?? []), { key: "approve-unit-1", kind: "prepare", title: "Look at lesson 1 with the new opening slide and approve it", why: "Why.", how: "How.", href: "agent:teaching/preview?file=1", command: ":preview 1", label: "Look", icon: "👁" }];
+    data.units[0].process.steps.at(-1).next = "look at the lesson again and approve it";
+  };
+  const run = text => {
+    let out = "";
+    inMiniProject(withAsk(text, ask), readmeFull, ({ validate }) => { out = validate().stdout; });
+    return out;
+  };
+  const out = run(approvedFull(2));
+  assert.match(out, /unit 1 is approved, but the overview asks to approve it again \(decisions "approve-unit-1", step "[^"]+"\.next\) – remove the item or record why the approval no longer holds/);
+  // Not approved: the ask is right.
+  assert.doesNotMatch(run(switchToFull(withUnits(miniState({ report: true, done: true }), 2))), /asks to approve it again/);
+  // Changed since the check: the approval no longer holds, a new one is right.
+  const changed = approvedFull(2).replace("**Outcome:** passed (2026-11-12)", "**Outcome:** passed (2026-11-12) – 1 point changed since – short re-check open");
+  assert.doesNotMatch(run(changed), /asks to approve it again/);
+  // A prepare item without the key, but with the approval word and a link to the unit, counts as well; "approved" in a text does not.
+  const byWord = data => { data.decisions = [{ key: "look-again", kind: "prepare", title: "Approve lesson 1 once more", why: "Why.", how: "How.", href: "agent:teaching/preview?file=1", command: ":preview 1", label: "Look" }]; };
+  const told = data => { data.units[0].process.steps.at(-1).next = "lesson 1 is approved"; };
+  const outs = [];
+  for (const change of [byWord, told]) inMiniProject(withAsk(approvedFull(2), change), readmeFull, ({ validate }) => { outs.push(validate().stdout); });
+  assert.match(outs[0], /unit 1 is approved, but the overview asks to approve it again \(decisions "look-again"\)/);
+  assert.doesNotMatch(outs[1], /asks to approve it again/);
+});
+
+test("T5-89: completing the outline is explained in everyday words; the button stays", () => {
+  const full = (more = {}) => ({ track: "full", filled: { "Course Context": true, Outline: true, Didactics: false }, units: [], templates: { selection: "open", adopted: [], briefs: [] },
+    validation: {}, published: false, hasAgenda: false, unitsPlanned: 2, unitsInOutline: 1, language: "en", ...more });
+  const one = courseNext(full(), new Map());
+  assert.equal(wordsOf(one, full(), { unit: "lesson" }).why, "Learning objectives and a slide plan are still missing for lesson 2. We settle them first – then the assistant knows what to write.");
+  assert.equal(wordsOf(one, full(), { unit: "lesson" }).label, englishActions["complete-outline"].label);
+  const several = courseNext(full({ unitsPlanned: 4 }), new Map());
+  assert.match(wordsOf(several, full(), { unit: "lesson" }).why, /missing for lesson 2–4\./);
+  const de = { ...full(), language: "de", pack: dePack() };
+  assert.equal(wordsOf(one, de, { unit: "Lernseite" }).why, "Für Lernseite 2 fehlen noch Lernziele und Folienplan. Die legen wir zuerst fest – dann weiß der Assistent, was er schreiben soll.");
+  assert.equal(wordsOf(one, de, { unit: "Lernseite" }).label, "Gliederung ergänzen");
+});
+
+test("T5-91: write-dashboard names the open points it adds and removes", () => {
+  const dir = mkdtempSync(join(tmpdir(), "decisions-diff-"));
+  try {
+    const journalFile = join(dir, "journal.md");
+    const draft = join(dir, "draft.json");
+    const writer = fileURLToPath(new URL("./write-dashboard.mjs", import.meta.url));
+    const item = (key, title) => ({ key, kind: "prepare", title, why: "Why.", how: "How." });
+    const before = { ...deriveData(), decisions: [item("old-point", "An old point"), item("kept", "Kept point")] };
+    writeFileSync(journalFile, deriveJournal(before, { report: failReport }));
+    writeFileSync(draft, JSON.stringify({ ...before, decisions: [item("kept", "Kept point"), item("new-point", "A new point")] }));
+    const run = spawnSync(process.execPath, [writer, draft, journalFile], { encoding: "utf8", cwd: dir });
+    assert.match(run.stdout, /decisions added: new-point \(A new point\) · removed: old-point \(An old point\)/, run.stdout + run.stderr);
+    // Nothing added or removed: no line.
+    writeFileSync(draft, JSON.stringify({ ...before, decisions: [item("kept", "Kept point, reworded"), item("new-point", "A new point")] }));
+    const again = spawnSync(process.execPath, [writer, draft, journalFile], { encoding: "utf8", cwd: dir });
+    assert.doesNotMatch(again.stdout, /decisions added/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

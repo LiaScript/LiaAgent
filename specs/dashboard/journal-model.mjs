@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isLater, trackIds } from "./tracks.mjs";
+import { isLater, trackIds, stepsOf, englishLightStepTitles } from "./tracks.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -39,14 +39,16 @@ export const englishTerms = {
   noBlocks: "none",
   asOf: "As of {date}",
   laterNote: "When needed – not needed for this course yet.",
+  outlineSlides: "Slides",
   miniSessionsNote: "The material is written in one go with “Write the course”.",
   passedMissing: "passed – still missing: {what}",
   passedConcerns: "passed – {n} point(s) to decide",
   blocksPerUnit: "checked per {unit} – none needed so far ({k} of {N})",
   blocksNone: "no building blocks needed",
-  checkCourseLater: "after the last {unit} – approved: {units}",
+  checkCourseLater: "course check after the last {unit} · approved so far: {units}",
   publishNeeded: "needed – after all {units} are checked",
   approvalOpen: "passed – waiting for your approval",
+  accessOpen: "access still open",
   imagesWaiting: "waiting for your photo – images {n} of {m}",
   approvedMissing: "approved – still missing: {what}",
   buildRunning: "being prepared – planning sketch ✅", buildRunningStep: "The assistant writes, illustrates and checks the material on its own; then you look at it together.", buildRequested: "preparation requested",
@@ -57,6 +59,10 @@ export const englishTerms = {
 };
 
 // LiaScript slide anchor: full heading text, lower case, spaces and "-" collapse to one "-", punctuation stays.
+// Older wordings of a term as [pattern, term key] (a pack's `outdatedTerms` likewise): derive recognises a label
+// it wrote in the old wording and replaces or removes it (T5-87).
+export const englishOutdatedTerms = [["after the last \\p{L}+ – approved:", "checkCourseLater"]];
+
 export const anchorOf = text => "#" + String(text).trim().toLowerCase().replace(/-/g, " ").split(/\s+/).filter(Boolean).join("-");
 
 const datePattern = /(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\/\d{1,2}\/\d{4})/;
@@ -83,8 +89,9 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
   // "sessions-called: Lesson", or in older journals "sessions-called: unit (Einheit)": the word in the course language.
   const called = context.match(/sessions-called:\s*([\p{L}\w-]+)(?:\s*\(([^)]+)\))?/u);
   const terminology = called ? (called[2] ?? called[1]).trim() : null;
-  // How learners open the material (Course Profile → Delivery): link or platform makes publishing required (SK69).
-  const delivery = context.match(/Delivery:\s*(link|platform|print|local)\b/i)?.[1].toLowerCase() ?? null;
+  // How learners open the material (Course Profile → Delivery): link or platform makes publishing required (SK69);
+  // open: not decided yet – publishing waits until the instructor settles it (T5-54).
+  const delivery = context.match(/Delivery:\s*(link|platform|print|local|open)\b/i)?.[1].toLowerCase() ?? null;
 
   // The track (full when the field is missing), its convert mode and source.
   const track = context.match(/^\s*\d+\.\s*Track:\s*(full|mini|convert|template)\b/m)?.[1] ?? trackIds[0];
@@ -116,16 +123,85 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
     const lines = stripComments(section(key)).split("\n").map(line => line.trim()).filter(line => line && !/\]\(agent:/.test(line) && !/^(-{3,}|\*{3,})$/.test(line));
     return lines.length > 1 || (lines.length === 1 && !/^_.*_$/.test(lines[0]));
   };
+  // How many units the course frame plans (Course Profile → "Units: 2 × 45 min") and how many the outline
+  // describes (T5-67); null where it is not clearly readable – then nothing is compared.
+  const unitsPlanned = Number(context.match(/^\s*\d+\.\s*Units:\s*(\d+)\s*[×x]\s*\d/m)?.[1] ?? NaN);
+  const unitsInOutline = outlineUnits(section("Outline"), [englishTerms, terms, ...packs.map(item => item.terms ?? {})].map(item => item.outlineSlides));
   const validationSummary = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
   return {
     language, terms, pack, headings, terminology, delivery, hasAgenda: agenda.length > 0, units: list, projectDir,
     track, convertMode, source: source_, later, personasSuffix,
+    unitsPlanned: Number.isInteger(unitsPlanned) && unitsPlanned > 0 ? unitsPlanned : null, unitsInOutline: later.includes("Outline") ? null : unitsInOutline,
     filled: Object.fromEntries(["Course Context", "Outline", "Didactics", "Agenda"].map(key => [key, filled(key)])),
     agendaRequired: context.match(/Agenda required:\s*(yes|no)/i)?.[1].toLowerCase() ?? null,
     templates: readTemplates(section("Templates")),
     validation: { mode: validationSummary.match(/\bMode:\s*(\w+)/)?.[1] ?? null, result: validationSummary.match(/\bResult:\s*(PASS with concerns|PASS|FAIL)/)?.[1] ?? null },
     published: /^\s*[*-]\s+__State:__\s*published/m.test(section("Publishing"))
   };
+}
+
+// The units the outline describes: the entries of its session overview (`data-key="session-overview"`, templates/
+// course-outline.yaml) – top-level list items or table rows. The slide list of a mini outline (label "Slides",
+// any pack's `terms.outlineSlides`) is the outline of one unit. null when there is no readable overview.
+function outlineUnits(outline, slideWords) {
+  const after = outline.split(/<!--\s*data-key="session-overview"\s*-->/)[1];
+  if (after == null) return null;
+  const lines = after.split("\n");
+  const labelAt = lines.findIndex(line => line.trim());
+  const label = lines[labelAt]?.match(/^\s*[*-]\s+__(.+?):?__/)?.[1].split(/\s+–\s+/)[0].replace(/:$/, "").trim().toLowerCase();
+  if (!label) return null;
+  const slides = slideWords.filter(Boolean).map(word => word.toLowerCase());
+  if (slides.some(word => label.startsWith(word))) return 1;
+  const body = [];
+  for (const line of lines.slice(labelAt + 1)) {
+    if (/^\s*<!--/.test(line) || /^\s*[*-]\s+__/.test(line) || /^(-{3,}|#{1,6}\s)/.test(line)) break;
+    body.push(line);
+  }
+  const items = body.filter(line => /^ {0,3}(?:\d+[.)]|[-*+])\s+\S/.test(line)).length;
+  const separator = line => /^\s*\|[\s:|-]+\|\s*$/.test(line) && line.includes("-");
+  const rows = body.filter((line, index) => /^\s*\|/.test(line) && !separator(line) && !separator(body[index + 1] ?? "")).length;
+  const count = items || rows;
+  return count > 0 ? count : null;
+}
+
+// The keys (tracks.mjs → stepsOf) of the overview's course steps. The full track may drop a step (the agenda step
+// with `Agenda required: no`, the template step in older journals): when every title is a known title of the
+// empty journal (English or the course pack), each step gets the key of its title; else by position, as before.
+export function courseStepKeys(steps = [], journal = {}) {
+  const keys = stepsOf(journal.track ?? "full", journal.convertMode ?? null);
+  if ((journal.track ?? "full") !== "full" || !steps.length) return keys;
+  const lists = [englishCourseSteps(), journal.pack?.dashboard?.process?.steps].filter(list => list?.length === keys.length);
+  const norm = text => String(text ?? "").trim().toLowerCase();
+  const byTitle = steps.map(step => keys.find((key, index) => lists.some(list => norm(list[index].title) === norm(step.title))) ?? null);
+  const ordered = byTitle.every((key, index) => key && (!index || keys.indexOf(key) > keys.indexOf(byTitle[index - 1])));
+  return ordered ? byTitle : keys;
+}
+
+// The course steps of the empty journal (templates/journal.md), English; a language pack has them under `dashboard`.
+let englishSteps;
+export function englishCourseSteps() {
+  if (!englishSteps) {
+    try {
+      const template = readFileSync(resolve(here, "..", "templates", "journal.md"), "utf8");
+      englishSteps = JSON.parse(template.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]).process.steps;
+    } catch { englishSteps = []; }
+  }
+  return englishSteps;
+}
+
+// The steps of a track as the empty journal or the language pack names them: full – the empty journal's steps
+// (title, state, why); a light track – the titles of `lightStepTitles`. null without words in the course language.
+export function trackSteps(journal) {
+  const keys = stepsOf(journal.track ?? "full", journal.convertMode ?? null);
+  const english = journal.language === "en";
+  if ((journal.track ?? "full") === "full") {
+    const list = journal.pack?.dashboard?.process?.steps ?? (english ? englishCourseSteps() : null);
+    if (!list || list.length !== keys.length) return null;
+    return keys.map((key, index) => ({ key, title: list[index].title, state: list[index].state ?? "planned", ...(list[index].why ? { why: list[index].why } : {}) }));
+  }
+  const titles = journal.pack?.lightStepTitles ?? (english ? englishLightStepTitles : null);
+  if (!titles || keys.some(key => !titles[key])) return null;
+  return keys.map(key => ({ key, title: titles[key], state: "planned" }));
 }
 
 // ## Templates (templates/course-templates.yaml): the selection line before <section> (missing = open), the
@@ -204,6 +280,13 @@ function readUnits(sessions, terms) {
     item.heading = { title, anchor: anchorOf(`${n}. ${title}`) };
     item.report = readReport(part);
     item.images = readImages(part);
+    // A report that names fewer missing photos than image entries are open belongs to an older version of the
+    // material (a spot was added after the check, T5-41). Placing photos only lowers the open count.
+    if (item.report?.result) {
+      const named = photosNamed(item.report.missing);
+      item.report.stale = named != null && item.images.open > named;
+      if (item.report.stale) item.report.photosNamed = named;
+    }
     // The skeleton part (summary, decisions …) before the first #### block holds the approval record.
     item.approved = approvedWord.test(stripComments(part.split(/^#### /m)[0]));
     // "Let it be prepared" was confirmed with the planning sketch (tasks/build-session.md): a dated decision
@@ -279,6 +362,27 @@ function shortItem(text) {
   return plain.replace(/[.!?]$/, "");
 }
 
+// The photos the ⏳ items of a report count: "10 Fotos: …", "1 own photo" → their sum; null when no item names
+// pictures or one names them without a number (then the count is unknown and nothing is compared).
+const pictureWord = "fotos?|photos?|bilder|bild|images?|pictures?|abbildungen|abbildung|grafiken|grafik|graphics?|diagramme?|diagrams?|illustrations?|illustrationen|illustration|zeichnungen|zeichnung|drawings?";
+export function photosNamed(items = []) {
+  const word = new RegExp(`(^|[^\\p{L}])(${pictureWord})([^\\p{L}]|$)`, "iu");
+  const counted = new RegExp(`(\\d+)\\s+(?:[\\p{L}-]+\\s+)?(?:${pictureWord})(?![\\p{L}])`, "giu");
+  let sum = 0, any = false;
+  for (const item of items.filter(text => word.test(text))) {
+    const counts = [...item.matchAll(counted)].map(match => Number(match[1]));
+    if (!counts.length) return null;
+    sum += counts.reduce((a, b) => a + b, 0);
+    any = true;
+  }
+  return any ? sum : null;
+}
+
+// The status of a unit whose check report belongs to an older version of its material (report.stale):
+// "changed after the check – short re-check open", from the pack's words (no "passed" for the new version).
+export const recheckOpenText = terms => terms.recheckOpen
+  ?? `${terms.changedAfterCheck ?? "changed after the check"} – ${String(terms.recheckShort ?? englishTerms.recheckShort).split(" – ").at(-1)}`;
+
 // Image entries (tasks/create-image.md): <section> blocks with `#### {slug}` and `__Status:__`.
 // `waiting`: open entries of the instructor's own photos (Source own, wanted) – they wait for a file from the
 // instructor, not for the image step, so they do not hold the check back (SK41).
@@ -306,10 +410,24 @@ const fill = (term, values) => String(term).replace(/\{(\w+)\}/g, (match, key) =
 // "material written · images {n} of {m}" → "images {n} of {m}": the part that follows another state.
 const tail = term => String(term).split(" · ").slice(1).join(" · ") || String(term);
 
+// The approval state is computed from the unit's decisions, never written into the outcome line (templates/
+// session-validation.yaml → outcome_words). Older reports that still carry it ("passed – waiting for your
+// approval") lose that part here: `approvalTails` lists it in English and every pack (T5-55).
+export function approvalTails(terms, packs = loadPacks()) {
+  const tail = term => String(term ?? "").split(/\s+–\s+/).slice(1).join(" – ").trim().toLowerCase();
+  return [...new Set([terms?.approvalOpen, englishTerms.approvalOpen, ...packs.map(pack => pack.terms?.approvalOpen)].map(tail).filter(Boolean))];
+}
+export function withoutApproval(outcome, tails) {
+  const parts = String(outcome).split(/\s+–\s+/);
+  const kept = parts.filter((part, index) => !index || !tails.includes(part.replace(datedOutcome, "").trim().toLowerCase()));
+  return { text: kept.join(" – "), carried: kept.length < parts.length };
+}
+
 // The one wording of a unit's state (templates/session-skeleton.yaml → section_layout.overview): the status
 // line, the Notes cell and the overview's statusLabel all carry it. Before a check it follows from the
 // planning sketch, the material and the image entries; once a report exists, its outcome line is the
-// source (without its date), "check: " before a FAIL, open images after " – "; Done ✅ → "checked ✅".
+// source (without its date), "check: " before a FAIL, open images after " – "; Done ✅ → "passed – waiting for
+// your approval" until the approval in the decisions, then "checked ✅" (T5-55).
 export function statusText(unit, terms) {
   if (!unit.heading && !unit.material) return null;
   // "Let it be prepared" is running until its check report exists: no "material open" meanwhile (R12-SK76).
@@ -319,9 +437,13 @@ export function statusText(unit, terms) {
   const report = unit.report;
   // An older report without a visible outcome line: its wording is unknown, the status stays as written.
   if (report?.result && !report.outcome) return null;
+  if (report?.stale) return recheckOpenText(terms);
   if (!report?.outcome) return !open ? terms.materialWritten : placed ? fill(terms.imagesPartial, { n: placed, m: total }) : terms.imagesMissing;
-  if (unit.done && !report.changedSince && !open) return terms.checked;
+  // Checked (Done ✅) waits for the approval; only the approval makes it "checked" (T5-55).
+  if (unit.done && !report.changedSince && !open) return unit.approved ? terms.checked : terms.approvalOpen ?? englishTerms.approvalOpen;
+  // An older outcome line with the approval state keeps it while the approval is open, never after it.
   let outcome = report.outcome.replace(datedOutcome, "").replace(/\s+/g, " ").trim();
+  if (unit.approved) outcome = withoutApproval(outcome, approvalTails(terms)).text;
   // Approved by the instructor while something is still missing: "approved – still missing: 1 photo" (SK61).
   const passedHead = String(terms.passedMissing).split("{what}")[0];
   if (unit.approved && report.result === "PASS" && !report.changedSince && outcome.startsWith(passedHead)) {
@@ -330,7 +452,11 @@ export function statusText(unit, terms) {
   }
   const prefix = report.result === "FAIL" ? String(terms.checkCorrection).match(/^[^:{(]+:/)?.[0] : null;
   const text = prefix && !outcome.toLowerCase().startsWith(prefix.toLowerCase()) ? `${prefix} ${outcome}` : outcome;
-  const images = open ? (placed ? fill(tail(terms.imagesPartial), { n: placed, m: total }) : tail(terms.imagesMissing)) : null;
+  // An outcome that already names the missing pictures ("still missing: 9 photos") gets no "images missing"
+  // after it (T5-22); the count "images n of m" still adds how far the image step is.
+  const imageWord = String(tail(terms.imagesMissing)).split(/\s+/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const namesImages = new RegExp(`(^|[^\\p{L}])(${[imageWord, "bild", "bilder", "fotos?", "images?", "photos?", "pictures?"].filter(Boolean).join("|")})([^\\p{L}]|$)`, "iu").test(outcome);
+  const images = open ? (placed ? fill(tail(terms.imagesPartial), { n: placed, m: total }) : namesImages ? null : tail(terms.imagesMissing)) : null;
   return images ? `${text} – ${images}` : text;
 }
 

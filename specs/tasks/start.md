@@ -35,7 +35,7 @@ the instructor's first message in the session.
    first answer. An existing journal stays as it is.
 3. **Open the chat:** run `tasks/open-chat.md` steps 2–5 — `get_state`; without a connected browser `goto`
    with `file: journal.md`, which opens the instructor's default browser; connect this session (roster,
-   event subscription, `read_chat`); greet — with saved chat entries the pick-up sentence of its step 4 replaces the greeting. Wait for the browser with `get_state` for at most about 10 s; if
+   event subscription, `read_chat` without arguments); greet — with saved chat entries the pick-up sentence of its step 4 replaces the greeting. Wait for the browser with `get_state` for at most about 10 s; if
    it is still not connected, give `get_state.url` in the terminal as the link to open, and stop.
 4. **Language first:** on the empty journal, before the greeting, the switch of `data/chat-language.md` →
    Language before the frame runs with `get_state.browser_lang` (language pack first, one write) and the

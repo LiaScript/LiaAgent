@@ -34,6 +34,7 @@ template:
     unitsTitle: '(computed) from Terminology and the `## Sessions` suffix'
     unitsNote: '(computed) the one-line note under `## Sessions`, shown above the units'
     unitLabel: '(computed) {one, many} from Terminology and the `## Sessions` suffix; an inflected `many` you write (German dative after "von": "Modulen") stays while it starts with the suffix'
+    unitsPlanned: '(computed) the units the course plans (course frame `Units:`, units the outline describes), only while more than `## Sessions` lists – the progress counts them as well ("1 of 2")'
     labels: 'For German or English only `decide` and `prepare` (and, where the course has its own word for the learners, `usable.*` and `viewMaterial` — `tasks/update-dashboard.md` step 8); when the course language is neither German nor English: every fixed text of the library translated, keyed as listed in `specs/dashboard/README.md` → `labels`; counted texts as {one, many} with the placeholders listed there. Never `plan` in German or English (the planning link keeps its name)'
     units:
       - id: '(computed) Stable number from Sessions / Agenda'
@@ -53,9 +54,9 @@ template:
               next: 'Optional: what to do next'
               statusLabel: 'Optional: plain-language refinement of the state'
           note: 'Optional: loops back or special cases'
-    process.later: '(computed by `derive-dashboard.mjs`) Optional list of {label, href: "agent:teaching/activate-section?section={slug}", command: ":activate-section {slug}"}, one per section marked `<!-- state: later -->` in `journal.md` except Analysis Status (`tracks.mjs` → `laterHidden`: stays marked, never offered); shown collapsed as "When needed", not counted as steps. The steps per track (full, mini, convert, template) are listed in `specs/dashboard/tracks.mjs` → `stepsOf`; `validate-journal.mjs` checks that this list matches the markers.'
+    process.later: '(computed by `derive-dashboard.mjs`) Optional list of {label, href: "agent:teaching/activate-section?section={slug}", command: ":activate-section {slug}"}, one per section marked `<!-- state: later -->` in `journal.md` except Analysis Status (`tracks.mjs` → `laterHidden`: stays marked, never offered); shown collapsed as one line from the library text `laterSummary` ("If needed – not required for your course ({n})"), not counted as steps. The steps per track (full, mini, convert, template) are listed in `specs/dashboard/tracks.mjs` → `stepsOf`; `validate-journal.mjs` checks that this list matches the markers.'
     selected: '(computed while next is a unit action; "" keeps the whole-course view) Optional: id of the recommended unit; empty string "" opens the whole-course view'
-    process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`)'
+    process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`). After a track switch `derive-dashboard.mjs` replaces steps of another track with the steps of the new one from the language pack and computes their states ("Track changed: …") – then write only `note`, `subtitle` and a why/result of your own'
     next:
       icon: 'Action symbol as in Markdown labels (`▶️` run, `✏️` revise, `🔍` check, `👁` preview, `🚀` publish only, agent icon for a switch); default `▶️`'
       title: 'What we do next'
@@ -64,10 +65,11 @@ template:
       href: 'Allowed `agent:` link or section anchor'
       command: 'Readable command; required for `agent:` links'
       running: '(computed) true while "let it be prepared" runs – the view shows the state without a button'
+      decide: '(computed) true when the next step is a decision the instructor says in the chat (Delivery open → "settle access"): no command, href is the course frame anchor, the view shows label and why without a button'
     decisions: 'Open points: list of {key, kind: decide|prepare|internal, title, why?, how (required unless internal), href?, command?, label?, icon?, source?}; `source: {check: n, date?}` marks a point that comes from the check of unit n (its `href` then links that report heading, `validate-journal.mjs` checks both); `label` is required when `href` is set and names the destination (e.g. "See outline"), never the question; a section anchor (`#…`) is shown as a plain text link, only an `agent:` link becomes a button'
     plan: 'Provisional planning {title?, note, rows: [{label, text}]} — only while no agenda exists'
     explore: 'Optional action cards with icon/title/description/label/href/command; optional actions use ➕ or their agent''s icon, never the icon of `next` (`validate-journal.mjs` checks it)'
-    links: '(computed anchors and labels of the listed sections) Section links with label/href (full heading slug)'
+    links: '(computed anchors and labels of the listed sections) Section links with label/href (full heading slug); a section marked when needed is left out (it waits under process.later)'
     footer: 'Computed: "As of {date}" from the pack'
   sections:
     - id: dashboard

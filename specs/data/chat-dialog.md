@@ -27,7 +27,7 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   so the status below does not read "not saved yet"; a second question comes as its own message. After a
   check the ✅ message carries the outcome and the line "usable with learners now" as two paragraphs (a blank
   line between — a single line break becomes a space) and links the report; details follow after the
-  overview update. The message (preview chat only) ends with `<!-- saved: {what} -->` as its last line, after all of this ({what} = section(s) or file(s), e.g. `<!-- saved: Course Context, Outline -->`; never in a message without a save; `data/chat-memory.md` reads it).
+  overview update. The message (preview chat only) ends with `<!--- saved: {what} --->` as its last line, after all of this ({what} = section(s) or file(s), e.g. `<!--- saved: Course Context, Outline --->`; never in a message without a save; `data/chat-memory.md` reads it). A status mid-save names nothing as saved ("I am in the middle of saving"); only the ✅ message reports it, with the marker. A later message that reports overview changes (new or removed open points) ends with `<!--- saved: Dashboard --->` too.
 - **An agreement is noted in the same turn:** when the instructor agrees to do something before the material is
   used (look at a page on the device, bring a photo, fix older units next time) — also in a farewell — write it as
   a `prepare` item in their words (`tasks/update-dashboard.md` step 6) with that turn's overview write, or say that it
@@ -49,7 +49,8 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
   - **One write per changed section:** `read_section` + `write_section` (hash-checked, layout kept), or all
     line changes of one save in one map for `node specs/dashboard/localize-journal.mjs <map.json> [<file>]` —
     an all-or-nothing line replacer: a pair may replace a block of consecutive lines that occurs once, and
-    `"append"` adds lines at the end of the file. A few lines in a foreign section go into the same map as
+    `"append"` adds lines at the end of the file, `{"removeBlock": "<heading line>"}` removes a whole entry
+    (map format: `localize-journal.mjs --help`, never its source). A few lines in a foreign section go into the same map as
     the own section's lines, never a rewrite of the whole foreign section. Material files alike: one map or
     the whole file once — never one edit per line (every write reloads the preview and resets the
     instructor's quiz answers).
@@ -61,16 +62,28 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
 
 - **Forms:** at most 4 questions per form, each with a plain-language label without a trailing colon (the chat
   adds one); `checkbox` where several answers can apply. `buttons` submits at once only when it is the only
-  question (e.g. "Save"/"Change"); never promise "one question at a time" when you send several.
+  question (e.g. "Save"/"Change"); never promise "one question at a time" when you send several. Never offer
+  back what the instructor just ruled out: a counter-proposal is one option ("my suggestion") next to her
+  choice. Options name places in her words ("the rule about pictures in your plan"), never section names.
+- **Saved state from the journal, not from memory:** before describing what the journal or the overview says,
+  look it up (`find.mjs`). Never call the overview's next step unnecessary while it stays shown: change it in
+  the same save, or say plainly why the overview shows it. **A to-do answer** ("what do I still have to do?")
+  lists the overview's `decide` and `prepare` points in its words; anything from elsewhere (a report
+  recommendation, the chat) names its place and is offered as an overview point (agreement rule, §1). A count
+  in the lead counts every listed item; optional things follow without a number. Describe a coming task's
+  order only after reading its task file.
 - **Long proposals:** a proposal longer than about 1500 characters (about 20 lines) — also the whole version
   after a change — goes out as 2–3 messages (content · distribution and time · open points); the form comes
-  as a separate last message. If it ends up more than a screen above after a side question, post it again.
+  as a separate last message. After a side question answer it and end with exactly one line "The choice above
+  still stands ↑" (translated; never "I'm waiting for the form") — never post an unchanged form again; a new form only when its content changes or
+  after a restart.
 - **Superseded forms:** when you post a revised proposal or a form that replaces an open one, close the old
   one with `chat` `close: true` and a `reason` ("Replaced – new form below ↓", translated; German „Ersetzt –
   neues Formular unten ↓“). An `answer` event to an older `ask` than your latest is not acted on; ask for an
   answer in the new form.
 - **Tables in the chat:** at most 3 columns with short cells (about 25 characters), otherwise a list; no column
-  of bare numbers ("1 · Title" in the first cell), no attribute comments. Long tables go to the journal; after
+  of bare numbers in any column ("1 · Title", "goal 4" — LiaScript offers a number column as a chart), no
+  attribute comments. Long tables go to the journal; after
   saving, link the section instead of repeating the table.
 - **Preview before writing:** quizzes, surveys and other interactive parts are shown in the chat as LiaScript
   first, so the instructor can try them. A message with read-aloud markup (`{{|>}}`, `{|>}{…}`, `--{{n}}--`)

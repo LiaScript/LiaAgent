@@ -52,7 +52,7 @@ template:
           3. Pacing: [scheduled | learner-driven | event-based | n/a]
           4. Assessment defaults: [one or more of quizzes, self-check quizzes, reflection, group work, assignments — or none; may be marked optional]
           5. Units: [count × length, if known — e.g. 3 × 45 min; read by `:create-agenda` and the duration check]
-          6. Delivery: [link | platform | print | local] — how learners open the material (the summary row "open the material"); link or platform makes publishing a required step of the overview (computed)
+          6. Delivery: [link | platform | print | local | open] — how learners open the material (the summary row "open the material", e.g. "Zugang"); link or platform makes publishing a required step of the overview (computed); open = not decided yet (shown as "still open", German "noch offen"): publishing stays required, its step says "access still open" and after the check the next step is to settle the access (no command – the instructor says it in the chat). The summary row and this value say the same (validate-journal.mjs warns otherwise)
 
     - id: file-structure
       title: File Structure

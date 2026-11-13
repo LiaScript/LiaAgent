@@ -11,6 +11,8 @@ import { stepsOf } from "./tracks.mjs";
 export const englishActions = {
   "init-course": { title: "Set the frame", label: "Start course", why: "Topic, target group and format are the basis for learning objectives and material." },
   "create-outline": { title: "Outline and learning objectives", label: "Create outline", why: "Clear learning objectives say what the learners can do at the end." },
+  // The course frame plans more units than the outline describes (T5-67): the same command, its own words.
+  "complete-outline": { title: "Outline and learning objectives", label: "Complete the outline", why: "Learning objectives and a slide plan are still missing for {unit} {k}. We settle them first – then the assistant knows what to write." },
   "create-didactics": { title: "Didactics", label: "Create didactics", why: "Methods, activity types and support that fit the objectives and the learners." },
   "suggest-templates": { title: "Templates for activities", label: "Suggest templates", why: "Ready-made building blocks for the activities – or the decision that none is needed." },
   "develop-template": { title: "Templates for activities", label: "Develop the building block {id}", why: "A building block of your own for an activity that no ready-made one covers." },
@@ -30,6 +32,8 @@ export const englishActions = {
   "view-unit": { label: "How learners see it", why: "The checked material as the learners see it." },
   "check-course": { title: "Check and revise", label: "Check the course", why: "The course check comes before publishing." },
   publish: { title: "Publish", label: "Publish course", why: "The checked course gets a link to share." },
+  // Delivery open (T5-54): a decision of the instructor, no command – said in the chat once it is known.
+  "decide-access": { title: "Publish", label: "Settle access", why: "How the learners open the course is still open. Tell me in the chat as soon as you know – then publishing follows." },
   // The light tracks (mini course, conversion, building block).
   "write-mini-course": { title: "Write the material", label: "Write the course", why: "The short course is written in one go from the frame, without outline and didactics." },
   "convert-course": { title: "Write the material", label: "Start converting", why: "The existing material is carried over into a LiaScript course." },
@@ -54,7 +58,6 @@ export const englishActions = {
 };
 
 // The global process steps of templates/journal.md, by position: the title of `next` for a course action.
-const courseStep = { "init-course": 0, "create-outline": 1, "create-didactics": 2, "suggest-templates": 3, "develop-template": 3, "adopt-template": 3, "create-agenda": 4, "check-course": 6, publish: 7 };
 const agentIcons = { artist: "🎨", learner: "🧑‍🎓", development: "🛠️" };
 
 // An action: the agent: link, the readable command (Dashboard) and the command as inline code (action line).
@@ -71,11 +74,20 @@ export function action(key, agent, cmd, params = {}, icon) {
   };
 }
 
+// Settling the access (Delivery: open, T5-54): a step of the instructor without a command. Its href is the
+// course frame (the overview needs a link target), the view shows it without a button (`next.decide`).
+export function decideAccess(journal) {
+  const anchor = journal.headings?.find(heading => heading.key === "Course Context")?.anchor ?? "#course-context";
+  return { key: "decide-access", agent: null, cmd: null, params: {}, icon: "🔑", href: anchor, command: undefined, code: "", also: [], decide: true };
+}
+// After the passed course check: publishing, or settling the access first while it is open.
+const publishOrDecide = journal => journal.delivery === "open" ? decideAccess(journal) : action("publish", "development", "create-project", {}, "🚀");
+
 // Approved by the instructor, passed, nothing changed since – and only own photos still to come (SK55): the
 // unit no longer holds the course back; its photo stays a card ("insert images") until it arrives.
 export function awaitsOwnMedia(unit) {
   const waiting = unit.images?.waiting ?? 0;
-  return Boolean(unit.approved && unit.material && unit.report?.result === "PASS" && !unit.report.changedSince
+  return Boolean(unit.approved && unit.material && unit.report?.result === "PASS" && !unit.report.changedSince && !unit.report.stale
     && waiting > 0 && unit.images.open === waiting);
 }
 
@@ -95,6 +107,8 @@ export function unitAction(unit) {
   // back to the same run, never to the joint way (SK58).
   if (unit.buildRequested && !report?.result) return action("build-running", "teaching", "build-session", { number: n }, "⏳");
   if (!unit.material) return { ...action("work-out", "teaching", "coauthor-materials", { number: n }), also: [`agent:teaching/build-session?number=${n}`] };
+  // A report of an older version of the material (a spot added after the check, T5-41): the re-check first.
+  if (report?.result && report.stale) return action("recheck-unit", "teaching", "validate-course", { number: n }, "🔍");
   // Before a check, and after changes since one: the open images first, then the (re-)check.
   if (!report?.result || report.changedSince) {
     if (imagesOpen) return action("insert-images", "artist", "create-image", { number: n });
@@ -128,6 +142,8 @@ export function courseNext(journal, states, selected) {
   if (journal.track === "template") return templateNext(journal);
   if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");
   if (!journal.filled.Outline) return action("create-outline", "teaching", "create-outline");
+  // More units planned (Course Profile → Units) than the outline describes, e.g. after a mini → full switch (T5-67).
+  if (outlineShort(journal)) return { ...action("complete-outline", "teaching", "create-outline"), values: { N: journal.unitsPlanned, m: journal.unitsInOutline, k: missingUnits(journal) } };
   if (!journal.filled.Didactics) return action("create-didactics", "teaching", "create-didactics");
   // The unit being worked on: the recommended one (also before its planning sketch) while it is not done,
   // else the first begun unit that is not done. Begun = it has its planning sketch; existing material without
@@ -159,9 +175,14 @@ export function courseNext(journal, states, selected) {
     return { ...action("insert-images", "artist", "create-image", { number: waitingMedia[0].n }), courseKey: "check-course" };
   }
   if (journal.units.length && !(journal.validation.mode === "course" && journal.validation.result === "PASS")) return action("check-course", "teaching", "validate-course", {}, "🔍");
-  if (journal.validation.mode === "course" && journal.validation.result === "PASS" && !journal.published) return action("publish", "development", "create-project", {}, "🚀");
+  if (journal.validation.mode === "course" && journal.validation.result === "PASS" && !journal.published) return publishOrDecide(journal);
   return null;
 }
+
+// The course frame plans more units than the outline describes; false where either count is not readable.
+// The units the outline does not describe yet: "2", or "2–4" (T5-89).
+const missingUnits = journal => journal.unitsInOutline + 1 === journal.unitsPlanned ? String(journal.unitsPlanned) : `${journal.unitsInOutline + 1}–${journal.unitsPlanned}`;
+export const outlineShort = journal => journal.unitsPlanned != null && journal.unitsInOutline != null && journal.unitsPlanned > journal.unitsInOutline;
 
 // The light tracks. mini and convert: frame, (outline), the one unit, publish only where the delivery needs a link.
 function lightNext(journal, states) {
@@ -170,11 +191,27 @@ function lightNext(journal, states) {
   if (!journal.filled.Outline && (mini || journal.convertMode === "rebuild")) return action("create-outline", "teaching", "create-outline");
   const unit = journal.units.find(item => item.n === "1");
   if (!unit?.material) return mini ? action("write-mini-course", "teaching", "create-mini-course") : action("convert-course", "teaching", "convert-course");
-  if (states.get("1") !== "done" && !awaitsOwnMedia(unit)) return unitAction(unit);
+  if (states.get("1") !== "done" && !awaitsOwnMedia(unit)) return lightUnitAction(unit);
   // Publishing needs a passed course check, as on the full track; the unit check refreshes it (one unit, one run).
-  if (!(journal.validation?.mode === "course" && journal.validation?.result === "PASS")) return action("check-course", "teaching", "validate-course", {}, "🔍");
-  if (["link", "platform"].includes(journal.delivery) && !journal.published) return action("publish", "development", "create-project", {}, "🚀");
+  // With exactly one unit, that unit checked, approved and unchanged since (state done) is the course check –
+  // a course summary that still says FAIL does not hold publishing back (T5-53).
+  if (!unitIsCourseCheck(journal, states) && !(journal.validation?.mode === "course" && journal.validation?.result === "PASS")) return action("check-course", "teaching", "validate-course", {}, "🔍");
+  if (["link", "platform", "open"].includes(journal.delivery) && !journal.published) return publishOrDecide(journal);
   return null;
+}
+
+// A light track with exactly one unit: its check, once passed, approved and unchanged since, is the course check.
+export function unitIsCourseCheck(journal, states) {
+  return ["mini", "convert"].includes(journal.track) && journal.units.length === 1 && journal.units[0].n === "1" && states.get("1") === "done";
+}
+
+// On a light track unit 1 is the course: an action that writes the material (or inserts images before a
+// check) advances the course step "material", any other one – the check, its images, the approval – "check" (T5-21).
+function lightUnitAction(unit) {
+  const next = unitAction(unit);
+  if (!next) return next;
+  const material = ["plan-unit", "work-out", "build-running"].includes(next.key) || (next.key === "insert-images" && !unit.report?.result);
+  return material ? next : { ...next, courseKey: "check-course" };
 }
 
 // The building-block track: request and brief, build with the instructor, publish.
@@ -209,7 +246,7 @@ export function wordsOf(expected, journal, values) {
   const words = journal.pack?.actions?.[expected.key] ?? (journal.language === "en" ? englishActions[expected.key] : null);
   if (!words) return null;
   // {n} without a value: the unit of the action itself (an action line of ## Sessions, SK54).
-  const own = { n: expected.params?.number ?? expected.params?.file };
+  const own = { n: expected.params?.number ?? expected.params?.file, ...(expected.values ?? {}) };
   const fill = text => text == null ? text : String(text).replace(/\{(\w+)\}/g, (match, name) => values[name] ?? own[name] ?? match);
   return { title: fill(words.title), label: fill(words.label), why: fill(words.why) };
 }
@@ -226,31 +263,36 @@ export function unitStepOf(expected, steps = []) {
 }
 
 // The step key (tracks.mjs) of a course action, by track; null for actions without a course step of their own.
-const stepKeys = { "init-course": "frame", "create-outline": "outline", "create-didactics": "didactics", "suggest-templates": "blocks", "adopt-template": "blocks",
-  "develop-template": "blocks", "create-agenda": "agenda", "check-course": "check", publish: "publish", "publish-template": "publish",
+const stepKeys = { "init-course": "frame", "create-outline": "outline", "complete-outline": "outline", "create-didactics": "didactics", "suggest-templates": "blocks", "adopt-template": "blocks",
+  "develop-template": "blocks", "create-agenda": "agenda", "check-course": "check", publish: "publish", "decide-access": "publish", "publish-template": "publish",
   "start-template": "brief", "write-mini-course": "material", "convert-course": "material" };
 
-// The course step an action advances: its own one, or for a unit action the material step.
-export function courseStepOf(expected, steps = [], { track = "full", convertMode = null } = {}) {
+// The course step an action advances: its own one, or for a unit action the material step. `keys`: the step key of
+// each shown step (journal-model.mjs → courseStepKeys); without it, by position in the track's list.
+export function courseStepOf(expected, steps = [], { track = "full", convertMode = null, keys = null } = {}) {
   const key = expected.courseKey ?? expected.key;
   if (track === "full" || !track) {
-    if (key in courseStep) return steps[courseStep[key]] ?? null;
-    return expected.params.number != null || expected.params.file != null ? steps.find(item => /materi/i.test(item.title)) ?? steps[5] ?? null : null;
+    const list = keys ?? stepsOf("full");
+    if (key in stepKeys && list.includes(stepKeys[key])) return steps[list.indexOf(stepKeys[key])] ?? null;
+    if (key in stepKeys) return null;
+    return expected.params.number != null || expected.params.file != null ? steps.find(item => /materi/i.test(item.title)) ?? steps[list.indexOf("material")] ?? null : null;
   }
   const list = stepsOf(track, convertMode);
   let stepKey = key === "init-course" && track === "template" ? "brief" : key === "develop-template" && track === "template" ? "build" : stepKeys[key];
   if (!stepKey && (expected.params.number != null || expected.params.file != null)) stepKey = "material";
+  // The mini track writes its short outline within the frame step.
+  if (stepKey === "outline" && !list.includes("outline")) stepKey = "frame";
   const index = stepKey ? list.indexOf(stepKey) : -1;
   return index >= 0 ? steps[index] ?? null : null;
 }
 
 // The title of `next`: the step it advances, as the process panel shows it (Rules → "next names one step").
-export function nextTitle(expected, data, unitWord, { track = "full", convertMode = null } = {}) {
+export function nextTitle(expected, data, unitWord, { track = "full", convertMode = null, keys = null } = {}) {
   if (track && track !== "full" && expected.params.number == null && expected.params.file == null) {
     const light = courseStepOf(expected, data.process?.steps ?? [], { track, convertMode });
     return light?.title ?? null;
   }
-  if (expected.key in courseStep) return data.process?.steps?.[courseStep[expected.key]]?.title ?? null;
+  if (expected.key in stepKeys) return courseStepOf(expected, data.process?.steps ?? [], { track: "full", keys })?.title ?? null;
   const n = expected.params.number ?? expected.params.file;
   const step = unitStepOf(expected, data.units?.find(unit => String(unit.id) === String(n))?.process?.steps ?? []);
   return step ? `${step.title} – ${unitWord} ${n}` : null;

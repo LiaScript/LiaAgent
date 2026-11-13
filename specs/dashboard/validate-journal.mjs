@@ -6,8 +6,10 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
-import { readJournal, loadPacks } from "./journal-model.mjs";
-import { trackIds, sectionSlug, stepsOf, laterHidden } from "./tracks.mjs";
+import { readJournal, loadPacks, recheckOpenText, approvalTails, withoutApproval } from "./journal-model.mjs";
+import { unitState } from "./derive-dashboard.mjs";
+import { unitIsCourseCheck, outlineShort, englishActions } from "./actions.mjs";
+import { trackIds, sectionSlug, stepsOf, laterHidden, laterOf } from "./tracks.mjs";
 import { unencodedUrls, describeUrl, analyseMaterial } from "./check-material.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -189,7 +191,51 @@ function findHints() {
     hints.push({ key: "preparation", kind: "prepare", text: "A section records a preparation task for the instructor" });
   }
   hints.push(...templateFindings.hints);
+  hints.push(...reportActionHints());
   return hints;
+}
+
+// Recommended actions of a unit's check report (T5-104): open ones need an open point of that check, `prepare`
+// when the instructor does it (look at it on the device, try it with a learner, provide something), `internal`
+// when the assistant does it. The script cannot tell the two apart, so it asks once per unit and the agent decides.
+// Label: "Recommended Actions" (templates/session-validation.yaml) or the pack's terms.recommendedActions.
+const actionLabels = ["Recommended Actions", ...packs.map(pack => pack.terms?.recommendedActions)].filter(Boolean)
+  .map(label => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+const actionLabel = new RegExp(`^\\s*(\\*\\*|__)(?:${actionLabels.join("|")})(?![\\p{L}])[^*_\\n]*\\1\\s*:?\\s*$`, "iu");
+const actionDone = /^(?:\*\*)?(?:✅|☑️?|✔️?|(?:erledigt|umgesetzt|behoben|done|resolved|fixed)(?![\p{L}]))/iu;
+const actionStillOpen = /noch offen|still open|(?<![\p{L}])(?:offen|open)\s*:/iu;
+const actionNone = /^(?:[—–-]+|keine?|nichts|none|nothing|n\/a)\.?$/iu;
+function openReportActions(body) {
+  const lines = body.split("\n");
+  const start = lines.findIndex(line => actionLabel.test(line));
+  if (start < 0) return [];
+  const items = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!line.trim()) continue;
+    const item = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (item) items.push(item[1].trim());
+    else if (items.length && /^\s{2,}\S/.test(line)) items[items.length - 1] += ` ${line.trim()}`;
+    else break;
+  }
+  return items.filter(text => !actionNone.test(text) && (!actionDone.test(text) || actionStillOpen.test(text)));
+}
+function reportActionHints() {
+  const text = section("Sessions");
+  const lines = text.split("\n");
+  const unitIds = new Set(model.units.map(unit => String(unit.id)));
+  const covered = new Set(model.decisions.filter(item => item.source).map(item => String(item.source.check)));
+  const found = new Map();
+  for (const report of reportHeadings(text)) {
+    if (!report.unit || !unitIds.has(report.unit) || covered.has(report.unit)) continue;
+    const end = lines.findIndex((line, index) => index > report.index && /^#{1,4} /.test(line));
+    const actions = openReportActions(lines.slice(report.index + 1, end < 0 ? undefined : end).join("\n"));
+    if (actions.length) found.set(report.unit, [...(found.get(report.unit) ?? []), ...actions]);
+  }
+  return [...found].map(([n, actions]) => ({
+    key: "report-action", check: n,
+    text: `the check report of unit ${n} recommends ${actions.length} action${actions.length === 1 ? "" : "s"} ("${short(actions[0], 70)}") but no open point has source {"check": ${n}} – add a prepare item with source {"check": ${n}} and a link to its report heading if the instructor does it (look at it on the device, try it with a learner, provide something; how in the report's words), or an internal item with source {"check": ${n}} if the assistant does it; an open point that already names it only gets the source (tasks/update-dashboard.md step 6)`,
+    missing: `hint "report-action" (unit ${n}) is missing in decisions – add a prepare or an internal item with source {"check": ${n}}, or set that source on the point that already names it (see Hints)`
+  }));
 }
 
 const internalWords = language === "de"
@@ -216,6 +262,8 @@ if (shownTexts.states.length) console.log(`States (as shown): ${shownTexts.state
 if (shownTexts.usable.length) console.log(`Usable (as shown): ${shownTexts.usable.map(item => `${item.id} "${item.text}"`).join(" · ")}`);
 
 const problems = [...templateFindings.problems];
+// Warnings found before the main warning list is built (it is declared further down).
+const earlyWarnings = [];
 if (!String(model.title ?? "").trim()) problems.push("Dashboard has no title – write the course title (or \"New course\", translated) into title; without it the page shows an empty heading");
 const hints = findHints();
 if (hints.length) {
@@ -231,15 +279,17 @@ if (prepSentences.length) {
   console.log("Preparations named in the course frame (each needs an open point or an internal note why not):");
   prepSentences.forEach(text => console.log(`- "${text.length > 90 ? `${text.slice(0, 89)}…` : text}"`));
   const linked = model.decisions.filter(item => ["prepare", "decide"].includes(item.kind) && /^#course-context|^#kursrahmen/i.test(String(item.href ?? "")) || (item.kind === "internal" && /course-context|kursrahmen/i.test(String(item.href ?? ""))));
-  if (!linked.length) warnings.push(`the course frame names ${prepSentences.length} preparation(s) ("${prepSentences[0].slice(0, 60)}…"), but no open point links ## Course Context – add a prepare item with a link to the course frame for each (tasks/update-dashboard.md step 6)`);
+  if (!linked.length) earlyWarnings.push(`the course frame names ${prepSentences.length} preparation(s) ("${prepSentences[0].slice(0, 60)}…"), but no open point links ## Course Context – add a prepare item with a link to the course frame for each (tasks/update-dashboard.md step 6)`);
 }
 const keyList = model.decisions.map(item => item.key).filter(Boolean);
 keyList.filter((key, index) => keyList.indexOf(key) !== index).forEach(key =>
   problems.push(`key "${key}" is duplicated – give every item its own key, e.g. "${key}-topic"`));
-const covered = hint => [hint.key, ...aliases[hint.key]].some(name =>
+// A report-action hint is only raised while no open point of its check exists (reportActionHints).
+const covered = hint => hint.check == null && [hint.key, ...aliases[hint.key]].some(name =>
   keyList.some(key => key === name || key.startsWith(`${name}-`)));
+// A report action without an open point is a warning, not an error: older courses keep such points without a source.
 hints.filter(hint => !covered(hint)).forEach(hint =>
-  problems.push(`hint "${hint.key}" is missing in decisions (add an item with key: "${hint.key}" or resolve it in the source section)`));
+  (hint.check != null ? earlyWarnings : problems).push(hint.missing ?? `hint "${hint.key}" is missing in decisions (add an item with key: "${hint.key}" or resolve it in the source section)`));
 model.decisions.filter(item => item.kind !== "internal").forEach(item => {
   if (!item.how) problems.push(`"${item.title}": field how is missing`);
   if (/^(Vor dem Einsatz vorbereiten|Vorbereitung|Noch zu entscheiden|Entscheidung|Prepare before use|Preparation|To decide|Decision)\s*:/i.test(item.title)) problems.push(`"${item.title}": title repeats the group name`);
@@ -458,7 +508,7 @@ const staleNote = notes.find(line => /after the didactics|nach der Didaktik/i.te
   || packTails.some(tail => line.replace(/[_\s]+/g, " ").toLowerCase().includes(tail)));
 if (agendaRows && staleNote) problems.push(`## Sessions still shows the empty-state note "${staleNote.trim().slice(0, 80)}" although ## Agenda plans ${agendaRows} units – the note says instead that the units are planned in the agenda and are created one after another, starting with the first`);
 // Warnings: likely contradictions the instructor reads, printed without changing the exit code.
-const warnings = [...stepsWarnings];
+const warnings = [...stepsWarnings, ...earlyWarnings];
 // Stage 1 offers only the full and the mini track: convert and template wait for their entry command.
 {
   const track = section("Course Context").match(/^\s*\d+\.\s*Track:\s*(convert|template)\b/m)?.[1];
@@ -658,6 +708,8 @@ const datedLine = /^\s*[-*]\s+(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}
 // Units whose report outcome itself uses outdated words: status line, statusLabel and Notes cell copy it
 // (write-dashboard.mjs), so one warning at the report says it all.
 const staleReports = new Map();
+// Reports of an older version of the material (T5-41): fewer photos named than image entries are open.
+const outdated = new Map(readJournal(source, { packs: loadPacks() }).units.filter(item => item.report?.stale).map(item => [item.n, item]));
 for (const report of reports) {
   const rest = sessionLines.slice(report.index + 1);
   const end = rest.findIndex(line => /^#{1,4}\s/.test(line));
@@ -675,7 +727,10 @@ for (const report of reports) {
   // and its "{n} … changed since"; a unit with Done ✅ shows "checked ✅" instead.
   const bare = outcome.replace(/^\s*\*\*[^*\n]+:\*\*\s*/, "");
   const dated = bare.search(/\s*\((?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\/\d{1,2}\/\d{4})\)/);
-  const word = (dated >= 0 ? bare.slice(0, dated) : changed ? bare.slice(0, bare.indexOf(changed[1])).replace(/[\s–-]+$/, "") : bare).trim();
+  // The approval state is computed from the unit's decisions, never written into the outcome line (T5-55).
+  const approval = withoutApproval(dated >= 0 ? bare.slice(0, dated) : bare, approvalTails(terms, packs));
+  if (approval.carried) warnings.push(`unit ${report.unit || "?"}: the outcome line carries the approval state – the overview computes it; remove it in the next write (templates/session-validation.yaml → outcome_words)`);
+  const word = withoutApproval((dated >= 0 ? bare.slice(0, dated) : changed ? bare.slice(0, bare.indexOf(changed[1])).replace(/[\s–-]+$/, "") : bare).trim(), approvalTails(terms, packs)).text;
   const unit = model.units.find(item => String(item.id) === report.unit);
   // Usable with learners now (R11-S1): the report's second bold line; the unit's `usable` (first line of
   // its card) carries the same answer.
@@ -684,6 +739,12 @@ for (const report of reports) {
   if (!reported) warnings.push(`unit ${report.unit || "?"}: the check report has no line "usable with learners now" right below its outcome (or its value is none of ${[terms.usableYes, terms.usableLimited, terms.usableNo].map(term => `"${term}"`).join(", ")}) – the line is mandatory (templates/session-validation.yaml → outcome_words)`);
   if (unit && !unit.usable) warnings.push(`unit ${report.unit} has a check report but no usable – write units[${report.unit}].usable {"state": ${reported ? `"${reported}"` : "yes|limited|no"}${reported && reported !== "yes" ? ', "missing": [what is still missing]' : ""}} from the report's line "${short(usableLine || "usable with learners now", 70)}"; it is the first line of the unit's card`);
   else if (unit && reported && unit.usable.state !== reported) warnings.push(`unit ${report.unit}: usable is "${unit.usable.state}", but the report says "${short(usableLine, 70)}" (${reported}) – usable follows the report`);
+  // A report of an older version: the status says "re-check open", not the old outcome (T5-41).
+  const older = outdated.get(report.unit);
+  if (older) {
+    warnings.push(`unit ${report.unit}: the check report names ${older.report.photosNamed} photo${older.report.photosNamed === 1 ? "" : "s"} still missing, but ${older.images.open} image entries are open – the material changed after the check, the report belongs to the older version: run \`:validate-course ${report.unit}\` (until then the unit shows "${recheckOpenText(terms)}")`);
+    continue;
+  }
   // Outdated wording (R11-D1): recommend the current terms, never the report's old words.
   const staleOutcome = outdatedIn(bare);
   if (staleOutcome.length) {
@@ -761,6 +822,69 @@ for (const [where, text] of countTexts) {
       const lists = named ? `"${named.title}" lists ${named.count}` : fromCheck ? `${fromCheckCount} open point${fromCheckCount === 1 ? " comes" : "s come"} from a check (source)` : `the groups list ${groupCounts.filter(group => group.count).map(group => `"${group.title}" ${group.count}${group.fromCheck ? ` (${group.fromCheck} ${shownTexts.fromCheck})` : ""}`).join(", ") || "no open points"}`;
       warnings.push(`${where} says "${found[0]}", but ${lists} – name the points by their titles, or count the same set the group shows`);
     }
+  }
+}
+// Light track, one unit (T5-53): its check, approved and unchanged since, is the course check – a course summary
+// that still says FAIL is outdated.
+{
+  const journal = readJournal(source, { packs: loadPacks() });
+  const states = new Map(journal.units.map(unit => [unit.n, unitState(unit).state]));
+  const lightCheckDone = unitIsCourseCheck(journal, states) && journal.validation.mode === "course" && journal.validation.result === "FAIL";
+  if (lightCheckDone) {
+    warnings.push("light track: course summary FAIL, but unit 1 is checked and approved – refresh the summary in the approval write (tasks/validate-course.md → One unit, one run)");
+  }
+  // On every track (T5-68): the course summary says a unit waits for the approval that its decisions record.
+  const summaryPart = section("Validation").split(/^### Latest Validation Summary[^\n]*\n/m)[1]?.split(/^#{1,3} /m)[0] ?? "";
+  const summaryVisible = summaryPart.replace(/<!--[\s\S]*?-->/g, "").replace(/<details>[\s\S]*?<\/details>/g, "");
+  const waitsForApproval = /\b(?:wartet|warten)\s+(?:noch\s+)?auf\s+(?:Ihre\s+|deine\s+|eure\s+|die\s+)?Freigabe|\b(?:is\s+|are\s+)?waiting\s+for\s+(?:your\s+|the\s+)?approval/i;
+  const unitWords = [...new Set([journal.terminology, journal.pack?.unitWord?.one, "unit"].filter(Boolean))].map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const unitRef = new RegExp(`(?<![\\p{L}])(${unitWords.join("|")})\\s+(\\d+)`, "giu");
+  if (journal.validation.mode === "course" && !lightCheckDone) {
+    const said = new Map();
+    for (const line of summaryVisible.split(/\n|(?<=[.!?])\s+/).filter(line => waitsForApproval.test(line))) {
+      for (const match of line.matchAll(unitRef)) if (!said.has(match[2])) said.set(match[2], match[0]);
+    }
+    for (const [n, text] of said) {
+      if (journal.units.find(unit => unit.n === n)?.approved) warnings.push(`course summary says ${text} waits for the approval, but unit ${n} is approved (its decisions) – rewrite outcome and recommended actions of ### Latest Validation Summary (tasks/validate-course.md)`);
+    }
+  }
+  // T5-88: a unit approved in its decisions – and not changed since its check ("… point(s) changed since") – that the
+  // overview asks to approve again: an open point with the key approve-unit-{n} / approve-waiting-{n}, or one that
+  // links the unit (preview?file={n}, or "{unit} {n}" in its title) and holds the approval verb, or a step `next` of
+  // the unit with that verb. The verb is the last word of the packs' approve-unit button ("approve", "freigeben"):
+  // the infinitive asks for the approval; "approved", "freigegeben" only state it.
+  const approveWords = [...new Set([englishActions["approve-unit"], ...loadPacks().map(pack => pack.actions?.["approve-unit"])]
+    .map(words => String(words?.label ?? "").trim().split(/\s+/).at(-1).toLowerCase()).filter(Boolean))].map(word => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const asksApproval = text => new RegExp(`(?<!\\p{L})(?:${approveWords.join("|")})(?!\\p{L})`, "iu").test(String(text ?? ""));
+  const overview = JSON.parse(match[1]);
+  for (const unit of journal.units.filter(item => item.approved && item.material && !item.report?.changedSince)) {
+    const n = unit.n;
+    const names = new RegExp(`(?<![\\p{L}])(?:${unitWords.join("|")})\\s+${n}(?!\\d)`, "iu");
+    const asks = (overview.decisions ?? []).filter(item => new RegExp(`^approve-(?:unit|waiting)-${n}(?!\\d)`).test(String(item?.key ?? ""))
+      || ((asksApproval(item?.title) || asksApproval(item?.label)) && (new RegExp(`[?&]file=${n}(?:&|$)`).test(String(item?.href ?? "")) || names.test(String(item?.title ?? "")))))
+      .map(item => `decisions "${item.key ?? item.title}"`);
+    const steps = ((overview.units ?? []).find(item => String(item?.id) === n)?.process?.steps ?? []).filter(step => asksApproval(step?.next)).map(step => `step "${step.title}".next`);
+    if (asks.length || steps.length) warnings.push(`unit ${n} is approved, but the overview asks to approve it again (${[...asks, ...steps].join(", ")}) – remove the item or record why the approval no longer holds`);
+  }
+  // Full track (T5-67): the course frame plans more units than the outline describes – the outline comes first.
+  if (journal.track === "full" && journal.filled.Outline && outlineShort(journal)) {
+    warnings.push(`course profile plans ${journal.unitsPlanned} units, the outline describes ${journal.unitsInOutline} – complete the outline (:create-outline)`);
+  }
+  // Full track (T5-74): with `Agenda required: no` ## Agenda waits when needed (tasks/init-course.md → When-Needed Markers).
+  if (journal.track === "full" && laterOf("full", null, { agendaRequired: journal.agendaRequired }).includes("Agenda")
+    && !journal.later.includes("Agenda") && !journal.filled.Agenda && journal.headings.some(heading => heading.key === "Agenda")) {
+    warnings.push(`Agenda required: no, but ## Agenda is not marked when needed – put the marker under its heading (tasks/init-course.md → When-Needed Markers), so the overview lists it under "When needed"`);
+  }
+  // The visible row of the course frame on how learners open the material and Delivery say the same (T5-54).
+  const frame = section("Course Context").replace(/<!--[\s\S]*?-->/g, "").split("<details>")[0];
+  const accessLabel = /^(zugang|zugriff|bereitstellung|access|delivery|open(?:ing)? the material|how (?:the )?learners open|wie (?:die )?(?:lernenden|kinder|schüler\S*) .*öffnen|material öffnen)/iu;
+  const openValue = /^(?:noch\s+)?(?:offen|unklar|ungeklärt|nicht (?:entschieden|geklärt))(?![\p{L}])|^noch nicht (?:entschieden|geklärt|klar|bekannt)|^(?:still\s+)?(?:open|undecided|unclear)(?![\p{L}])|^not (?:yet )?(?:decided|settled|known|clear)/iu;
+  const row = frame.split("\n").map(line => line.match(/^\s*\|([^|]+)\|([^|]+)\|/)).filter(Boolean)
+    .map(match => ({ label: match[1].trim(), value: match[2].replace(/\*\*/g, "").trim() })).find(item => accessLabel.test(item.label));
+  if (row) {
+    const saysOpen = openValue.test(row.value);
+    if (saysOpen && journal.delivery !== "open") warnings.push(`course frame: the row "${row.label}" says the access is still open, but Delivery is ${journal.delivery ?? "missing"} – set Delivery: open (templates/course-context.yaml → Course Profile), so the overview names the open access and settles it before publishing`);
+    if (!saysOpen && journal.delivery === "open") warnings.push(`course frame: Delivery is open, but the row "${row.label}" says "${short(row.value, 60)}" – write the decided way into Delivery (link | platform | print | local), or "still open" into the row`);
   }
 }
 if (warnings.length) {

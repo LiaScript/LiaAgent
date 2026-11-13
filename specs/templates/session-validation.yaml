@@ -32,7 +32,8 @@ template:
     "the point corrected" — a count always shows the points still open, never only the original findings) · PASS with concerns → "passed – {n} point(s) to decide"
     ({n} = the open concerns; it says what is left, never "with concerns") · PASS with ⏳ items → "passed – still missing: {what}" ({what} = what learners still miss, as a noun
     phrase with a number: "1 photo", "2 pictures for the self-check"; never a command or step name as subject) · PASS →
-    "passed" (all translated); PASS for a draft the instructor has not approved yet → "passed – waiting for your approval".
+    "passed" (all translated). Whether a draft still waits for the instructor's approval is never written into the
+    outcome line — the overview computes "passed – waiting for your approval" from the unit's decisions.
     Once the instructor approved a unit that still misses something, status line, Notes cell and card say
     "approved – still missing: {what}" (computed by write-dashboard; the report's outcome line stays as it is).
     "Usable with learners now" (mandatory, translated): "yes" (nothing open) · "yes, with limits: {what}" (⏳ items or open
