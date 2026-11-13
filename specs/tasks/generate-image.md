@@ -285,7 +285,7 @@ For each queued entry (single or sequential batch):
 ## Phase 5b: Update Journal Entry *(all modes)*
 
 - Only once the file exists at the `__File:__` path: in the `<section>` for `{slug}`, set `__Status:__` to `generated` and add the image `![{alt text}]({path})` below the prompt. If it does not, keep `prompt-ready` and report where the file is.
-- In the material, replace the marker `<!--- image: {slug} … --->` (older journals: `<!-- image: {slug} -->`) + `> 🖼️ _…_` with the image `![{alt text}]({path relative to the material document})`. A spot from `:review-images` has only the slug comment — with `__Replaces:__` the comment and the old image line below it are replaced (`tasks/create-image.md` → Status `existing`). Without a marker (e.g. status `prompt-only`), insert the image at the place it belongs and say where. Only then is the image visible to learners.
+- In the material, replace the marker `<!--- image: {slug} … --->` (older journals: `<!-- image: {slug} -->`) + `> 🖼️ _…_` with the image `![{alt text}]({path relative to the material document})`. A spot from `:review-images` has only the slug comment — with `__Replaces:__` the comment and the old image line below it are replaced (`tasks/create-image.md` → Status `existing`). A quiz option image: only the `![…](…)` inside its option line is replaced, keeping the option prefix and its style comment. Without a marker (e.g. status `prompt-only`), insert the image at the place it belongs and say where. Only then is the image visible to learners.
 
 ---
 
