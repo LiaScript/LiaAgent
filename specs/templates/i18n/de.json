@@ -449,6 +449,7 @@
   "start-template": {"title": "Wunsch und Steckbrief", "label": "Baustein beginnen", "why": "Beschreibe, was der Baustein können soll; der Steckbrief ist die Grundlage für den Bau."},
   "publish-template": {"title": "Veröffentlichen", "label": "Baustein {id} veröffentlichen", "why": "Der Baustein ist freigegeben; durch das Veröffentlichen steht er anderen zur Verfügung."},
   "design-look": {"title": "Aussehen", "label": "Aussehen festlegen", "why": "Farben, Schriften und der Stil der Bilder – was der Kurs schon hat und wie er wirken soll."},
+  "design-image-style": {"title": "Bilder", "label": "Bildstil festlegen", "why": "Der Stil der Bilder – was der Kurs schon hat und wie neue Bilder aussehen sollen."},
   "apply-theme": {"title": "Aussehen", "label": "Aussehen übernehmen", "why": "Das neue Aussehen kommt in alle Kursdateien; vorher sehen Sie Vorher und Nachher."},
   "review-images": {"label": "Bilder durchsehen", "why": "Sie entscheiden für jedes Bild: behalten, neu machen, ersetzen oder entfernen."},
   "activate-section": {"label": "hinzunehmen"},

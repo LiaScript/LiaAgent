@@ -267,7 +267,7 @@ export function derive(journal, input, { date, previous } = {}) {
       const ownOnly = facts.imagesReviewed && imagesOpen > 0 && imagesOpen === imagesWaiting;
       const photoIsNext = expected?.key === "insert-images" && String(expected.params.number) === String(facts.n);
       designState(lightTitles.images, facts.imagesReviewed && imagesOpen === 0 ? "done" : ownOnly ? (photoIsNext ? "current" : "planned")
-        : byAction(["review-images", "insert-images", ...(designKeys.includes("look") ? [] : ["design-look"])]),
+        : byAction(["review-images", "insert-images", ...(designKeys.includes("look") ? [] : ["design-look", "design-image-style"])]),
         facts.imagesReviewed && imagesOpen === 0 ? "images reviewed, none open" : ownOnly ? "only own photos still to come" : `the unit's next action: ${own}`);
     }
     // Only own photos still missing: the step waits for the instructor ("planned") – it becomes current again

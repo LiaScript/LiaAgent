@@ -41,6 +41,8 @@ export const englishActions = {
   "publish-template": { title: "Publish", label: "Publish the building block {id}", why: "The building block is approved; publishing makes it available to others." },
   // The design track (look and/or images of an existing course).
   "design-look": { title: "Look", label: "Set the look", why: "Colours, fonts and the style of the images – what the course already has and what it should feel like." },
+  // Scope images: only the style of the images is set, the colours and fonts stay.
+  "design-image-style": { title: "Images", label: "Set the image style", why: "The style of the images – what the course already has and what new pictures should look like." },
   "apply-theme": { title: "Look", label: "Apply the look", why: "The new look goes into every course file; you see before and after first." },
   "review-images": { label: "Review images", why: "You decide for each picture: keep it, make it new, replace it or remove it." },
   "activate-section": { label: "Add" },
@@ -218,7 +220,7 @@ export function unitIsCourseCheck(journal, states) {
 function designNext(journal, states) {
   if (!journal.filled["Course Context"]) return action("init-course", "teaching", "init-course");
   const scope = journal.designScope ?? "both";
-  if (!lookSet(journal)) return action("design-look", "artist", "create-visuals");
+  if (!lookSet(journal)) return lookAction(journal);
   if (scope !== "images" && journal.units.some(unit => unit.themeApplied === false)) return action("apply-theme", "artist", "apply-theme");
   if (scope !== "look") {
     const unreviewed = journal.units.find(unit => !unit.imagesReviewed);
@@ -236,11 +238,12 @@ function designNext(journal, states) {
 // A design unit's main action, in the order of designNext: the look (set, then applied to its course file), its
 // images reviewed, then as on every track – its open images, the check, the approval.
 // The look is set: scope look/both – a theme in ## Visual Identity; scope images – the section filled (image style).
+const lookAction = journal => action((journal.designScope ?? "both") === "images" ? "design-image-style" : "design-look", "artist", "create-visuals");
 const lookSet = journal => (journal.designScope ?? "both") === "images" ? Boolean(journal.filled["Visual Identity"]) : journal.visualTheme?.length > 0;
 
 export function designUnitAction(unit, journal) {
   const scope = journal.designScope ?? "both";
-  if (!lookSet(journal)) return action("design-look", "artist", "create-visuals");
+  if (!lookSet(journal)) return lookAction(journal);
   if (scope !== "images" && unit.themeApplied === false) return action("apply-theme", "artist", "apply-theme");
   if (scope !== "look" && !unit.imagesReviewed) return action("review-images", "artist", "review-images", { number: unit.n });
   const next = unitAction(unit);
@@ -315,7 +318,7 @@ const stepKeys = { "init-course": "frame", "create-outline": "outline", "complet
 
 // The design track: the look and image actions advance their step, every other unit action the check. With scope
 // images (no look step) the image style belongs to the images; with scope look a stray image action to the check.
-const designStepKeys = { "design-look": "look", "apply-theme": "look", "review-images": "images", "insert-images": "images" };
+const designStepKeys = { "design-look": "look", "design-image-style": "images", "apply-theme": "look", "review-images": "images", "insert-images": "images" };
 function designStepOf(key, expected, list) {
   let stepKey = designStepKeys[key] ?? stepKeys[key] ?? (expected.params.number != null || expected.params.file != null ? "check" : null);
   if (stepKey === "look" && !list.includes("look")) stepKey = "images";

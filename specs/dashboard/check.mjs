@@ -4494,3 +4494,16 @@ test("final fix 15: contrast ratio cut, not rounded; skipped samples named; them
     "https://design-org.github.io/macros/README.md"
   ]), ["template", "theme", "template", "theme", "template"]);
 });
+test("final fix 14: scope images sets only the image style – its own button word", () => {
+  const de = JSON.parse(readFileSync(new URL("../templates/i18n/de.json", import.meta.url), "utf8"));
+  assert.equal(de.actions["design-image-style"]?.label, "Bildstil festlegen");
+  assert.equal(englishActions["design-image-style"]?.label, "Set the image style");
+  const images = deriveDesign({ scope: "images" }).data.next;
+  assert.equal(images.href, "agent:artist/create-visuals");
+  assert.equal(images.label, "Bildstil festlegen");
+  assert.equal(images.title, "Bilder", "the image style belongs to the images step");
+  assert.equal(deriveDesign({ scope: "both" }).data.next.label, "Aussehen festlegen");
+  assert.equal(designUnitAction(designCourse({ scope: "images" }).units[0], designCourse({ scope: "images" })).key, "design-image-style");
+  // The unit's images step is in progress while the image style is the unit's next action.
+  assert.equal(deriveDesign({ scope: "images" }).data.units[0].process.steps[0].state, "current");
+});
