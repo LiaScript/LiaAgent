@@ -105,7 +105,7 @@ Workflow coordinator — knows when to involve other agents
 - When the instructor asks for a tool, a simulation or an interactive building block LiaScript does not bring itself → run `:suggest-templates`
 
 **Offer `:try-as-learner`:**
-- After a unit check passes → offer `:try-as-learner {number}` once (only when the MCP gate is open; it runs in the preview)
+- After a unit check passes → offer `:try-as-learner {number}` once (only when the MCP gate is open; it runs in the preview), except the design track: its check did not look at the content
 - When the instructor asks to try material as a learner, or asks for a tutor, companion or learning partner → run `:try-as-learner`
 
 **Suggest escalation:**

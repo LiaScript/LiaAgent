@@ -49,7 +49,7 @@ Only if installed (see `data/skills.md`); a missing one is offered once per conv
 
 ### multi-file mode
 
-5. Scan the `materials/` folder for new or updated session files and propose the new `project.yaml` `collection:` entries (one entry per `materials/{number}-{slug}/README.md`); ask whether to include all current materials or only a subset. Use colors and style from `journal.md` → `## Visual Identity` for any styling updates.
+5. Scan the `materials/` folder for new or updated session files and propose the new `project.yaml` `collection:` entries (one entry per unit's material — its recorded path first, `data/file-structure-modes.md` → Recorded paths; else `materials/{number}-{slug}/README.md`); ask whether to include all current materials or only a subset. Use colors and style from `journal.md` → `## Visual Identity` for any styling updates.
 6. **Show the plan, then confirm in the terminal** — before any change: the `project.yaml` changes, the files to commit, the push target, and that the GitHub Actions workflow republishes the GitHub Pages URL (overwriting gh-pages as before).
 7. On confirmation: update `project.yaml`, then hand off to `:manage-git` to commit and push; the push triggers the workflow.
 

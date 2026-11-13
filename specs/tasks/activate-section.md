@@ -60,7 +60,7 @@ Tier: **confirm in chat** (it writes only `journal.md`, and from mini to full al
 
 When the instructor wants another track — on request ("make it a full course", "I need a second lesson") or after accepting the growth offer below:
 
-0. **Stage 2a: full ↔ mini and design → full.** Converting existing material (track `convert`) and building a template (track `template`) come in a later stage: if the instructor asks for one, say in one line that this is not available yet and offer the full or the mini track (as `tasks/init-course.md` step 2a does). Never write `Track: convert` or `Track: template`. A design course grows only into the full track ("Content and structure"); a switch into the design track is a new frame (`tasks/init-course.md` → Design Track), never this task.
+0. **Stage 2a: full ↔ mini and design → full.** Converting existing material (track `convert`) and building a template (track `template`) come in a later stage: if the instructor asks for one, say in one line that this is not available yet and offer the full or the mini track (as `tasks/init-course.md` step 2a does). Never write `Track: convert` or `Track: template`. A design course grows only into the full track ("Content and structure"); there is no switch into the design track: a full or mini course uses `:apply-theme` and `:review-images` directly.
 1. **Show and confirm in one form** (tier "confirm in chat"; the single write confirmation of the switch):
    - the new track in teacher words (never the slug) and its `__Track:__` values;
    - the markers that go: sections the new track needs (`tasks/init-course.md` → When-Needed Markers) — they get their default content as in step 3;
