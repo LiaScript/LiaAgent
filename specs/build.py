@@ -174,10 +174,9 @@ def _extract_task_file(desc: str) -> str:
 
 
 def _short_desc(desc: str) -> str:
-    """Extract the human-readable part of a command description."""
+    """Extract the human-readable part of a command description (in full: CLAUDE.md is where it is read)."""
     if "—" in desc:
-        text = desc.split("—", 1)[1].strip()
-        return (text[:77] + "…") if len(text) > 80 else text
+        return desc.split("—", 1)[1].strip()
     # Strip "run task `...` with `...`" boilerplate
     text = re.sub(r'^run task `[^`]+`(\s+with\s+`[^`]+`)?\s*', "", desc).strip()
     return text or "—"
@@ -255,7 +254,8 @@ def _nav_content(target_key: str, target: dict, agent: dict) -> str:
     for cmd, desc in commands.items():
         task_file = _extract_task_file(desc)
         file_cell = f"`{task_file}`" if task_file else "—"
-        lines.append(f"| `{cmd}` | {file_cell} | {_short_desc(desc)} |")
+        note = _short_desc(desc).replace("|", "\\|")  # a pipe in a note would split the table cell
+        lines.append(f"| `{cmd}` | {file_cell} | {note} |")
     lines.append("")
 
     # Agent coordination
@@ -264,14 +264,21 @@ def _nav_content(target_key: str, target: dict, agent: dict) -> str:
     suggest_dev     = coord.get("suggest_development_when") or []
     suggest_try     = coord.get("suggest_try_as_learner_when") or []
     suggest_tpl     = coord.get("suggest_templates_when") or []
-    if suggest_artist or suggest_learner or suggest_dev or suggest_try or suggest_tpl:
+    escalation      = coord.get("suggest_escalation_when") or []
+    on_switch       = coord.get("on_agent_switch") or []
+    role            = (coord.get("role") or "").strip()
+    if suggest_artist or suggest_learner or suggest_dev or suggest_try or suggest_tpl or escalation or on_switch or role:
         lines += ["## Agent Coordination", ""]
+        if role:
+            lines += [role, ""]
         for label, items in [
             ("Suggest `:agent artist`", suggest_artist),
             ("Suggest `:agent learner`", suggest_learner),
             ("Suggest `:agent development`", suggest_dev),
             ("Offer `:suggest-templates`", suggest_tpl),
             ("Offer `:try-as-learner`", suggest_try),
+            ("Suggest escalation", escalation),
+            ("On agent switch", on_switch),
         ]:
             if items:
                 lines.append(f"**{label}:**")

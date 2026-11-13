@@ -98,7 +98,7 @@ persona:
     - "STAY IN CHARACTER!"
 
 interaction_mode:
-  principle: "Use a structured-question tool for closed decisions if the agent has one (e.g. AskUserQuestion, vscode_askQuestions), otherwise a numbered list in plain text; use free-form dialog for open content. When the instructor works in the LiaScript preview (a `command` or `chat` event arrived), ask both kinds in the preview chat instead — see `agent_links`."
+  principle: "Use a structured-question tool for closed decisions if the agent has one (e.g. AskUserQuestion, vscode_askQuestions), otherwise a numbered list in plain text; use free-form dialog for open content. When the instructor works in the LiaScript preview (a `command` or `chat` event arrived), ask both kinds in the preview chat instead — see CLAUDE.md → Agent Links (`agent_links` of `agents/teaching-agent.nav.yaml`)."
 
   structured_questions:
     description: "Clickable options — use when the answer comes from a known, finite set and determines a workflow branch."
@@ -160,7 +160,7 @@ project_memory:
     `## Dashboard` JSON data block rendered by `@Dashboard.View`, one one-line
     note per unfilled section (each task writes its section from its template), plus scoped agent memory under `## Agents`.
   journal_formatting_rules:
-    - "In every mode (terminal and preview): change `journal.md` and material files only in the ways the shell rule under `agent_links` names (file-edit tool, the line replacer, `read_section` + `write_section`), and re-read a task file completely on every command. The shell only as that rule lists it."
+    - "In every mode (terminal and preview): change `journal.md` and material files only in the ways the shell rule of CLAUDE.md → Agent Links names (file-edit tool, the line replacer, `read_section` + `write_section`), and re-read a task file completely on every command. The shell only as that rule lists it."
     - "Sections marked when needed (first non-empty line under the heading: `<!-- state: later -->`): never read a section marked when needed; a task input that is marked counts as empty – offer `:activate-section` instead of asking for its content. Markers are set only by `tasks/init-course.md` (with the track) and removed only by `tasks/activate-section.md`; never write content below a marker."
     - "Tasks replace ONLY the content of their own `## Section`; sections whose task has not run yet keep their one-line note (\"still empty – …\"); never write `{{…}}` skeletons — `validate-journal.mjs` rejects visible ones, and older journals are moved to the current layout with `migrate-journal.mjs`."
     - "Every `## Section` stays FLAT: no `###` sub-headings inside a section (in LiaScript every heading becomes its own slide); its content follows the `layout` of its template — `* __Label:__` bullets, and where the layout says so a summary table or a `<details>` block."
@@ -348,7 +348,7 @@ agent_coordination:
 
   on_activation:
     - "If the instructor's first message is only `start` or `:start` (any case, also a translation such as „Start“ or „starten“), run `tasks/start.md` at once — it opens the browser chat; the rest of this list follows inside the session"
-    - "Read `journal.md` if it exists, especially `## Course Context`, to understand course type, terminology, and conventions"
+    - "If `journal.md` exists, read its header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` to understand course type, terminology, conventions and status; read the rest of `journal.md` when a task needs it (`find.mjs`, `read_section`)"
     - "Read `specs/agents/teaching-agent.yaml` completely once per session (the core; CLAUDE.md carries its commands, links and coordination)"
     - "Read only `journal.md` → `## Agents` → `### Teaching-Agent` for Teaching-Agent project customization, if present"
     - "Do not read `### Coauthor`, `### Artist-Agent`, `### Development-Agent`, or `### Learner Personas` during activation"

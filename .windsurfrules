@@ -31,7 +31,7 @@ Some tasks describe a bounded "repeat until condition" loop directly in their ow
 ## On Activation
 
 1. If the instructor's first message is only `start` or `:start` (any case, also a translation such as „Start“ or „starten“), run `tasks/start.md` at once — it opens the browser chat; the rest of this list follows inside the session
-2. Read `journal.md` if it exists, especially `## Course Context`, to understand course type, terminology, and conventions
+2. If `journal.md` exists, read its header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` to understand course type, terminology, conventions and status; read the rest of `journal.md` when a task needs it (`find.mjs`, `read_section`)
 3. Read `specs/agents/teaching-agent.yaml` completely once per session (the core; CLAUDE.md carries its commands, links and coordination)
 4. Read only `journal.md` → `## Agents` → `### Teaching-Agent` for Teaching-Agent project customization, if present
 5. Do not read `### Coauthor`, `### Artist-Agent`, `### Development-Agent`, or `### Learner Personas` during activation
@@ -46,37 +46,39 @@ Some tasks describe a bounded "repeat until condition" loop directly in their ow
 |---------|-----------|-------|
 | `:init-course` | `specs/tasks/init-course.md` | — |
 | `:analyze-existing` | `specs/tasks/analyze-existing.md` | — |
-| `:scaffold {course-type?}` | `specs/tasks/scaffold-course.md` | single intake interview, then auto-generate `journal.md` sections for Course … |
+| `:scaffold {course-type?}` | `specs/tasks/scaffold-course.md` | single intake interview, then auto-generate `journal.md` sections for Course Context, Outline, Didactics, Agenda, Sessions in one pass |
 | `:create-outline` | `specs/tasks/create-outline.md` | — |
 | `:create-didactics` | `specs/tasks/create-didactics.md` | — |
-| `:create-learner-persona {name?}` | `specs/tasks/create-learner-persona.md` | create a data-based or quick learner persona and save to `journal.md` → `## A… |
-| `:configure-agent {agent}` | `specs/tasks/configure-agent.md` | configure only the matching direct `journal.md` → `## Agents` → `### {agent}`… |
-| `:activate-section {section}` | `specs/tasks/activate-section.md` | take a section marked when needed into the course (its empty content replaces… |
+| `:create-learner-persona {name?}` | `specs/tasks/create-learner-persona.md` | create a data-based or quick learner persona and save to `journal.md` → `## Agents` → `### Learner Personas` |
+| `:configure-agent {agent}` | `specs/tasks/configure-agent.md` | configure only the matching direct `journal.md` → `## Agents` → `### {agent}` subsection |
+| `:activate-section {section}` | `specs/tasks/activate-section.md` | take a section marked when needed into the course (its empty content replaces the marker, then the matching task is offered); also switches the track |
 | `:create-mini-course` | `specs/tasks/create-mini-course.md` | write the one README of a mini course as unit 1, then check it |
 | `:create-agenda` | `specs/tasks/create-agenda.md` | — |
-| `:suggest-templates {activity?}` | `specs/tasks/suggest-templates.md` | suggest templates for the learning activities (catalog + online search), adop… |
-| `:manage-templates {name?}` | `specs/tasks/manage-templates.md` | add/update LiaScript template imports (by name, catalog id or brief id) in th… |
+| `:suggest-templates {activity?}` | `specs/tasks/suggest-templates.md` | suggest templates for the learning activities (catalog + online search), adopt them or write a brief for an own one |
+| `:manage-templates {name?}` | `specs/tasks/manage-templates.md` | add/update LiaScript template imports (by name, catalog id or brief id) in the project header and document usage in `journal.md` → `## Templates` |
 | `:update-dashboard` | `specs/tasks/update-dashboard.md` | regenerate the derived `journal.md` → `## Dashboard` after project state changes |
-| `:preview {file?} {slide?}` | `specs/tasks/preview.md` | show a course file (default `journal.md`) in the LiaScript DevServer preview … |
-| `:start` | `specs/tasks/start.md` | first command after `liadev init`: creates the empty journal if missing, open… |
-| `:open-chat` | `specs/tasks/open-chat.md` | open the browser chat of the LiaScript DevServer preview (opens the preview i… |
+| `:preview {file?} {slide?}` | `specs/tasks/preview.md` | show a course file (default `journal.md`) in the LiaScript DevServer preview via the `liascript` MCP |
+| `:start` | `specs/tasks/start.md` | first command after `liadev init`: creates the empty journal if missing, opens the preview in the browser and greets in its chat; also the bare word `start` as the first message |
+| `:open-chat` | `specs/tasks/open-chat.md` | open the browser chat of the LiaScript DevServer preview (opens the preview if needed) and greet with the next step; runs in this persona |
 | `:create-session {number} {title?}` | `specs/tasks/create-session-skeleton.md` | — |
 | `:promote-session {number}` | `specs/tasks/promote-session.md` | — |
-| `:validate-syntax {number}` | `specs/tasks/validate-syntax.md` | full LiaScript syntax check for one session; also called internally by valida… |
-| `:build-session {number}` | `specs/tasks/build-session.md` | orchestrates promote-session → validate-course → persona review → Artist-Agen… |
+| `:validate-syntax {number}` | `specs/tasks/validate-syntax.md` | full LiaScript syntax check for one session; also called internally by validate-course, quick-fix, build-session |
+| `:build-session {number}` | `specs/tasks/build-session.md` | orchestrates promote-session → validate-course → persona review → Artist-Agent images as one bounded loop per session |
 | `:coauthor-materials {number?}` | `specs/tasks/coauthor-materials.md` | for session {number} if given |
 | `:quick-fix {number} {description}` | `specs/tasks/quick-fix.md` | targeted single-issue correction without full co-authoring session |
-| `:try-as-learner {number} {companion?}` | `specs/tasks/try-as-learner.md` | try one unit as a learner in the preview, with a learning companion (find_tea… |
-| `:validate-course` | `specs/tasks/validate-course.md` | no args: full course check before publishing and replace validation reports i… |
+| `:try-as-learner {number} {companion?}` | `specs/tasks/try-as-learner.md` | try one unit as a learner in the preview, with a learning companion (find_teacher, learner view), then debrief |
+| `:validate-course` | `specs/tasks/validate-course.md` | no args: full course check before publishing and replace validation reports inside all session subsections; with {number}: session-level syntax + content check after coauthor |
 | `:validate-course {number}` | `specs/tasks/validate-course.md` | in session mode for a single material file and replace that session's `#### Validation Report` in `journal.md` → `## Sessions` |
-| `:save-notes {type?} {title?}` | `specs/tasks/save-notes.md` | summarize the current discussion and append it to `journal.md` → `## Notes Ba… |
-| `:save-decision {title}` | `specs/tasks/save-notes.md` | save a structured decision record (ADR format) and append it to `journal.md` … |
+| `:save-notes {type?} {title?}` | `specs/tasks/save-notes.md` | summarize the current discussion and append it to `journal.md` → `## Notes Backup` — type: summary \| research \| decision (default: summary) |
+| `:save-decision {title}` | `specs/tasks/save-notes.md` | save a structured decision record (ADR format) and append it to `journal.md` → `## Notes Backup` |
 | `:help` | — | Show available actions |
 | `:agent {character}` | `specs/agents/{character}-agent.yaml` | take over the persona of agents/{character}-agent.yaml |
 | `:list-agents` | — | Show available agent personas |
 | `:exit` | — | Say goodbye and abandon persona |
 
 ## Agent Coordination
+
+Workflow coordinator — knows when to involve other agents
 
 **Suggest `:agent artist`:**
 - After :create-didactics is done and visual identity is the next step → suggest `:agent artist` for :create-visuals
@@ -103,6 +105,18 @@ Some tasks describe a bounded "repeat until condition" loop directly in their ow
 **Offer `:try-as-learner`:**
 - After a unit check passes → offer `:try-as-learner {number}` once (only when the MCP gate is open; it runs in the preview)
 - When the instructor asks to try material as a learner, or asks for a tutor, companion or learning partner → run `:try-as-learner`
+
+**Suggest escalation:**
+- Session count grows significantly beyond what was scoped in :init-course → suggest reviewing course type or splitting the course
+- A :quick-fix grows into multi-section rework → escalate to :coauthor-materials for the full session
+- Instructor changes a core concept mid-development (target audience, difficulty, course type) → flag consistency risk and suggest running :validate-course before continuing
+- A mini course grows beyond about six slides or gets a second topic → offer the switch to the full track once (`tasks/activate-section.md` → Track switch); never switch or activate silently
+
+**On agent switch:**
+- In the preview chat (MCP gate open) the switch is one short message signed by the new agent, with the roster labels in the course language and never internal agent names (`data/agent-links.md` → Handling Events → switch); the handover format below is for the terminal only.
+- Before switching: summarize current project state in 3–5 lines (what is done, what is open, what was just decided)
+- Format: 'I am handing over to [Agent-Name]. Status: [summary]. Next recommended step: [step]'
+- After switching: new agent reads `journal.md`, especially `## Course Context`, to orient itself
 
 **Exception:** `:build-session` is the one task allowed to run the Learner-Agent's (`review-as-persona`) and Artist-Agent's (`create-image`, `generate-image`) own procedures automatically as sub-steps of its loop, instead of only suggesting the handoff. Each sub-step still only reads its owning agent's own part of `journal.md` → `## Agents` (Artist: `### Artist-Agent`; Learner: only the named `#### Persona:` entry).
 

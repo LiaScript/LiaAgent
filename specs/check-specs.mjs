@@ -795,7 +795,8 @@ test("the fixed start reading stays within its budget (T5-111)", () => {
     const { bytes, files } = startLoad(agent);
     assert.ok(bytes <= 64_000, `${agent}: start reading ${bytes} bytes > 64000 (${files.join(", ")})`);
   }
-  assert.ok(Buffer.byteLength(read("agents/teaching-agent.yaml")) <= 16_000, "teaching-agent.yaml core ≤ 16 kB");
+  // 16.5 kB, not 16 kB: the core's two pointers to the moved agent_links name where it lives now (CLAUDE.md → Agent Links, the nav file).
+  assert.ok(Buffer.byteLength(read("agents/teaching-agent.yaml")) <= 16_500, "teaching-agent.yaml core ≤ 16.5 kB");
 });
 
 test("CLAUDE.md carries what moved to teaching-agent.nav.yaml", () => {
@@ -810,4 +811,28 @@ test("CLAUDE.md carries what moved to teaching-agent.nav.yaml", () => {
   }
   assert.ok(claude.includes("Read `specs/agents/teaching-agent.yaml` completely once per session (the core; CLAUDE.md carries its commands, links and coordination)"), "On Activation names the core");
   assert.match(claude, /\(2\) read the header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` of `journal\.md`/, "start order reads only the head of the journal");
+});
+
+test("every rule of teaching-agent.nav.yaml reaches CLAUDE.md: nothing moved out of the start reading gets lost (T5-111)", () => {
+  const claude = flat(readFileSync(join(specs, "..", "CLAUDE.md"), "utf8").replaceAll("\\|", "|"));
+  const nav = read("agents/teaching-agent.nav.yaml");
+  const commands = nav.split(/^commands:\s*$/m)[1];
+  const rules = [...nav.split(/^commands:\s*$/m)[0].matchAll(/^\s+(?:- |[\w-]+: )"(.*)"$/gm)].map(match => match[1]);
+  assert.ok(rules.length >= 40, `the nav file has its rules (${rules.length})`);
+  const notes = Object.values(yamlCommands(nav)).map(desc => desc.replace(/^"|"$/g, ""))
+    .map(desc => desc.includes("—") ? desc.split("—").slice(1).join("—").trim() : /^run task/.test(desc) ? `specs/${desc.match(/`(tasks\/[^`]+)`/)[1]}` : desc);
+  assert.ok(commands && notes.length >= 20);
+  const missing = [...rules, ...notes].filter(text => !claude.includes(flat(text)));
+  assert.deepEqual(missing.map(text => text.slice(0, 70)), [], "build.py does not render these rules of the nav file into CLAUDE.md");
+  const rows = readFileSync(join(specs, "..", "CLAUDE.md"), "utf8").split("\n").filter(line => line.startsWith("| `:"));
+  assert.deepEqual(rows.filter(row => row.replaceAll("\\|", "").split("|").length !== 5).map(row => row.slice(0, 40)), [], "a command note splits its table row (escape | as \\|)");
+});
+
+test("the core and CLAUDE.md read journal.md the same way at start: head, Course Context, Dashboard; the rest on demand", () => {
+  const claude = readFileSync(join(specs, "..", "CLAUDE.md"), "utf8");
+  const activation = claude.split("## On Activation")[1].split("\n## ")[0];
+  assert.doesNotMatch(activation, /Read `journal\.md` if it exists, especially/, "On Activation still reads the whole journal");
+  assert.match(activation, /the Dashboard block[^\n]*the rest of `journal\.md` when a task needs it \(`find\.mjs`, `read_section`\)/);
+  assert.doesNotMatch(read("agents/teaching-agent.yaml"), /see `agent_links`"|under `agent_links` names/, "the core points to agent_links without saying where it lives now");
+  assert.match(read("agents/teaching-agent.yaml"), /CLAUDE\.md → Agent Links/);
 });

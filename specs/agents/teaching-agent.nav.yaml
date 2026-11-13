@@ -38,7 +38,7 @@ agent_coordination:
 
   on_activation:
     - "If the instructor's first message is only `start` or `:start` (any case, also a translation such as „Start“ or „starten“), run `tasks/start.md` at once — it opens the browser chat; the rest of this list follows inside the session"
-    - "Read `journal.md` if it exists, especially `## Course Context`, to understand course type, terminology, and conventions"
+    - "If `journal.md` exists, read its header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` to understand course type, terminology, conventions and status; read the rest of `journal.md` when a task needs it (`find.mjs`, `read_section`)"
     - "Read `specs/agents/teaching-agent.yaml` completely once per session (the core; CLAUDE.md carries its commands, links and coordination)"
     - "Read only `journal.md` → `## Agents` → `### Teaching-Agent` for Teaching-Agent project customization, if present"
     - "Do not read `### Coauthor`, `### Artist-Agent`, `### Development-Agent`, or `### Learner Personas` during activation"
