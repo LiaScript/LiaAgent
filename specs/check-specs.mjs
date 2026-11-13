@@ -124,7 +124,7 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
 // growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b, measured durations and agreements after R12c).
 const budgets = {
-  "tasks/update-dashboard.md": 3260, /* +110 over 3005: process steps per track, the two new triggers; +145 over 3115 (tandem test 5): decide only for now, no approval item for an approved unit, report actions → prepare, old Course Context words in the cache */ "data/agent-links.md": 4090, /* +23: chat-memory sheet row and pointer; +15 over 3898: the pick-up replaces the due greeting; +177 over 3913 (tandem test 5): idle watch, nudge, status after a form answer, "your answer has arrived", read_chat without arguments */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1480, /* +35 over 1191: the save marker rule; +3 over 1226: marker in the preview chat only; +251 over 1229 (tandem test 5): no ruled-out options, saved state from the journal, to-do answer = overview, side questions without a new form, no number columns, removeBlock */
+  "tasks/update-dashboard.md": 3275, /* +110 over 3005: process steps per track, the two new triggers; +145 over 3115 (tandem test 5): decide only for now, no approval item for an approved unit, report actions → prepare, old Course Context words in the cache; +15 over 3260 (stage 2a T8): the design track's step list with its titles "Frame" and "Images" and the scope rule */ "data/agent-links.md": 4090, /* +23: chat-memory sheet row and pointer; +15 over 3898: the pick-up replaces the due greeting; +177 over 3913 (tandem test 5): idle watch, nudge, status after a form answer, "your answer has arrived", read_chat without arguments */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1480, /* +35 over 1191: the save marker rule; +3 over 1226: marker in the preview chat only; +251 over 1229 (tandem test 5): no ruled-out options, saved state from the journal, to-do answer = overview, side questions without a new form, no number columns, removeBlock */
   "data/chat-checks.md": 637, "tasks/build-session.md": 3367, "tasks/validate-course.md": 4420, /* +89 over 4198: one unit, one run on a light track; +31 over 4287: light-track unit 1 in session mode, short re-check refreshes the summary; +102 over 4318 (tandem test 5): the unit check is the course check, the summary follows every later report change */ "tasks/quick-fix.md": 1750, /* +8 over 1613: light track, the whole README is unit 1; +129 over 1621 (tandem test 5): "look at it later", re-check sets Done, approval refreshes the summary, removeBlock */
 };
 test("commands never stand in the chat, only in journal.md after their link", () => {
@@ -266,6 +266,16 @@ test("a task that runs only in a light track names no section its track marks wh
       assert.doesNotMatch(inputs, new RegExp(`## ${key}\\b`), `${file}: its Inputs name ## ${key}, which the ${track}${mode ? ` (${mode})` : ""} track marks when needed`);
     }
   }
+});
+
+test("design track: the follow-up question, the frame and its markers (stage 2a)", () => {
+  const init = read("tasks/init-course.md");
+  for (const phrase of ["What should get better?", "## Design Track", "`node specs/dashboard/read-source.mjs .`", "Design scope", "never changes teaching text", "| design | Outline, Didactics, Agenda, Learner Personas, Analysis Status |"]) assert.ok(init.includes(phrase), phrase);
+  // The markers table copies tracks.mjs verbatim: the mini and design rows are the lists of laterOf.
+  for (const track of ["mini", "design"]) assert.ok(init.includes(`| ${track} | ${laterOf(track).join(", ")} |`), `init-course: the ${track} row of the markers table differs from laterOf("${track}")`);
+  assert.match(read("templates/course-context.yaml"), /Design scope: \[look \| images \| both \| n\/a\]/);
+  assert.match(read("data/file-structure-modes.md"), /Recorded paths[\s\S]*design track/);
+  assert.match(read("tasks/update-dashboard.md"), /design: Frame → Look → Images → Check → Publish/);
 });
 
 test("preview is a navigation command of every agent", () => {

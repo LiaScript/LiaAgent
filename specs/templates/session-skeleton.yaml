@@ -23,12 +23,21 @@ template:
         `#### Validation Report` says `Result: PASS` (not "with concerns") with no open ⏳ item — set and
         reset by `:validate-course` in session and course mode alike.
       entries: "Session skeletons as `### {{number}}. {{title}}` subsections below the overview"
+      design_track: >-
+        Design track (`tasks/init-course.md` → Design Track): one unit per course file, all saved with the frame.
+        Table row: `` | {n} | {title} | existing | ✅ | ✅ `{path}` | | | `` — Type `existing`, Skeleton ✅ (the entry
+        exists), Material ✅ followed by the recorded path (`data/file-structure-modes.md` → Recorded paths), no
+        Method column. The entry holds only `### {n}. {title}` (the file's `#` title), one sentence on what the file
+        covers, and an empty `#### Images` heading that the Artist-Agent's image review fills — no technical
+        details, kind line, Summary, Content or Activities: the course file holds the teaching text. Action and status
+        lines come from `write-dashboard.mjs`; decisions (e.g. "images reviewed", `terms.imagesReviewed`) and the
+        validation report take their place in `entry_order`.
       entry_order: >-
         Inside each `### {{number}}. {{title}}` subsection, always in this order: action line →
         `<details>` "Technical settings and more actions" (Type, Method, further commands) →
         visible kind line → Summary → Content → Activities → Building blocks → Decisions (once the first exists) → References →
         the validation report (once a check ran; heading and `<section data-key="validation-report">`,
-        `templates/session-validation.yaml`) → `#### Images` (once the first image entry exists) →
+        `templates/session-validation.yaml`) → `#### Images` (once the first image entry exists; in the design track from the start) →
         `#### Persona Reviews` (once a review exists). So the unit's slide shows the unit and the report's
         slide only the report. A task inserts its block at this position, never
         relative to another optional block.

@@ -215,7 +215,8 @@ Run this task automatically after any task that changes project state:
   (`specs/dashboard/tracks.mjs`; `## Course Context` → `__Track:__`, missing = `full`), in order. Full track: the
   titles of the empty journal; else (translated) frame "Frame and learning objectives", outline "Outline and
   learning objectives", look "Look", material "Write the material", check "Check", publish "Publish", brief
-  "Request and brief", build "Build and test", try "Try and approve". The first run on a light track replaces
+  "Request and brief", build "Build and test", try "Try and approve"; design: Frame → Look → Images → Check → Publish
+  (scope look drops Images, images drops Look). The first run on a light track replaces
   the empty journal's steps with that list, a track switch with a `note`; `validate-journal.mjs` checks the
   count. process.later is derived, never written by hand.
 - Keep the process steps of the track stable from its first Dashboard on: the agenda step (full track)

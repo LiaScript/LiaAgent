@@ -24,21 +24,25 @@ template:
       # (tasks/init-course.md → Mini Track), and older journals that say single-lesson stay valid.
       template: |
         * __Course Type:__
-          1. Type: [lecture-series | self-paced | workshop | single-lesson (mini track only) | improve-existing]
+          1. Type: [lecture-series | self-paced | workshop | single-lesson (mini track only) | improve-existing (also the design track)]
           2. Working Title: [optional working title]
           3. Target Group: [short: who learns, how many, where, special needs (e.g. dyslexia) — details follow in `## Outline`]
 
     - id: track
       title: Track
       # Read by the dashboard scripts (journal-model.mjs). A missing block means `full` (older journals); new
-      # journals always write it (init-course step 8, the mini save M4, scaffold Phase 2 step 2: `Track: full`).
-      # mini: the short frame of a mini course (tasks/init-course.md → Mini Track); convert and template follow
-      # in a later stage. The track's sections marked when needed: tasks/init-course.md → When-Needed Markers.
+      # journals always write it (init-course step 8, the mini save M4, the design save D3, scaffold Phase 2 step 2: `Track: full`).
+      # mini: the short frame of a mini course (tasks/init-course.md → Mini Track); design: look and/or images of an
+      # existing LiaScript course (tasks/init-course.md → Design Track; Source = its course folder or file in the
+      # project); convert and template follow in a later stage. The track's sections marked when needed:
+      # tasks/init-course.md → When-Needed Markers. Field 4: the design track writes its scope; other
+      # tracks may leave it out (= n/a).
       template: |
         * __Track:__
-          1. Track: [full | mini | convert | template]
+          1. Track: [full | mini | convert | template | design]
           2. Convert mode: [transfer | rebuild | n/a]
           3. Source: [file path in the project or URL | n/a]
+          4. Design scope: [look | images | both | n/a]
 
     - id: profile
       title: Course Profile

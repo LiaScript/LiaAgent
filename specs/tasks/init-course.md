@@ -7,7 +7,7 @@ Initializes a new course project by instantiating `journal.md` from the skeleton
 This is the **first mandatory step** for every new course project.
 The course context acts as the governance layer: it defines the track, the course type, terminology, persona style, conventions, and LiaScript rules that all subsequent tasks will load and follow.
 
-The track decides how much of the journal the course needs: the full track (a course with several units) fills every section in turn; a light track (a mini course) fills only what it needs and marks the other sections "when needed" (see When-Needed Markers below) — they wait, not forgotten, until `:activate-section` takes them in.
+The track decides how much of the journal the course needs: the full track (a course with several units) fills every section in turn; a light track (a mini course, or the design track for the look and images of an existing course) fills only what it needs and marks the other sections "when needed" (see When-Needed Markers below) — they wait, not forgotten, until `:activate-section` takes them in.
 
 ## Inputs
 
@@ -23,27 +23,32 @@ The track decides how much of the journal the course needs: the full track (a co
 - `journal.md` created from `templates/journal.md` if it does not exist yet
 - `journal.md` → `## Course Context`, including the `__Track:__` block
 - Mini track only: a short `journal.md` → `## Outline` and the when-needed markers of the track
+- Design track only: one unit per course file in `journal.md` → `## Sessions` and the when-needed markers of the track
 - Optional: `journal.md` main metadata header `import:` lines and `## Templates`
 - Structure based on `templates/course-context.yaml`
 
 ## Steps
 
-1. Welcome the instructor in one or two sentences, together with the track question of step 2a (only when it is asked). Once the track is known, say how many question rounds follow — count them from steps 3, 4, 6 (only when it asks) and 7 in the full track, from steps M1 and M3 (only when it asks) in the mini track, never an estimate; use the same number wherever you announce it. Do not repeat a workflow explanation the instructor already received in this chat.
+1. Welcome the instructor in one or two sentences, together with the track question of step 2a (only when it is asked). Once the track is known, say how many question rounds follow — count them from steps 3, 4, 6 (only when it asks) and 7 in the full track, from steps M1 and M3 (only when it asks) in the mini track, from step D2 (only when it asks) in the design track, never an estimate; use the same number wherever you announce it. Do not repeat a workflow explanation the instructor already received in this chat.
    - **Reuse what is known.** Before asking, collect everything the instructor already said in this chat (`read_chat` when the preview is connected, otherwise this conversation) or in `journal.md` (topic, audience, number and length of lessons, how learners work, devices). Do not ask for it again; show it as a prefilled assumption ("Noted so far: … Correct?") and let the instructor correct it.
    - **No unfounded recommendations.** Mark an option as recommended only if the instructor's own statements support it, and name that reason in one line. Otherwise give no recommendation.
-   - **Language.** Ask in the language the instructor writes in. Until the save (step 9, in the mini track step M4), that language is the course language for all chat messages and option labels (see `data/chat-language.md` → Language before the frame).
+   - **Language.** Ask in the language the instructor writes in. Until the save (step 9, in the mini track step M4, in the design track step D3), that language is the course language for all chat messages and option labels (see `data/chat-language.md` → Language before the frame).
 2. If `journal.md` does not exist, instantiate it from `templates/journal.md`:
    - Copy the template **1:1, byte for byte** with the single command `cp specs/templates/journal.md journal.md` — no edits, no added comments, no reformatting. The file is already a valid LiaScript document; its first HTML comment is the LiaScript metadata header (`language:`, `@color` macro, `import: ./specs/dashboard/README.md`) and must remain the first comment.
-   - Unfilled sections show only their one-line note ("still empty – …"); each task writes its section from its template in `templates/`. This task only fills `## Course Context` (in the mini track also a short `## Outline` and the when-needed markers), the course title, the header's `language:` (course language code, step 7), and `## Dashboard` (via `tasks/update-dashboard.md`).
-   - This copy — and the language switch of `data/chat-language.md` → Language before the frame — are the only writes allowed before the save confirmation in step 9 (in the mini track step M4; `data/agent-links.md` → confirmation tiers): they contain nothing the instructor said. Every content change waits for that save.
+   - Unfilled sections show only their one-line note ("still empty – …"); each task writes its section from its template in `templates/`. This task only fills `## Course Context` (in the mini track also a short `## Outline` and the when-needed markers, in the design track the units under `## Sessions` and the markers), the course title, the header's `language:` (course language code, step 7), and `## Dashboard` (via `tasks/update-dashboard.md`).
+   - This copy — and the language switch of `data/chat-language.md` → Language before the frame — are the only writes allowed before the save confirmation in step 9 (in the mini track step M4, in the design track step D3 — whose fetch of a course repository in D1 is confirmed in the terminal and writes no journal; `data/agent-links.md` → confirmation tiers): they contain nothing the instructor said. Every content change waits for that save.
    - If `journal.md` already exists, leave it untouched and only work on the sections below.
 2a. 🎛️ **Track — "What are you planning?"** (form title, translated; single choice). **Only while `## Course Context` is still empty** (a new course): ask it first, before any other question, in the instructor's own terms — never show the track slugs:
    1. "Plan a course — several lessons, with learning objectives, didactics and material" → track `full` (steps 3–13)
    2. "Something small — one page with an overview, a few slides and quizzes" → track `mini` (Mini Track below, then steps 11–13)
-   3. "Improve an existing LiaScript course" → track `full` with course type `improve-existing`: skip step 3, then steps 4–13
+   3. "Improve an existing LiaScript course" → the follow-up question **"What should get better?"** (form title, translated; single choice, its own form right after this one — skip it when the chat already says it):
+      1. "Content and structure" → track `full` with course type `improve-existing`: skip step 3, then steps 4–13
+      2. "Only the look — colours, fonts, logo" → track `design`, `Design scope: look` (Design Track below)
+      3. "Only the images — check, replace, add new ones" → track `design`, `Design scope: images`
+      4. "Look and images" → track `design`, `Design scope: both`
    - **Propose instead of asking** when the chat already makes the answer clear (step 1 → Reuse what is known, e.g. "just a short quiz page on …"): show the form with that option preselected and one line "Sounds like {option} — correct?" (translated).
-   - **Later stage:** two more tracks are added in a later stage – not offered yet: turning existing material (PDF, slides, web page) into an interactive course (track `convert`), and building or adapting a template (track `template`). They never appear in the form. If the instructor asks for one, say in one line that this is not available yet and offer options 1 and 2.
-   - **Course Context already filled** (e.g. "Revise course frame"): the track is the journal's — its `__Track:__` block, `full` when the block is missing — and is **not asked**; revise in that track (full: steps 3–13, mini: M1–M4). Any wish for another track is a track switch — follow `tasks/activate-section.md` → Track switch instead of this task. The mini save (M4) never overwrites a filled section of the full track (e.g. a full outline): on a revise in the mini track it changes only its own short frame and short outline.
+   - **Later stage:** two more tracks are added in a later stage – not offered yet: turning existing material (PDF, slides, web page) into an interactive course (track `convert`), and building or adapting a template (track `template`). They never appear in the form. If the instructor asks for one, say in one line that this is not available yet and offer the options of the form.
+   - **Course Context already filled** (e.g. "Revise course frame"): the track is the journal's — its `__Track:__` block, `full` when the block is missing — and is **not asked**; revise in that track (full: steps 3–13, mini: M1–M4, design: D1–D3, where a new course file becomes a new unit and existing units stay). Any wish for another track is a track switch — follow `tasks/activate-section.md` → Track switch instead of this task. The mini save (M4) never overwrites a filled section of the full track (e.g. a full outline): on a revise in the mini track it changes only its own short frame and short outline.
 3. 🎛️ **Order:** ask step 4 (free text) before this form unless its answers are already known, so the options below fit the setting the instructor named. Ask for the course type as **two short questions in the instructor's own terms** (one form, skip what is already known from step 1 or 4). Show only plain labels in the course language, never the type slugs. Phrase the options for the instructor's setting (school, university, adult education) — e.g. "lesson" vs. "session", "pupils" vs. "participants":
 
    **3a. Scope** (single choice; full track only — something small is the mini track and improving existing material is option 3 of step 2a, so neither is offered here):
@@ -140,6 +145,7 @@ The track decides how much of the journal the course needs: the full track (a co
     - **single-lesson** (older journals only) → `:create-outline` → `:create-didactics` → `:create-agenda` (if yes) → `:create-session 1`
     - **mini track** → `:create-mini-course` (the short outline is saved already)
     - **improve-existing** → `:analyze-existing` (scans existing project memory and materials, offers to fill gaps)
+    - **design track** → D4 (the handover to the Artist-Agent)
 
     Name the next step exactly as the Dashboard's `next.title` and its button do.
 
@@ -158,6 +164,24 @@ M4. **Before saving** — the single write confirmation of this track: show the 
    - under `## Sessions`, the one-line note of the empty template ("No units yet – they are created after the didactics …") is replaced by the mini note `_{miniSessionsNote}_` — the language pack's `terms.miniSessionsNote` ("The material is written in one go with “Write the course”."), without a pack translated; the unit-word map of step 11 then leaves that line out.
    Write the Course Context, the outline, the markers and the note in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13; the overview run of step 11 replaces `process.steps` with the steps of the mini track (`tasks/update-dashboard.md` → Rules → Process steps per track).
 
+## Design Track
+
+Options 2–4 of the follow-up question in step 2a: an existing LiaScript course gets a new look, better images, or both. The design track **never changes teaching text** — it asks for no learning objectives, writes no `## Outline` and plans no lessons. One question round, then **one confirmation** saves the frame. Steps 1, 2, 5 and the rules of step 9 (Decided table, suggestions, noted for later, language pack first) apply as written; steps 3, 4, 6–8, 10 and 13 do not run.
+
+D1. **Find the course files — only inside the project.** Run `node specs/dashboard/read-source.mjs .` (lists the LiaScript course files of the project and skips backup, archive and hidden folders), then `node specs/dashboard/read-source.mjs <file>` once per course file for its compact excerpt (title, header styling and imports, slides, images with credit) — never read the whole files.
+   - The course lies in a Git repository → fetch it into the project with the MCP tool `git_clone` (tier "confirm in terminal", `data/agent-links.md`: a chat note says the confirmation waits there), then list again.
+   - Only a web address, no repository → ask the instructor in one line to download the course files into the project folder, and wait; never take a fetched web page for the course.
+   - No LiaScript file, or only PDF, slides or web pages → say in one line that this track needs an existing LiaScript course and that turning other material into a course comes in a later stage; offer the options of step 2a.
+   - **One unit per course file:** every `.md` file with a LiaScript header is one unit — also a single `README.md` with many `##` chapters is **one** unit (its image entries name the chapter). Several files: number them in the order the course gives (a start page that links the others, else the folder order).
+D2. 🎛️ Ask in one form only what is still open (step 1 → Reuse what is known): who the learners are (Target Group, short), and how they open the course (Delivery: link · learning platform · printed · on this computer). Language, tone, person and author come from the files (header `language:`, `author:`, the text) and stand in the summary as assumptions to confirm — never asked; the instructor address is the default of step 7.
+D3. **Before saving** — the single write confirmation of this track: show the summary of step 9 (Decided table in the instructor's words: what should get better, the learners, how they open the course), below it the course files as units in their order ("1 · {title} — {path}", translated) and one plain line naming what stays as it is, in teacher words (e.g. "The texts, tasks and learning objectives of your course stay as they are.", translated). "Save" / "Change something". Then save, in one write where the tool allows it (`data/chat-dialog.md` → Changing another section):
+   - the language pack first, exactly as step 9 says;
+   - `## Course Context` per `templates/course-context.yaml` → `layout`, short: Course Type (`Type: improve-existing`, Working Title: the course's `#` title, Target Group), Terminology (`sessions-called`: the word for one unit in the course language), Course Profile (`Agenda required: no`, `Delivery` from D2; the other fields `(from existing)`), File Structure (`Mode: multi-file`, `Session folder naming: n/a` — every unit keeps its recorded path), Conventions (from D2), Additional Notes, and the Track block (`Track: design`, `Convert mode: n/a`, `Source:` the course folder or file in the project, `Design scope` from step 2a);
+   - `## Sessions` per `templates/session-skeleton.yaml` → `section_layout.design_track`: one technical table row and one entry per unit, its path recorded in the Material cell (`data/file-structure-modes.md` → Recorded paths);
+   - the when-needed markers of the design track (below).
+   Then continue with steps 11 and 12; the overview run of step 11 replaces `process.steps` with the steps of the design track for its scope (`tasks/update-dashboard.md` → Rules → Process steps per track).
+D4. **Hand over to the Artist-Agent** — the look and the images are its work: a short summary and the switch link `agent:artist/switch` (terminal: `:agent artist`) as the next step. A wish to change content on the way (an objective, a task, the order) is a track switch to "Content and structure" (`tasks/activate-section.md` → Track switch), never a change in this track.
+
 ## When-Needed Markers
 
 A section the track does not need gets a marker instead of its empty-template content, in the same save as `## Course Context` — never as a write of its own, and never on a section that already has content. Lists per track (`specs/dashboard/tracks.mjs` → `laterOf`, copied verbatim):
@@ -166,6 +190,7 @@ A section the track does not need gets a marker instead of its empty-template co
 |---|---|
 | full | none — only `## Agenda` when the Course Profile says `Agenda required: no` (it comes when needed) |
 | mini | Didactics, Visual Identity, Agenda, Learner Personas, Analysis Status |
+| design | Outline, Didactics, Agenda, Learner Personas, Analysis Status |
 | convert, transfer (later stage) | Outline, Didactics, Agenda, Learner Personas, Analysis Status |
 | convert, rebuild (later stage) | Didactics, Agenda, Learner Personas, Analysis Status |
 | template (later stage) | Outline, Didactics, Visual Identity, Agenda, Sessions, Learner Personas, Validation, Analysis Status |
@@ -192,5 +217,5 @@ _{laterNote}_
 
 - All subsequent tasks (`:create-outline`, `:create-didactics`, `:create-agenda`, etc.) will read `journal.md` → `## Course Context` and adapt their behavior accordingly. A section marked when needed counts as empty for every task; `:activate-section {slug}` takes it in (`tasks/activate-section.md`).
 - The profile defaults are suggestions; the instructor can override any field.
-- For `improve-existing`, `:analyze-existing` handles the reverse-engineering of missing `journal.md` sections before improvement work begins.
+- For `improve-existing` (content and structure), `:analyze-existing` handles the reverse-engineering of missing `journal.md` sections before improvement work begins.
 - The skeleton's formatting rules are binding: no sub-headings inside sections (Course Context uses the `layout` of its template: table + `<details>`), no `###` sub-headings outside `## Sessions` / `## Templates` / `## Agents` / `## Validation` / `## Notes Backup`, and the Dashboard is only ever updated via `tasks/update-dashboard.md`.
