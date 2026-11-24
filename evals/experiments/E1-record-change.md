@@ -47,4 +47,4 @@ danach Tandem-Test, dann `main`.
   FAIL, teilweise behobener Punkt) – erst dort zeigt sich der Hauptnutzen. Danach Tandem-Test, dann `main`.
 
 Nebenbefunde für die Prüfstrecke: `quiz-balanced` prüft jetzt auch eine zu kurze richtige Antwort (der Richter
-fand den Fall in base/3); alle 12 Läufe nennen der Lehrkraft Dateinamen wie `README.md` (`language` 0/12).
+fand den Fall in base/3); alle 12 Läufe nennen der Lehrkraft Dateinamen wie `README.md` (`language` 0/12). Entscheidung der Lehrkraft: Dateinamen sind erwünscht, die Lehrkraft arbeitet mit den Dateien – die Richter-Frage zählt seither nur noch interne Schlüssel und Skriptnamen.
