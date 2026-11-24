@@ -106,6 +106,31 @@ export const checks = {
     return { pass, detail: `dated ${dated}, suffixes ${suffixes}, stated ${stated}, re-check actions ${actions}, open points of check ${points}` };
   },
 
+  "material-unchanged": (params, run) => {
+    const lines = changedLines(join(run.pristine, "README.md"), join(run.project, "README.md"));
+    return { pass: lines.length === 0, detail: lines.length ? `${lines.length} line(s) changed` : "unchanged" };
+  },
+
+  // After a passed short re-check: nothing says "re-check open" any more (outcome, status, usable line,
+  // overview, course summary), each dated line is marked re-checked, the re-check left the recommended actions and the open points, Done is ✅ again,
+  // and the dated lines stay as the record.
+  "recheck-closed": (params, run) => {
+    const journal = read(join(run.project, "journal.md"));
+    const open = journal.match(/kurze Nachprüfung (?:von [^\n]*?)?offen|short re-check (?:of [^\n]*?)?open|seither geändert|changed since/gi)?.length ?? 0;
+    const block = journal.split(/\*\*(?:Nach der Prüfung geändert|Changed after the check):\*\*\n\n?/)[1] ?? "";
+    const datedLines = (block.match(/^(?:- [^\n]*\n?)+/)?.[0] ?? "").split("\n").filter(line => /^- \d/.test(line));
+    const dated = datedLines.length;
+    const unmarked = datedLines.filter(line => !/·\s*(?:nachgeprüft|re-checked):/i.test(line)).length;
+    const actions = (journal.match(/^\d+\.\s*(?:Kurze Nachprüfung der geänderten Seiten|Short re-check of the changed pages)/gim) ?? []).length;
+    const row = journal.match(/^\|\s*1\s*\|[^\n]*$/m)?.[0] ?? "";
+    const done = row.split("|").map(cell => cell.trim())[6] ?? "";
+    const dashboard = journal.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}";
+    let points = 0;
+    try { points = (JSON.parse(dashboard).decisions ?? []).filter(item => item.source?.check === 1).length; } catch { points = -1; }
+    const pass = open === 0 && dated === params.lines && unmarked === 0 && actions === 0 && done === "✅" && points === 0;
+    return { pass, detail: `"open" mentions ${open}, dated ${dated} (${unmarked} not marked re-checked), re-check actions ${actions}, Done ${done || "?"}, open points of check ${points}` };
+  },
+
   "approvals": (params, run) => {
     const count = (read(join(run.project, "journal.md")).match(/^- \*\*[\d.-]+:\*\*\s*(?:Material freigegeben|material approved)/gim) ?? []).length;
     return { pass: count === params.count, detail: `${count} approval line(s)` };
