@@ -89,6 +89,23 @@ export const checks = {
     return { pass: recheckOpen(outcome) || done, detail: outcome.slice(0, 120) };
   },
 
+  // A further change after a check: one more dated line, the count in the outcome follows it,
+  // and nothing is doubled (suffix, recommended re-check, open point of the check).
+  "changed-count": (params, run) => {
+    const journal = read(join(run.project, "journal.md"));
+    const block = journal.split(/\*\*(?:Nach der Prüfung geändert|Changed after the check):\*\*\n\n?/)[1] ?? "";
+    const dated = (block.match(/^(?:- [^\n]*\n?)+/)?.[0] ?? "").split("\n").filter(line => /^- \d/.test(line)).length;
+    const outcome = outcomeOf(journal);
+    const suffixes = outcome.match(/seither geändert|changed since/gi)?.length ?? 0;
+    const stated = Number(outcome.match(/(\d+)\s+(?:Punkte?|points?)\s+(?:seither geändert|changed since)/i)?.[1] ?? 0);
+    const actions = (journal.match(/^\d+\.\s*(?:Kurze Nachprüfung der geänderten Seiten|Short re-check of the changed pages)/gim) ?? []).length;
+    const dashboard = journal.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}";
+    let points = 0;
+    try { points = (JSON.parse(dashboard).decisions ?? []).filter(item => item.source?.check === params.unit).length; } catch { points = -1; }
+    const pass = dated === params.lines && suffixes === 1 && stated === params.lines && actions <= 1 && points === 1;
+    return { pass, detail: `dated ${dated}, suffixes ${suffixes}, stated ${stated}, re-check actions ${actions}, open points of check ${points}` };
+  },
+
   "approvals": (params, run) => {
     const count = (read(join(run.project, "journal.md")).match(/^- \*\*[\d.-]+:\*\*\s*(?:Material freigegeben|material approved)/gim) ?? []).length;
     return { pass: count === params.count, detail: `${count} approval line(s)` };

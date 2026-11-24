@@ -67,3 +67,11 @@ An den acht quick-fix-Läufen des Skills-Pilots nachbewertet (`docs/levers/runs`
 
 Ordner unter `scenarios/` mit `scenario.json` (Felder wie in `quickfix-quiz`), Fixture-Dateien daneben oder
 aus `specs/dashboard/fixtures/`. Eine neue Prüfung kommt als Funktion nach `checks.mjs` (`id` → `{ pass, detail }`).
+
+## Szenarien
+
+| Szenario | Lage | Was es prüft |
+|---|---|---|
+| `quickfix-typo` | Lernseite geprüft und freigegeben, ein Tippfehler | Änderung bleibt auf der Folie, Nachprüfung offen, Kurs nicht veröffentlichbar |
+| `quickfix-quiz` | wie oben, noch nicht freigegeben; Quiz verrät die Antwort | dazu: Antworten gleich lang (`quiz-balanced`) |
+| `quickfix-second-change` | schon einmal nach der Prüfung geändert (Nachprüfung offen), jetzt ein Tippfehler | zweite datierte Zeile, „2 Punkte seither geändert“, nichts doppelt (`changed-count`) |

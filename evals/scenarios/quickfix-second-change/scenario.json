@@ -1,0 +1,30 @@
+{
+  "id": "quickfix-second-change",
+  "title": "quick-fix on a unit already changed after its check (re-check open): a typo",
+  "fixture": {
+    "journal.md": "evals/scenarios/quickfix-second-change/journal.md",
+    "README.md": "evals/scenarios/quickfix-second-change/material.md"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-24",
+  "command": ":quick-fix 1 Tippfehler auf der Seite „Wo ist das Wasser?“: „Grundwaser“",
+  "replies": [
+    "Scope confirmation → \"Ja\"",
+    "Showing the change before saving (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "An approval question for the unit → \"Freigeben\"",
+    "Any other question or offer → the option you would present as the recommended default; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    { "id": "validator-ok" },
+    { "id": "no-warning", "patterns": ["Done ✅ while", "recommended actions name none", "says yes while the short re-check", "course summary says Result: PASS while", "the overview says units", "report-action"] },
+    { "id": "material-scope", "slides": ["Wo ist das Wasser?"] },
+    { "id": "material-has", "pattern": "Grundwasser" },
+    { "id": "material-lacks", "pattern": "Grundwaser\\b" },
+    { "id": "changed-count", "unit": 1, "lines": 2 },
+    { "id": "recheck-state" },
+    { "id": "approvals", "count": 1 },
+    { "id": "summary-blocked" }
+  ],
+  "judge": "evals/judges/quick-fix.md"
+}
