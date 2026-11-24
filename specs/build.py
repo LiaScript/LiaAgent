@@ -168,6 +168,9 @@ def _extract_task_file(desc: str) -> str:
     m = re.search(r'`(tasks/[^`]+\.md)`', desc)
     if m:
         return f"specs/{m.group(1)}"
+    m = re.search(r'skill `([\w-]+)`', desc)
+    if m:
+        return f".claude/skills/{m.group(1)}/SKILL.md"
     if re.search(r'agents/\{[^}]+\}-agent\.yaml', desc):
         return "specs/agents/{character}-agent.yaml"
     return ""
