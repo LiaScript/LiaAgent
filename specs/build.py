@@ -137,6 +137,11 @@ def build_bundle(out_path: Path) -> None:
             for file in sorted(path.iterdir()):
                 if file.is_file():
                     bundle += _read_file_bundle(file, f"{name}/{file.name}")
+                elif name == "data" and file.is_dir():
+                    # data/cheat-sheet/: the parts of the LiaScript guide, in the order of its index
+                    for part in sorted(file.iterdir()):
+                        if part.is_file():
+                            bundle += _read_file_bundle(part, f"{name}/{file.name}/{part.name}")
         else:
             if not path.exists() or not path.is_file():
                 continue

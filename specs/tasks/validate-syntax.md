@@ -16,7 +16,7 @@ This task is also invoked internally (not just via the command) by `tasks/valida
 - File Structure mode from `journal.md` → `## Course Context` → `__File Structure:__` — checks 1 and 2 differ by mode
 - the session's type — resolved from the session number as described in `data/session-types.md` → "Resolving a session's type"; never a command parameter
 - The material document for this session — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode
-- `data/liascript-cheat-sheet.md` as the syntax reference
+- `data/liascript-cheat-sheet.md` as the syntax reference — its index and the parts it names: every part for a whole document, `00-checks.md` plus the parts of the constructs in scope for a narrower scope (the index → How to read this guide)
 - Optionally, a narrower scope (e.g. "only the changed section") when called by `quick-fix.md`
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-checks.md`
 
@@ -29,7 +29,7 @@ This task is also invoked internally (not just via the command) by `tasks/valida
 ## Steps
 
 1. Resolve the material document (or the given narrower scope) per the Inputs above.
-2. Load `data/liascript-cheat-sheet.md` as the syntax reference.
+2. Load `data/liascript-cheat-sheet.md` as the syntax reference: the index, then its parts as the index says — all of them for the whole document; for a narrower scope `00-checks.md` and every part of a construct in that scope. Run only the checks below that concern the scope.
    - If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference for constructs the cheat sheet does not cover and for unclear findings. The check list below and the findings format stay as defined here.
 3. Run every check below against the material, noting rule, ✅/❌, and the page title of each finding.
 4. If invoked as a sub-procedure: return the findings list to the caller — do not ask the instructor anything.
