@@ -73,7 +73,8 @@ Run this task automatically after any task that changes project state:
    line and run it again. After a course step was saved, quote the button word it lists in the step texts
    and the chat link.
 4. **The texts of each unit** (yours): `summary` never contradicts the unit's state and does not repeat
-   `usable`, the first line of its card. Fill each step's `why`, `result` (what exists, e.g. "{n} inserted"
+   `usable`, the first line of its card; it describes the unit, never the changes made to it (those stand in
+   the report's block "Changed after the check"). Fill each step's `why`, `result` (what exists, e.g. "{n} inserted"
    for the image step) and `next` (what remains, e.g. the `__To do:__` lines of the image entries) from
    evidence. A generated draft is not instructor approval, and a session PASS is not a course publication
    PASS. A step that is `done` returns to an earlier state only through a check result (FAIL, concerns);
