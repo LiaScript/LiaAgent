@@ -13,3 +13,6 @@ test/dashboard/artifacts/
 
 # Brainstorming-Entwürfe (Visual Companion)
 .superpowers/
+
+# evaluation runs (evals/README.md)
+evals/.runs/

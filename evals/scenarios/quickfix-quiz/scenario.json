@@ -1,0 +1,31 @@
+{
+  "id": "quickfix-quiz",
+  "title": "quick-fix after a check, not yet approved: the quiz gives its answer away",
+  "fixture": {
+    "journal.md": "specs/dashboard/fixtures/journal-mini-approved.md",
+    "README.md": "evals/scenarios/quickfix-quiz/material.md"
+  },
+  "patches": [
+    { "file": "journal.md", "remove": "- **12.11.2026:** Material freigegeben\n" }
+  ],
+  "mode": "terminal",
+  "today": "2026-11-24",
+  "command": ":quick-fix 1 Im Quiz „Was passiert zuerst?“ verrät sich die richtige Antwort selbst – sie ist viel länger als die anderen.",
+  "replies": [
+    "Scope confirmation → \"Ja\"",
+    "Showing the change before saving (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "An approval question for the unit → \"Freigeben\"",
+    "Any other question or offer → the option you would present as the recommended default; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    { "id": "validator-ok" },
+    { "id": "no-warning", "patterns": ["Done ✅ while", "recommended actions name none", "says yes while the short re-check", "course summary says Result: PASS while", "the overview says units"] },
+    { "id": "material-scope", "slides": ["Quiz: Was passiert zuerst?"] },
+    { "id": "quiz-balanced", "slide": "Quiz: Was passiert zuerst?", "maxRatio": 1.2, "minRatio": 0.9 },
+    { "id": "journal-has", "pattern": "Nach der Prüfung geändert" },
+    { "id": "recheck-state" },
+    { "id": "approvals", "count": 1 },
+    { "id": "summary-blocked" }
+  ],
+  "judge": "evals/judges/quick-fix.md"
+}
