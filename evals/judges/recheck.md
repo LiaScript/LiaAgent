@@ -20,7 +20,7 @@ Questions (one failure mode each):
 - `record_kept`: The two dated change lines stay as the record (marked as re-checked), not deleted.
 - `material_untouched`: The material was not changed by the check.
 - `next_step`: The closing message names one fitting next step (e.g. publishing or trying the unit), not a list of everything.
-- `language`: German throughout, the instructor addressed as „Sie“, no internal keys or tool names in the messages (data keys, slugs, script names such as `write-dashboard.mjs`). File names the instructor works with (`README.md`, `journal.md`) are fine.
+- `language`: German throughout, the instructor addressed as „Sie“, no internal keys or tool names in the messages (data keys, slugs, script names such as `write-dashboard.mjs`). File names the instructor works with (`README.md`, `journal.md`), the preview program the instructor runs (`liadev`, LiaScript DevServer) and the result words the task asks for (PASS, FAIL) are fine.
 - `no_harm`: Nothing wrong or unasked was written (no false claims, no edits to unrelated sections).
 
 Do not count what `validate.txt` already reports: the code checks score the validator's warnings, and a

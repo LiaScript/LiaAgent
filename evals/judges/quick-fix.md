@@ -19,7 +19,7 @@ Questions (one failure mode each):
 - `approval_right`: The approval form appeared exactly when the unit had no approval decision before, with three choices; never otherwise.
 - `learner_offer`: (quiz only, else null) After "Freigeben", trying the unit as a learner was offered once.
 - `outside_findings`: Problems found outside the change were neither fixed silently nor lost: named once and kept as an open point of the overview.
-- `language`: German throughout, the instructor addressed as „Sie“, no internal keys or tool names in the messages (data keys, slugs, script names such as `write-dashboard.mjs`). File names the instructor works with (`README.md`, `journal.md`) are fine.
+- `language`: German throughout, the instructor addressed as „Sie“, no internal keys or tool names in the messages (data keys, slugs, script names such as `write-dashboard.mjs`). File names the instructor works with (`README.md`, `journal.md`), the preview program the instructor runs (`liadev`, LiaScript DevServer) and the result words the task asks for (PASS, FAIL) are fine.
 - `no_harm`: Nothing wrong or unasked was written (no false claims, no edits to unrelated sections).
 
 Do not count what `validate.txt` already reports: the code checks score the validator's warnings, and a

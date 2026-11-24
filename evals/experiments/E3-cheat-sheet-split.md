@@ -23,4 +23,17 @@ Schutz verletzt ist.
 
 ## Ergebnis
 
-(nach dem Lauf)
+Lauf 24.11.2026, `/home/claude/runs/m2` (2 Läufe je Variante und Szenario, blinder Richter).
+
+| Szenario | gelesene Spec-Wörter base | e3 | Tokens base | e3 | alle Code-Prüfungen base | e3 |
+|---|---|---|---|---|---|---|
+| recheck-short | 27.974 | 28.789 (+3 %) | 185.577 | 187.289 | 2/2 | 1/2 |
+| quickfix-quiz | 23.683 | 24.550 (+4 %) | 160.377 | 165.749 | 2/2 | 2/2 |
+| quickfix-second-change | 19.736 | 20.781 | 139.424 | 143.700 | 2/2 | 2/2 |
+| quickfix-typo | 20.191 | 20.515 | 144.535 | 147.162 | 2/2 | 2/2 |
+
+**Entscheidung: nicht übernehmen.** Die Hauptkennzahl verfehlt das Ziel (−15 %) deutlich; e3 liest sogar mehr.
+Grund: `develop` liest das Cheat-Sheet schon heute abschnittsweise (Abschnittsregel aus 4002f10, z. B. „lines
+503–562, Quizzes for young learners“), bei der kurzen Nachprüfung gar nicht. Die Teile von e3 sind größer als
+diese Abschnitte. Ein Schutz ist verletzt: einmal blieb nach der Nachprüfung ein zweiter offener Punkt der
+Prüfung stehen (`recheck-closed`). Die Teilung lohnt erst, wenn Agenten das ganze Blatt laden müssten.

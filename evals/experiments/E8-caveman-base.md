@@ -22,4 +22,21 @@ Schutz verletzt ist.
 
 ## Ergebnis
 
-(nach dem Lauf)
+Gebaut: `teaching-agent.yaml` 2.064 → 1.612 Wörter (−22 %), `teaching-agent.nav.yaml` 2.648 → 2.225 (−16 %),
+`CLAUDE.md` 3.139 → 2.637. Ziel von −25 % verfehlt: Code, Pfade, Befehlslisten und geschützte Sätze bleiben wörtlich.
+
+Lauf 24.11.2026, `/home/claude/runs/m2` (2 Läufe je Variante und Szenario, blinder Richter).
+
+| Szenario | Tokens base | e8 | gelesene Spec-Wörter base | e8 | Code-Prüfungen | Richter-Auffälligkeit |
+|---|---|---|---|---|---|---|
+| quickfix-quiz | 160.377 | 164.928 (+3 %) | 23.683 | 20.083 | 2/2 · 2/2 | `content_fixed` base 2/2, **e8 0/2** |
+| quickfix-second-change | 139.424 | 144.805 (+4 %) | 19.736 | 18.639 | 2/2 · 2/2 | – |
+| quickfix-typo | 144.535 | 151.950 (+5 %) | 20.191 | 21.181 | 2/2 · 2/2 | – |
+| recheck-short | 185.577 | 179.267 (−3 %) | 27.974 | 27.169 | 2/2 · 2/2 | e8 besser bei `scope_kept`, `no_harm` |
+
+**Entscheidung: nicht übernehmen.** Die Tokens sinken nicht (Hauptkennzahl verfehlt): die gesparten ~500 Wörter
+Grundlast gehen im Rauschen der Lesemenge unter. Der Qualitätsschutz ist verletzt: beide e8-Quizläufe schrieben
+knappe, gleich gebaute Antworten („Regen fällt herab.“ / „Wasser verdunstet.“ / „Schnee fällt herab.“;
+„Es verdunstet Wasser.“) – der Telegrammstil der Anweisungen färbt auf den Text für Lernende ab. Bei nur zwei
+Läufen ist das kein Beweis, aber genau das Risiko, das die Hypothese prüfen sollte. Wenn überhaupt, dann nur
+Teile ohne Bezug zum Schreiben (Befehlstabelle, Shell-Liste) verdichten.
