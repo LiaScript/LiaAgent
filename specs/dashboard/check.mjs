@@ -4534,3 +4534,27 @@ test("check-material names narration comments apart from ▶ buttons", () => {
   assert.equal(narration, 2);
   assert.equal(readAloud.blocks, 1);
 });
+
+// E1 (evals/experiments): record-change.mjs writes the whole change path after a check in one write.
+test("record-change: dated line, outcome suffix, usable, Done ❌, recommended action and the light-track summary – and counts on", async () => {
+  const { recordChange } = await import("./record-change.mjs");
+  const { readJournal, loadPacks } = await import("./journal-model.mjs");
+  const mini = readFileSync(new URL("./fixtures/journal-mini-approved.md", import.meta.url), "utf8");
+  const journal = readJournal(mini, { packs: loadPacks() });
+  const base = { unit: 1, page: "Wo ist das Wasser?", change: "Tippfehler", checked: "Quelltext geprüft", date: "24.11.2026", isoDate: "2026-11-24", terms: journal.terms, unitWord: journal.terminology, track: journal.track };
+  const once = recordChange(mini, base).text;
+  assert.match(once, /\*\*Nach der Prüfung geändert:\*\*\n\n- 24\.11\.2026 · Wo ist das Wasser\? · Tippfehler · Quelltext geprüft\n/);
+  assert.match(once, /\*\*Ergebnis:\*\* bestanden \(12\.11\.2026\) – 1 Punkt seither geändert – kurze Nachprüfung offen/);
+  assert.match(once, /\*\*Jetzt mit den Lernenden nutzbar:\*\* ja, mit Einschränkungen: kurze Nachprüfung offen/);
+  assert.match(once, /^\| 1 \| Der Wasserkreislauf \|.*\| ❌ \| geprüft ✅ \|$/m);
+  assert.match(once, /^1\. Kurze Nachprüfung der geänderten Seiten: `:validate-course 1`$/m);
+  assert.match(once, /- Result: PASS with concerns/);
+  assert.match(once, /noch nicht bereit zum Veröffentlichen – kurze Nachprüfung von Lernseite 1 offen \(24\.11\.2026\)/);
+  const twice = recordChange(once, { ...base, page: "Quiz: Was passiert zuerst?", change: "Antworten gleich lang" }).text;
+  assert.match(twice, /– 2 Punkte seither geändert – kurze Nachprüfung offen/);
+  assert.equal((twice.match(/kurze Nachprüfung offen/g) ?? []).length, (once.match(/kurze Nachprüfung offen/g) ?? []).length, "no second suffix");
+  // The mini-check was the re-check: only the dated line.
+  const rechecked = recordChange(mini, { ...base, rechecked: true }).text;
+  assert.match(rechecked, /· Quelltext geprüft · nachgeprüft: Quelltext geprüft/);
+  assert.match(rechecked, /\*\*Ergebnis:\*\* bestanden \(12\.11\.2026\)\n/);
+});
