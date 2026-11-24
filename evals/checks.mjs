@@ -70,8 +70,11 @@ export const checks = {
     const correct = options.find(item => item.correct);
     const others = options.filter(item => !item.correct).map(item => item.text.length);
     if (!correct || !others.length) return { pass: false, detail: "no single-choice options found" };
-    const ratio = correct.text.length / Math.max(...others);
-    return { pass: ratio <= params.maxRatio, detail: `correct ${correct.text.length} chars, longest other ${Math.max(...others)} (ratio ${ratio.toFixed(2)})` };
+    // The right answer stands out neither as the longest nor as the shortest option.
+    const high = correct.text.length / Math.max(...others);
+    const low = correct.text.length / Math.min(...others);
+    const minRatio = params.minRatio ?? 0.9;
+    return { pass: high <= params.maxRatio && low >= minRatio, detail: `correct ${correct.text.length} chars, others ${others.join("/")} (vs longest ${high.toFixed(2)}, vs shortest ${low.toFixed(2)})` };
   },
 
   "material-has": (params, run) => ({ pass: new RegExp(params.pattern, "u").test(read(join(run.project, "README.md"))), detail: params.pattern }),

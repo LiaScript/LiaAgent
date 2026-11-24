@@ -5,7 +5,7 @@ ein Lauf der Prüfstrecke mit `base=main` und der Variante. Kennzahlen und Ziel 
 
 | # | Idee | Hauptkennzahl | Stand |
 |---|---|---|---|
-| E1 | `record-change.mjs` schreibt den Änderungsweg nach einer Prüfung (Done, Ergebnis, Nutzbar, empfohlener Schritt, Zusammenfassung) | alle Code-Prüfungen bestanden | geplant |
+| E1 | `record-change.mjs` schreibt den Änderungsweg nach einer Prüfung (Done, Ergebnis, Nutzbar, empfohlener Schritt, Zusammenfassung) | alle Code-Prüfungen bestanden | gelaufen: Kandidat – gleich richtig, −6–7 % Tokens, −12–16 % Zeit, viel weniger Streuung |
 | E2 | `load_command`: ein Werkzeug legt fest, was gelesen wird | Spanne der Lesemenge | geplant |
 | E3 | Cheat-Sheet nach Konstrukt geteilt (aus `experiment/levers-tasks`, jetzt mit Abschnittsregel) | gelesene Spec-Wörter | geplant |
 | E4 | Regeln als OKF-Bundle mit Status, Herkunft und Prüfstand | unbelegte Regeln, Prüfungen | geplant |

@@ -21,7 +21,7 @@
     { "id": "validator-ok" },
     { "id": "no-warning", "patterns": ["Done ✅ while", "recommended actions name none", "says yes while the short re-check", "course summary says Result: PASS while", "the overview says units"] },
     { "id": "material-scope", "slides": ["Quiz: Was passiert zuerst?"] },
-    { "id": "quiz-balanced", "slide": "Quiz: Was passiert zuerst?", "maxRatio": 1.2 },
+    { "id": "quiz-balanced", "slide": "Quiz: Was passiert zuerst?", "maxRatio": 1.2, "minRatio": 0.9 },
     { "id": "journal-has", "pattern": "Nach der Prüfung geändert" },
     { "id": "recheck-state" },
     { "id": "approvals", "count": 1 },
