@@ -213,6 +213,9 @@ export function analyseMaterial(source) {
     inline: (text.match(/\{\|>[^{}\n]*\}\{/g) ?? []).length,
     inHints: hintLines.reduce((sum, item) => sum + (item.line.match(/\{\|>[^{}\n]*\}\{/g) ?? []).length, 0)
   };
+  // Narration comments (--{{n}}--) are not ▶ buttons and are not counted above; named apart so that
+  // "0 blocks" is not read as "nothing is read aloud" (simulated quick-fix runs, docs/levers).
+  const narration = (text.match(/^[ \t]*--\{\{\d+(?:-\d+)?\}\}--[ \t]*$/gm) ?? []).length;
   // With a narrator, hints are read aloud like questions and options: - [[?]] {|>}{hint text}.
   const header = source.match(/^\s*<!--([\s\S]*?)-->/)?.[1] ?? "";
   const silent = hintLines.filter(item => !/\{\|>[^{}]*\}\{/.test(item.line));
@@ -242,7 +245,7 @@ export function analyseMaterial(source) {
   const patterns = answerPatterns({ masked, raw, slideOf, quizzes, language: header.match(/^\s*language\s*:\s*([A-Za-z]{2})/m)?.[1].toLowerCase() });
   warnings.push(...patterns.warnings);
   delete patterns.warnings;
-  return { slides, titlePages, quizzes: quizzes.length, markers, readAloud, hints, patterns, problems, warnings };
+  return { slides, titlePages, quizzes: quizzes.length, markers, readAloud, narration, hints, patterns, problems, warnings };
 }
 
 // ---------------------------------------------------------------------------
@@ -657,7 +660,7 @@ function report(file, analysis, rendered, reason) {
     }
   } else {
     console.log(`Slides: ${analysis.slides.length}${pagesNote(analysis.slides.length, analysis.titlePages)} (from the headings)`);
-    console.log(`Quizzes with options: ${analysis.quizzes} · Read-aloud in the source: ${readAloud.blocks} blocks, ${readAloud.inline} inline`);
+    console.log(`Quizzes with options: ${analysis.quizzes} · Read-aloud in the source: ${readAloud.blocks} blocks, ${readAloud.inline} inline${analysis.narration ? ` (▶ buttons {{|>}} and {|>}{…} only; plus ${analysis.narration} narration comment${analysis.narration === 1 ? "" : "s"} --{{n}}--, not counted as buttons)` : ""}`);
     console.log("Fit on screen: not measured (needs the rendered check)");
   }
   console.log(`Answer patterns: ${describePatterns(analysis.patterns)}`);

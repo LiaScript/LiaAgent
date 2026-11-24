@@ -41,6 +41,7 @@ The wording of this section is canonical; tasks that run `check-material.mjs` po
   `npm i -D playwright`, then `npx playwright install chromium` (about 150 MB). Without a
   `package.json` run `npm init -y` first; add `node_modules/` to the `.gitignore`.
 - **Never run** a step with `sudo` or `--with-deps` — only name it.
+- **Any other reason** (e.g. the preview server `liadev` is not found): no offer; say in one line, in plain words, that the page was checked in the source only, and why.
 - **Declined** (or no shell): do not ask again in this conversation; say in one line what
   was checked instead, as before.
 - **`build-session`** runs on its own, so it asks once in the terminal **before** the run.

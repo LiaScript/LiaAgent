@@ -18,7 +18,7 @@ computed by `write-dashboard.mjs`; this task writes the texts and the open point
   `## Validation` → `### Latest Validation Summary`, `## Publishing`
 - `journal.md` → `## Agents` → `### Learner Personas` — headings only, for actions
 - `templates/project-dashboard.yaml` — semantic data shape; fields marked (computed) are set by the script
-- `data/agent-links.md` — link format and which commands fit which state
+- `data/agent-links.md` — which commands fit which state in the preview chat; only with the MCP gate open (the link format in `journal.md` is `data/journal-links.md`)
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/journal-links.md`; `data/chat-language.md` only when this run changes the course language
 - `dashboard/README.md` → `labels` only when the course language is neither German nor English
 

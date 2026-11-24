@@ -4507,3 +4507,28 @@ test("final fix 14: scope images sets only the image style – its own button wo
   // The unit's images step is in progress while the image style is the unit's next action.
   assert.equal(deriveDesign({ scope: "images" }).data.units[0].process.steps[0].state, "current");
 });
+
+// Simulated quick-fix runs (docs/levers on the experiment branches): every run missed these three; the
+// validator now names them. The mini fixture is approved and checked.
+test("validator: a stale overview, Done ✅ and no recommended action while the short re-check is open", () => {
+  const mini = readFileSync(new URL("./fixtures/journal-mini-approved.md", import.meta.url), "utf8");
+  // The approval line is gone, the overview still says approved.
+  const unapproved = mini.replace(/^- \*\*12\.11\.2026:\*\* Material freigegeben\n/m, "");
+  assert.notEqual(unapproved, mini);
+  inProject(unapproved, ({ validate }) => assert.match(validate().output, /the overview says units\[1\]\.approved = true, the unit's decisions say/));
+  inProject(mini, ({ validate }) => assert.doesNotMatch(validate().output, /the overview says units|short re-check is open/));
+  // A change after the check: the outcome carries the suffix, Done stays ✅, the actions say "Keine".
+  const changed = mini.replace("**Ergebnis:** bestanden (12.11.2026)", "**Ergebnis:** bestanden (12.11.2026) – 1 Punkt seither geändert – kurze Nachprüfung offen");
+  assert.notEqual(changed, mini);
+  inProject(changed, ({ validate }) => {
+    const output = validate().output;
+    assert.match(output, /unit 1: Done ✅ while its report says the short re-check is open/);
+    assert.match(output, /unit 1: the report's short re-check is open, but its recommended actions name none/);
+  });
+});
+
+test("check-material names narration comments apart from ▶ buttons", () => {
+  const { readAloud, narration } = analyseMaterial("<!--\nnarrator: Deutsch Female\n-->\n\n# A\n\n## B\n\n    --{{0}}--\nHallo.\n\nHallo.\n\n    --{{1}}--\nNoch was.\n\n{{|>}}\nText mit Knopf.\n");
+  assert.equal(narration, 2);
+  assert.equal(readAloud.blocks, 1);
+});

@@ -7,7 +7,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import "./dashboard.js";
 import { readJournal, loadPacks, recheckOpenText, approvalTails, withoutApproval, recordedPath, englishTerms as modelEnglishTerms } from "./journal-model.mjs";
-import { unitState } from "./derive-dashboard.mjs";
+import { unitState, deriveForJournal } from "./derive-dashboard.mjs";
 import { unitIsCourseCheck, outlineShort, englishActions } from "./actions.mjs";
 import { trackIds, sectionSlug, stepsOf, laterHidden, laterOf } from "./tracks.mjs";
 import { unencodedUrls, describeUrl, analyseMaterial } from "./check-material.mjs";
@@ -917,6 +917,24 @@ for (const [where, text] of countTexts) {
     const saysOpen = openValue.test(row.value);
     if (saysOpen && journal.delivery !== "open") warnings.push(`course frame: the row "${row.label}" says the access is still open, but Delivery is ${journal.delivery ?? "missing"} – set Delivery: open (templates/course-context.yaml → Course Profile), so the overview names the open access and settles it before publishing`);
     if (!saysOpen && journal.delivery === "open") warnings.push(`course frame: Delivery is open, but the row "${row.label}" says "${short(row.value, 60)}" – write the decided way into Delivery (link | platform | print | local), or "still open" into the row`);
+  }
+  // Found in simulated quick-fix runs (all of them missed these; docs/levers on the experiment branches):
+  // (1) the overview says "approved" while the unit's decisions lack the approval line (or the reverse).
+  try {
+    const { _journalHash, ...draft } = JSON.parse(match[1]);
+    const stale = deriveForJournal(file, draft).changes.filter(change => /^units\[\d+\]/.test(change.path) && /\.approved$/.test(change.path));
+    if (stale.length) stale.forEach(change => warnings.push(`the overview says ${change.path} = ${JSON.stringify(change.from) ?? "–"}, the unit's decisions say ${JSON.stringify(change.to) ?? "not approved"} – the decision line is the source ("material approved", translated): add it if the instructor approved, otherwise run node specs/dashboard/write-dashboard.mjs (tasks/update-dashboard.md step 8)`));
+  } catch { /* a draft the deriver cannot read is reported by write-dashboard.mjs itself */ }
+  // (2) and (3): a change after the check leaves the unit not done and the re-check open in the report.
+  const sessionsText = section("Sessions");
+  const sessionLines = sessionsText.split("\n");
+  for (const unit of journal.units.filter(item => item.report?.changedSince)) {
+    if (unit.done) warnings.push(`unit ${unit.n}: Done ✅ while its report says the short re-check is open – set Done ❌ in the technical table until the re-check (tasks/quick-fix.md → Change path after a check)`);
+    const report = reportHeadings(sessionsText).find(item => item.unit === String(unit.n));
+    if (!report) continue;
+    const end = sessionLines.findIndex((line, index) => index > report.index && /^#{1,4} /.test(line));
+    const body = sessionLines.slice(report.index + 1, end < 0 ? undefined : end).join("\n");
+    if (body.split("\n").some(line => actionLabel.test(line)) && !openReportActions(body).length) warnings.push(`unit ${unit.n}: the report's short re-check is open, but its recommended actions name none – write the re-check (:validate-course ${unit.n}) as its recommended action in the same map (tasks/quick-fix.md → One journal write per fix)`);
   }
 }
 if (warnings.length) {
