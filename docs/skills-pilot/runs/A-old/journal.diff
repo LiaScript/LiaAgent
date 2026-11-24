@@ -1,0 +1,189 @@
+--- pristine-run-A-old/journal.md	2026-11-24 15:20:38.093377466 +0100
++++ run-A-old/journal.md	2026-11-24 15:25:32.272198517 +0100
+@@ -18,14 +18,14 @@
+ {
+   "title": "Der Wasserkreislauf",
+   "context": "Klasse 6 · 24 Lernende · 15 Minuten allein am Laptop",
+-  "subtitle": "Die Lernseite „Der Wasserkreislauf“ hat drei Folien und ein Quiz. Sie ist geprüft und von Ihnen freigegeben.",
++  "subtitle": "Die Lernseite „Der Wasserkreislauf“ hat drei Folien und ein Quiz. Nach der Prüfung wurden die Antworten im Quiz angeglichen; die geänderte Folie wartet auf eine kurze Nachprüfung.",
+   "next": {
+-    "icon": "🚀",
+-    "title": "Veröffentlichen",
+-    "why": "Der geprüfte Kurs bekommt einen Link zum Teilen.",
+-    "label": "Kurs veröffentlichen",
+-    "href": "agent:development/create-project",
+-    "command": ":agent development → :create-project"
++    "icon": "🔍",
++    "title": "Prüfen und freigeben – Lernseite 1",
++    "why": "Die kurze Nachprüfung sieht die geänderte Quiz-Folie noch einmal durch, etwa 2 Minuten. Danach kann die Lernseite veröffentlicht werden.",
++    "label": "Lernseite 1 kurz nachprüfen",
++    "href": "agent:teaching/validate-course?number=1",
++    "command": ":validate-course 1"
+   },
+   "labels": {
+     "decide": "Noch zu entscheiden",
+@@ -36,7 +36,7 @@
+     {
+       "id": 1,
+       "title": "Der Wasserkreislauf",
+-      "summary": "Drei Folien und ein Quiz, jeder Text zum Vorlesen.",
++      "summary": "Drei Folien und ein Quiz, jeder Text zum Vorlesen; die Quiz-Antworten sind seit dem 24.11.2026 etwa gleich lang.",
+       "process": {
+         "title": "Der Wasserkreislauf",
+         "steps": [
+@@ -54,19 +54,20 @@
+           },
+           {
+             "title": "Prüfen und freigeben",
+-            "state": "done",
++            "state": "review",
+             "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt; danach geben Sie es frei.",
+-            "result": "bestanden und am 12.11.2026 von Ihnen freigegeben"
++            "result": "Prüfung am 12.11.2026 bestanden; am 24.11.2026 die Antworten im Quiz „Was passiert zuerst?“ geändert und von Ihnen freigegeben",
++            "next": "kurze Nachprüfung der geänderten Quiz-Folie"
+           }
+         ]
+       },
+-      "state": "done",
++      "state": "review",
+       "href": "#1.-der-wasserkreislauf",
+       "view": {
+         "href": "agent:teaching/preview?file=1",
+         "command": ":preview 1"
+       },
+-      "statusLabel": "geprüft ✅",
++      "statusLabel": "bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen",
+       "usable": {
+         "state": "yes"
+       },
+@@ -91,13 +92,14 @@
+       },
+       {
+         "title": "Prüfen",
+-        "state": "done",
++        "state": "current",
+         "why": "Die Prüfung zeigt, ob die Seite zu den Lernzielen, zur Zeit und zu den Lernenden passt.",
+-        "result": "Lernseite 1 geprüft und freigegeben"
++        "result": "Lernseite 1 am 12.11.2026 geprüft; eine Änderung im Quiz wartet auf die kurze Nachprüfung",
++        "statusLabel": "bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen"
+       },
+       {
+         "title": "Veröffentlichen",
+-        "state": "current",
++        "state": "planned",
+         "why": "Die Seite bekommt einen Link für die Lernenden."
+       }
+     ],
+@@ -125,6 +127,17 @@
+       }
+     ]
+   },
++  "decisions": [
++    {
++      "key": "outline-material-slides",
++      "kind": "decide",
++      "title": "Gliederung und Lernseite beschreiben zwei Folien verschieden",
++      "why": "Die Gliederung plant im Quiz den Schritt nach dem Verdunsten und auf „Geschafft!“ ein Ankreuzen, was ich schon kann. Die Lernseite fragt nach dem ersten Schritt und hat kein Ankreuzen.",
++      "how": "Entscheiden Sie, ob die Gliederung an die Lernseite angepasst wird oder ob die beiden Folien gemeinsam überarbeitet werden.",
++      "href": "#outline-–-gliederung",
++      "label": "Zur Gliederung"
++    }
++  ],
+   "explore": [
+     {
+       "icon": "💬",
+@@ -159,7 +172,7 @@
+     "one": "Lernseite",
+     "many": "Lernseiten"
+   },
+-  "footer": "Stand: 13.11.2026"
++  "footer": "Stand: 24.11.2026"
+ }
+ ```
+ 
+@@ -374,21 +387,21 @@
+ in this order. Never use `#####` headings inside a session.
+ --->
+ 
+-1. Der Wasserkreislauf – geprüft ✅
++1. Der Wasserkreislauf – bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen
+ 
+ <details><summary>Technische Übersicht</summary>
+ 
+ <!-- data-type="none" -->
+ | # | Title | Type | Skeleton | Material | Done | Notes |
+ |---|-------|------|----------|----------|------|-------|
+-| 1 | Der Wasserkreislauf | n/a | ✅ | ✅ | ✅ | geprüft ✅ |
++| 1 | Der Wasserkreislauf | n/a | ✅ | ✅ | ✅ | bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen |
+ 
+ </details>
+ 
+ ### 1. Der Wasserkreislauf
+ 
+ <!-- class="journal-actions" -->
+-[👁 So sehen es die Lernenden](agent:teaching/preview?file=1) `:preview 1`
++[🔍 Lernseite 1 kurz nachprüfen](agent:teaching/validate-course?number=1) `:validate-course 1` · [👁 So sehen es die Lernenden](agent:teaching/preview?file=1) `:preview 1`
+ 
+ <!--- Unit 1 of the mini course, written by :create-mini-course on 11.11.2026; the whole root README.md is this unit. --->
+ 
+@@ -402,12 +415,13 @@
+ 
+ - **11.11.2026:** Keine Bilder: Die Lernenden kennen die Abbildung des Kreislaufs aus dem Unterricht.
+ - **11.11.2026:** Ein Quiz mit einer Frage zur Reihenfolge; nach dem ersten Fehler gibt es einen Tipp.
++- **24.11.2026:** Material freigegeben
+ 
+ #### Prüfbericht – Lernseite 1
+ 
+ <section data-key="validation-report">
+ 
+-**Ergebnis:** bestanden (12.11.2026)
++**Ergebnis:** bestanden (12.11.2026) – 1 Punkt seither geändert – kurze Nachprüfung offen
+ 
+ **Jetzt mit den Lernenden nutzbar:** ja
+ 
+@@ -417,6 +431,10 @@
+ - Jeder Text und jede Antwort hat ▶ zum Vorlesen.
+ - Die Seite dauert nach Faustregel etwa 12 Minuten und passt damit zu den geplanten 15 Minuten.
+ 
++**Nach der Prüfung geändert:**
++
++- 24.11.2026 · Quiz: Was passiert zuerst? · Die drei Antworten sind jetzt etwa gleich lang und gleich gebaut („Das Wasser …“), die richtige ist nicht mehr die längste; jede Antwort hat ▶ zum Vorlesen · Kurzprüfung (Syntax und Antwortmuster geprüft; die Seite wurde nicht im Browser angezeigt)
++
+ <details>
+ <summary>Technischer Bericht</summary>
+ 
+@@ -526,13 +544,13 @@
+ 
+ ### Latest Validation Summary – Letzte Kursprüfung
+ 
+-<!--- Written by :validate-course 1 (one unit, one run) on 12.11.2026; rewritten with the approval on 12.11.2026. --->
++<!--- Written by :validate-course 1 (one unit, one run) on 12.11.2026; rewritten by :quick-fix 1 with the approval on 24.11.2026 (no new run; Foundation, Templates, Agenda and Consistency stay from 12.11.2026). --->
+ 
+-**Ergebnis:** bereit zum Veröffentlichen (12.11.2026)
++**Ergebnis:** bestanden (12.11.2026) – 1 Punkt seither geändert – kurze Nachprüfung offen
+ 
+ <details><summary>Technischer Teil</summary>
+ 
+-- Date: 2026-11-12
++- Date: 2026-11-24
+ - Mode: course
+ - Result: PASS
+ - Issues found: 0
+@@ -547,13 +565,14 @@
+ - **Grundlagen:** ✅ Kursrahmen und Gliederung vollständig (kleiner Kurs: Titel, Zielgruppe, zwei Lernziele)
+ - **Bausteine:** ✅ keine im Einsatz
+ - **Ablaufplan:** übersprungen – für diesen Kurs nicht nötig
+-- **Lernseiten:** Lernseite 1 bestanden und freigegeben
+-- **Material:** Lernseite 1 — Der Wasserkreislauf: ohne Bilder (Entscheidung vom 11.11.2026)
++- **Lernseiten:** Lernseite 1 bestanden und am 24.11.2026 freigegeben; 1 Punkt seither geändert – kurze Nachprüfung offen
++- **Material:** Lernseite 1 — Der Wasserkreislauf: ohne Bilder (Entscheidung vom 11.11.2026); Antworten im Quiz „Was passiert zuerst?“ am 24.11.2026 angeglichen
+ - **Zusammenhang:** ✅ Titel, zwei Lernziele und drei Folien in Gliederung und Seite gleich
+ 
+ <!-- data-key="recommended-actions" -->
+ **Empfohlene Schritte:**
+-1. Die Lernseite veröffentlichen.
++1. Lernseite 1 kurz nachprüfen: die geänderte Folie „Quiz: Was passiert zuerst?“ (`:validate-course 1`).
++2. Danach die Lernseite veröffentlichen.
+ 
+ ---
+ 

@@ -1,0 +1,15 @@
+--- pristine-run-A-new/README.md	2026-11-24 15:20:38.086410617 +0100
++++ run-A-new/README.md	2026-11-24 15:23:38.692191766 +0100
+@@ -37,9 +37,9 @@
+ 
+ Die Sonne scheint auf das Meer. Was passiert zuerst?
+ 
+-- [( )] Es regnet.
+-- [(X)] Das Wasser wird warm, verdunstet und steigt als unsichtbarer Wasserdampf nach oben in die Luft.
+-- [( )] Es schneit.
++- [( )] {|>}{Das Wasser fällt als Regen herunter.}
++- [(X)] {|>}{Das Wasser wird warm und verdunstet.}
++- [( )] {|>}{Das Wasser wird kalt und gefriert.}
+ - [[?]] Denk an einen Topf mit Wasser auf dem Herd.
+ 
+ ## Geschafft!
