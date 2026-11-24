@@ -1,0 +1,93 @@
+--- pristine-run-C-tasks/README.md	2026-11-24 15:50:50.221046476 +0100
++++ run-C-tasks/README.md	2026-11-24 15:54:26.465403532 +0100
+@@ -4,6 +4,9 @@
+ language: de
+ narrator: Deutsch Female
+ comment:  Mini-Kurs: Der Wasserkreislauf (Klasse 6)
++
++@ok: Richtig! ⭐
++@notyet: Noch nicht ganz. Klicke auf die Glühbirne 💡.
+ -->
+ 
+ # Der Wasserkreislauf
+@@ -50,3 +53,80 @@
+ Super gemacht! Das Wasser verdunstet, bildet Wolken und fällt als Regen wieder herunter.
+ 
+ Super gemacht! Das Wasser verdunstet, bildet Wolken und fällt als Regen wieder herunter.
++
++## Lernseite: Wolken und Regen
++
++    {{|>}}
++Hallo, schön, dass du wieder da bist! Auf Lernseite 1 ist das Wasser verdunstet. Jetzt verfolgen wir den Wasserdampf weiter nach oben.
++
++    {{|>}}
++Das machen wir heute in drei Schritten: Zuerst entsteht eine Wolke. Dann regnet es. Zum Schluss ordnest du in einem Quiz alle Schritte.
++
++    {{|>}}
++Klicke auf ▶, dann lese ich dir jeden Text vor.
++
++### Aus Wasserdampf wird eine Wolke
++
++    {{|>}}
++Der Wasserdampf steigt mit der warmen Luft nach oben. Oben ist die Luft kälter.
++
++    {{|>}}
++Dort kühlt der Dampf ab. Er wird wieder zu winzigen Wassertröpfchen.
++
++    {{|>}}
++Viele Tröpfchen zusammen sehen wir als Wolke. Das nennt man **Wolkenbildung**.
++
++    {{|>}}
++Das kennst du aus der Küche: Über einem Topf mit heißem Wasser hält jemand einen kalten Deckel. Der Deckel wird innen nass. Auch dort wird Dampf wieder zu Tröpfchen.
++
++    {{|>}}
++Eine Wolke ist also kein Dampf. Sie besteht aus winzigen Tröpfchen Wasser. Erinnerst du dich an die Abbildung vom Wasserkreislauf aus dem Unterricht? Such in Gedanken die Wolken darauf.
++
++**Kleine Aufgabe**
++
++    {{|>}}
++Woraus besteht eine Wolke? Klicke auf eine Antwort.
++
++<!-- data-hint-button="1" data-solution-button="false" data-text-solved="@ok" data-text-failed="@notyet" -->
++- [( )] {|>}{aus feinem grauem Rauch}
++- [(X)] {|>}{aus winzigen Wassertröpfchen}
++- [( )] {|>}{aus unsichtbarem Wasserdampf}
++- [[?]] {|>}{Denk an den kalten Deckel über dem Kochtopf. Was sammelt sich innen am Deckel?}
++
++### Aus der Wolke wird Regen
++
++    {{|>}}
++In der Wolke stoßen die Tröpfchen zusammen. So werden sie größer und schwerer.
++
++    {{|>}}
++Irgendwann sind sie zu schwer zum Schweben. Dann fallen sie als **Regen** herunter.
++
++    {{|>}}
++Das Regenwasser fließt in Bäche, Flüsse und ins Meer. Das nennt man **Abfließen**. Ein Teil läuft langsam in den Boden.
++
++    {{|>}}
++Im Meer wärmt die Sonne das Wasser wieder. Dann beginnt der Kreislauf von vorn.
++
++### Quiz: Bring die Schritte in die richtige Reihenfolge
++
++    {{|>}}
++Jetzt bist du dran! Die vier Schritte heißen Verdunsten, Wolkenbildung, Regen und Abfließen. Bring sie in die richtige Reihenfolge.
++
++    {{|>}}
++Wähle für jeden Platz einen Schritt aus der Liste. Dann klicke auf den Knopf zum Prüfen.
++
++<!-- data-hint-button="1" data-solution-button="false" data-text-solved="@ok" data-text-failed="@notyet" -->
++Platz 1: [[ Abfließen | Regen | (Verdunsten) | Wolkenbildung ]] → Platz 2: [[ Abfließen | Regen | Verdunsten | (Wolkenbildung) ]] → Platz 3: [[ Abfließen | (Regen) | Verdunsten | Wolkenbildung ]] → Platz 4: [[ (Abfließen) | Regen | Verdunsten | Wolkenbildung ]]
++[[?]] {|>}{Was macht die Sonne zuerst mit dem Wasser im Meer?}
++
++### Geschafft!
++
++    {{|>}}
++Super gemacht! Die Sonne lässt Wasser verdunsten, daraus werden Wolken, es regnet, und das Wasser fließt zurück ins Meer – dann beginnt alles von vorn.
++
++    {{|>}}
++Kreuze an, was du schon kannst. Das ist kein Test. Wenn du auf den Knopf zum Senden klickst, bedankt sich die Seite bei dir. Dann bist du fertig.
++
++[[wolke]] {|>}{Ich weiß, woraus eine Wolke besteht.}
++[[regen]] {|>}{Ich kann erklären, wie aus einer Wolke Regen wird.}
++[[reihe]] {|>}{Ich kann die vier Schritte in die richtige Reihenfolge bringen.}

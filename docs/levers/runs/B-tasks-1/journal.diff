@@ -1,0 +1,170 @@
+--- pristine-run-B-tasks-1/journal.md	2026-11-24 15:44:12.668192872 +0100
++++ run-B-tasks-1/journal.md	2026-11-24 15:47:50.589380000 +0100
+@@ -18,14 +18,14 @@
+ {
+   "title": "Der Wasserkreislauf",
+   "context": "Klasse 6 · 24 Lernende · 15 Minuten allein am Laptop",
+-  "subtitle": "Die Lernseite „Der Wasserkreislauf“ hat drei Folien und ein Quiz. Sie ist geprüft und von Ihnen freigegeben.",
++  "subtitle": "Die Lernseite „Der Wasserkreislauf“ hat drei Folien und ein Quiz und ist mit den Lernenden nutzbar. Nach einer kleinen Korrektur auf „Wo ist das Wasser?“ sehe ich diese Seite noch einmal kurz durch, dann kann sie veröffentlicht werden.",
+   "next": {
+-    "icon": "🚀",
+-    "title": "Veröffentlichen",
+-    "why": "Der geprüfte Kurs bekommt einen Link zum Teilen.",
+-    "label": "Kurs veröffentlichen",
+-    "href": "agent:development/create-project",
+-    "command": ":agent development → :create-project"
++    "icon": "🔍",
++    "title": "Prüfen und freigeben – Lernseite 1",
++    "why": "Die geänderte Seite „Wo ist das Wasser?“ wird noch einmal kurz durchgesehen; danach kann die Lernseite veröffentlicht werden.",
++    "label": "Lernseite 1 kurz nachprüfen",
++    "href": "agent:teaching/validate-course?number=1",
++    "command": ":validate-course 1"
+   },
+   "labels": {
+     "decide": "Noch zu entscheiden",
+@@ -54,19 +54,20 @@
+           },
+           {
+             "title": "Prüfen und freigeben",
+-            "state": "done",
++            "state": "review",
+             "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt; danach geben Sie es frei.",
+-            "result": "bestanden und am 12.11.2026 von Ihnen freigegeben"
++            "result": "am 12.11.2026 bestanden und von Ihnen freigegeben",
++            "next": "Die am 24.11.2026 geänderte Seite „Wo ist das Wasser?“ kurz nachprüfen."
+           }
+         ]
+       },
+-      "state": "done",
++      "state": "review",
+       "href": "#1.-der-wasserkreislauf",
+       "view": {
+         "href": "agent:teaching/preview?file=1",
+         "command": ":preview 1"
+       },
+-      "statusLabel": "geprüft ✅",
++      "statusLabel": "bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen",
+       "usable": {
+         "state": "yes"
+       },
+@@ -91,13 +92,15 @@
+       },
+       {
+         "title": "Prüfen",
+-        "state": "done",
++        "state": "current",
+         "why": "Die Prüfung zeigt, ob die Seite zu den Lernzielen, zur Zeit und zu den Lernenden passt.",
+-        "result": "Lernseite 1 geprüft und freigegeben"
++        "result": "Lernseite 1 geprüft und freigegeben",
++        "next": "Lernseite 1 kurz nachprüfen",
++        "statusLabel": "bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen"
+       },
+       {
+         "title": "Veröffentlichen",
+-        "state": "current",
++        "state": "planned",
+         "why": "Die Seite bekommt einen Link für die Lernenden."
+       }
+     ],
+@@ -135,6 +138,7 @@
+       "command": ":help"
+     }
+   ],
++  "decisions": [],
+   "selected": "",
+   "links": [
+     {
+@@ -159,7 +163,7 @@
+     "one": "Lernseite",
+     "many": "Lernseiten"
+   },
+-  "footer": "Stand: 13.11.2026"
++  "footer": "Stand: 24.11.2026"
+ }
+ ```
+ 
+@@ -374,21 +378,21 @@
+ in this order. Never use `#####` headings inside a session.
+ --->
+ 
+-1. Der Wasserkreislauf – geprüft ✅
++1. Der Wasserkreislauf – bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen
+ 
+ <details><summary>Technische Übersicht</summary>
+ 
+ <!-- data-type="none" -->
+ | # | Title | Type | Skeleton | Material | Done | Notes |
+ |---|-------|------|----------|----------|------|-------|
+-| 1 | Der Wasserkreislauf | n/a | ✅ | ✅ | ✅ | geprüft ✅ |
++| 1 | Der Wasserkreislauf | n/a | ✅ | ✅ | ✅ | bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen |
+ 
+ </details>
+ 
+ ### 1. Der Wasserkreislauf
+ 
+ <!-- class="journal-actions" -->
+-[👁 So sehen es die Lernenden](agent:teaching/preview?file=1) `:preview 1`
++[🔍 Lernseite 1 kurz nachprüfen](agent:teaching/validate-course?number=1) `:validate-course 1` · [👁 So sehen es die Lernenden](agent:teaching/preview?file=1) `:preview 1`
+ 
+ <!--- Unit 1 of the mini course, written by :create-mini-course on 11.11.2026; the whole root README.md is this unit. --->
+ 
+@@ -408,7 +412,7 @@
+ 
+ <section data-key="validation-report">
+ 
+-**Ergebnis:** bestanden (12.11.2026)
++**Ergebnis:** bestanden (12.11.2026) – 1 Punkt seither geändert – kurze Nachprüfung offen
+ 
+ **Jetzt mit den Lernenden nutzbar:** ja
+ 
+@@ -418,6 +422,10 @@
+ - Jeder Text und jede Antwort hat ▶ zum Vorlesen.
+ - Die Seite dauert nach Faustregel etwa 12 Minuten und passt damit zu den geplanten 15 Minuten.
+ 
++**Nach der Prüfung geändert:**
++
++- 24.11.2026 · Wo ist das Wasser? · Tippfehler „Grundwaser“ → „Grundwasser“ korrigiert · Mini-Check: Seite im Quelltext geprüft, Darstellung nicht geprüft – kein Browser verfügbar
++
+ <details>
+ <summary>Technischer Bericht</summary>
+ 
+@@ -527,16 +535,16 @@
+ 
+ ### Latest Validation Summary – Letzte Kursprüfung
+ 
+-<!--- Written by :validate-course 1 (one unit, one run) on 12.11.2026; rewritten with the approval on 12.11.2026. --->
++<!--- Written by :validate-course 1 (one unit, one run) on 12.11.2026; rewritten with the approval on 12.11.2026 and with :quick-fix 1 (change after the check, short re-check open) on 24.11.2026. --->
+ 
+-**Ergebnis:** bereit zum Veröffentlichen (12.11.2026)
++**Ergebnis:** bestanden – 1 Punkt seither geändert – kurze Nachprüfung offen (24.11.2026)
+ 
+ <details><summary>Technischer Teil</summary>
+ 
+-- Date: 2026-11-12
++- Date: 2026-11-24
+ - Mode: course
+-- Result: PASS
+-- Issues found: 0
++- Result: PASS with concerns
++- Issues found: 1
+ - Mechanical open: 0
+ - Sessions checked: 1
+ 
+@@ -548,13 +556,14 @@
+ - **Grundlagen:** ✅ Kursrahmen und Gliederung vollständig (kleiner Kurs: Titel, Zielgruppe, zwei Lernziele)
+ - **Bausteine:** ✅ keine im Einsatz
+ - **Ablaufplan:** übersprungen – für diesen Kurs nicht nötig
+-- **Lernseiten:** Lernseite 1 bestanden und freigegeben
+-- **Material:** Lernseite 1 — Der Wasserkreislauf: ohne Bilder (Entscheidung vom 11.11.2026)
++- **Lernseiten:** Lernseite 1 bestanden und freigegeben; seit einer Änderung am 24.11.2026 ist die kurze Nachprüfung offen
++- **Material:** Lernseite 1 — Der Wasserkreislauf: Tippfehler auf „Wo ist das Wasser?“ korrigiert (24.11.2026), Seite noch nicht nachgeprüft; ohne Bilder (Entscheidung vom 11.11.2026)
+ - **Zusammenhang:** ✅ Titel, zwei Lernziele und drei Folien in Gliederung und Seite gleich
+ 
+ <!-- data-key="recommended-actions" -->
+ **Empfohlene Schritte:**
+-1. Die Lernseite veröffentlichen.
++1. Die geänderte Seite „Wo ist das Wasser?“ kurz nachprüfen lassen (Lernseite 1 prüfen).
++2. Danach die Lernseite veröffentlichen.
+ 
+ ---
+ 
