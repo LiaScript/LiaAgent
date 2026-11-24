@@ -75,3 +75,4 @@ aus `specs/dashboard/fixtures/`. Eine neue Prüfung kommt als Funktion nach `che
 | `quickfix-typo` | Lernseite geprüft und freigegeben, ein Tippfehler | Änderung bleibt auf der Folie, Nachprüfung offen, Kurs nicht veröffentlichbar |
 | `quickfix-quiz` | wie oben, noch nicht freigegeben; Quiz verrät die Antwort | dazu: Antworten gleich lang (`quiz-balanced`) |
 | `quickfix-second-change` | schon einmal nach der Prüfung geändert (Nachprüfung offen), jetzt ein Tippfehler | zweite datierte Zeile, „2 Punkte seither geändert“, nichts doppelt (`changed-count`) |
+| `recheck-short` | nach zwei Änderungen: `:validate-course 1` | nur die geänderten Seiten, danach nichts mehr „offen“, Zeilen als nachgeprüft markiert, Done ✅ (`recheck-closed`) |

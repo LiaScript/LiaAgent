@@ -1,0 +1,23 @@
+{
+  "id": "recheck-short",
+  "title": "short re-check of a unit with two changes after its check",
+  "fixture": {
+    "journal.md": "evals/scenarios/recheck-short/journal.md",
+    "README.md": "evals/scenarios/recheck-short/material.md"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-24",
+  "command": ":validate-course 1",
+  "replies": [
+    "An approval question for the unit → \"Freigeben\"",
+    "Any other question or offer → the option you would present as the recommended default; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    { "id": "validator-ok" },
+    { "id": "no-warning", "patterns": ["Done ✅ while", "recommended actions name none", "says yes while the short re-check", "course summary says Result: PASS while", "the overview says units", "report-action"] },
+    { "id": "material-unchanged" },
+    { "id": "recheck-closed", "lines": 2 }
+  ],
+  "judge": "evals/judges/recheck.md"
+}
