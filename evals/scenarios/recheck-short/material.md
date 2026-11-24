@@ -4,6 +4,9 @@ version:  0.1.0
 language: de
 narrator: Deutsch Female
 comment:  Mini-Kurs: Der Wasserkreislauf (Klasse 6)
+
+@ok: Richtig! ⭐
+@notyet: Noch nicht ganz. Tippe auf die Glühbirne 💡.
 -->
 
 # Der Wasserkreislauf
@@ -37,10 +40,11 @@ Die Sonne scheint auf das Meer. Was passiert zuerst?
 
 Die Sonne scheint auf das Meer. Was passiert zuerst?
 
+<!-- data-hint-button="1" data-solution-button="false" data-text-solved="@ok" data-text-failed="@notyet" -->
 - [( )] {|>}{Das Wasser fällt als Regen herunter.}
 - [(X)] {|>}{Das Wasser verdunstet in die Luft.}
 - [( )] {|>}{Das Wasser friert zu Eis und Schnee.}
-- [[?]] Denk an einen Topf mit Wasser auf dem Herd.
+- [[?]] {|>}{Denk an einen Topf mit Wasser auf dem Herd.}
 
 ## Geschafft!
 
