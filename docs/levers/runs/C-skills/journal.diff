@@ -1,0 +1,297 @@
+--- pristine-run-C-skills/journal.md	2026-11-24 15:50:50.243158324 +0100
++++ run-C-skills/journal.md	2026-11-24 15:58:01.361416306 +0100
+@@ -18,14 +18,14 @@
+ {
+   "title": "Der Wasserkreislauf",
+   "context": "Klasse 6 · 24 Lernende · je Lernseite 15 Minuten allein am Laptop",
+-  "subtitle": "Der Kurs hat zwei Lernseiten. Lernseite 1 „Der Wasserkreislauf“ ist geprüft und freigegeben. Für Lernseite 2 „Wolken und Regen“ steht die Planungsskizze; das Material dafür fehlt noch.",
++  "subtitle": "Der Kurs hat zwei Lernseiten. Lernseite 1 „Der Wasserkreislauf“ ist geprüft und freigegeben. Lernseite 2 „Wolken und Regen“ ist vorbereitet und mit Einschränkungen nutzbar; offen sind die Sachaussagen der Erklärseiten und das Lob auf der Schlussfolie.",
+   "next": {
+-    "icon": "▶️",
+-    "title": "Material ausarbeiten – Lernseite 2",
+-    "why": "Aus der Planungsskizze entstehen die Texte, die kleine Aufgabe zur Wolke und das Quiz zur Reihenfolge; Sie sehen jeden Teil, bevor er gespeichert wird.",
+-    "label": "Lernseite 2 ausarbeiten",
+-    "href": "agent:teaching/coauthor-materials?number=2",
+-    "command": ":coauthor-materials 2"
++    "icon": "🔍",
++    "title": "Prüfen und freigeben – Lernseite 2",
++    "why": "Sie bestätigen die Sachaussagen der beiden Erklärseiten und entscheiden über das Lob auf „Geschafft!“; danach geben Sie die Lernseite frei.",
++    "label": "Lernseite 2 prüfen: Bedenken klären",
++    "href": "agent:teaching/validate-course?number=2",
++    "command": ":validate-course 2"
+   },
+   "labels": {
+     "decide": "Noch zu entscheiden",
+@@ -81,7 +81,7 @@
+     {
+       "id": 2,
+       "title": "Wolken und Regen",
+-      "summary": "Wie aus Wasserdampf Wolken und Regen werden; zum Schluss ordnen die Lernenden die vier Schritte des Kreislaufs in einem Quiz.",
++      "summary": "Eine Zwischenfolie, zwei Erklärseiten mit einer kleinen Aufgabe zur Wolke, ein Quiz zur Reihenfolge und „Geschafft!“, jeder Text zum Vorlesen.",
+       "process": {
+         "title": "Wolken und Regen",
+         "steps": [
+@@ -93,27 +93,38 @@
+           },
+           {
+             "title": "Material ausarbeiten",
+-            "state": "current",
+-            "why": "Texte, Aufgaben und Selbstkontrolle entstehen gemeinsam; jeder Teil wird vorher gezeigt.",
+-            "next": "Lernseite 2 ausarbeiten"
++            "state": "done",
++            "why": "Texte, Aufgaben und Selbstkontrolle entstehen aus der Planungsskizze.",
++            "result": "eine Zwischenfolie, vier Folien, eine kleine Aufgabe, ein Quiz und eine Selbsteinschätzung"
+           },
+           {
+             "title": "Bilder einfügen",
+-            "state": "planned",
++            "state": "done",
+             "why": "Bilder helfen beim Verstehen, wo ein Wort noch nicht sicher sitzt.",
+-            "next": "keine Bilder geplant – wie im Kursrahmen festgelegt; wird beim Ausarbeiten bestätigt"
++            "result": "keine Bilder – wie im Kursrahmen festgelegt"
+           },
+           {
+             "title": "Prüfen und freigeben",
+-            "state": "planned",
++            "state": "review",
+             "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt; danach geben Sie es frei.",
+-            "next": "nach dem Ausarbeiten"
++            "result": "geprüft am 24.11.2026",
++            "next": "Sachaussagen bestätigen, über das Lob auf „Geschafft!“ entscheiden, dann freigeben"
+           }
+         ]
+       },
+       "state": "current",
+       "href": "#2.-wolken-und-regen",
+-      "statusLabel": "Planungsskizze ✅ · Material offen"
++      "statusLabel": "bestanden – 3 Punkte zu entscheiden",
++      "view": {
++        "href": "agent:teaching/preview?file=2",
++        "command": ":preview 2"
++      },
++      "usable": {
++        "state": "limited",
++        "missing": [
++          "Die Sachaussagen auf zwei Erklärseiten sind noch nicht von Ihnen bestätigt, und…"
++        ]
++      }
+     }
+   ],
+   "process": {
+@@ -148,8 +159,7 @@
+         "title": "Material erstellen",
+         "state": "current",
+         "why": "Erklärungen, Aufgaben und Selbstkontrollen entstehen aus der Planung.",
+-        "result": "Lernseite 1 „Der Wasserkreislauf“",
+-        "next": "Lernseite 2 „Wolken und Regen“ ausarbeiten"
++        "result": "Lernseite 1 „Der Wasserkreislauf“ und Lernseite 2 „Wolken und Regen“"
+       },
+       {
+         "title": "Prüfen und überarbeiten",
+@@ -178,11 +188,67 @@
+     {
+       "key": "course-frame-unit-2",
+       "kind": "decide",
+-      "title": "Thema der zweiten Lernseite im Kursrahmen",
+-      "why": "Im Kursrahmen steht als zweite Lernseite noch „Wasser im Alltag – wofür wir Wasser brauchen und wie man es spart“. Die Gliederung plant jetzt „Wolken und Regen“.",
+-      "how": "Sagen Sie, welches Thema gilt. Bei „Wolken und Regen“ passe ich den Kursrahmen (Vorhaben und Hinweis für die Gliederung) mit „Kursrahmen überarbeiten“ an; bei „Wasser im Alltag“ überarbeiten wir die Gliederung noch einmal.",
++      "title": "Kursrahmen an die zweite Lernseite anpassen",
++      "why": "Sie haben am 24.11.2026 entschieden: Die zweite Lernseite heißt „Wolken und Regen“. Im Kursrahmen steht noch „Wasser im Alltag – wofür wir Wasser brauchen und wie man es spart“.",
++      "how": "Starten Sie „Kursrahmen überarbeiten“; ich passe dann das Vorhaben und den Hinweis für die Gliederung an.",
+       "href": "#course-context-–-kursrahmen",
+       "label": "Kursrahmen ansehen"
++    },
++    {
++      "key": "facts-2-wolke",
++      "kind": "decide",
++      "title": "Sachaussagen auf „Aus Wasserdampf wird eine Wolke“ bestätigen",
++      "why": "Oben ist die Luft kälter, der Dampf wird zu winzigen Tröpfchen, Wasserdampf ist unsichtbar – das ist ohne Internet nicht nachgeprüft.",
++      "how": "Lesen Sie die Seite und sagen Sie im Chat, ob die Aussagen so stimmen oder was korrigiert werden soll.",
++      "href": "#prüfbericht-–-lernseite-2",
++      "label": "Prüfbericht ansehen",
++      "source": {
++        "check": 2
++      }
++    },
++    {
++      "key": "facts-2-regen",
++      "kind": "decide",
++      "title": "Sachaussagen auf „Aus der Wolke wird Regen“ bestätigen",
++      "why": "Die Tröpfchen stoßen zusammen und werden schwer, das Wasser fließt über Bäche und Flüsse ins Meer, ein Teil versickert – das ist ohne Internet nicht nachgeprüft.",
++      "how": "Lesen Sie die Seite und sagen Sie im Chat, ob die Aussagen so stimmen oder was korrigiert werden soll.",
++      "href": "#prüfbericht-–-lernseite-2",
++      "label": "Prüfbericht ansehen",
++      "source": {
++        "check": 2
++      }
++    },
++    {
++      "key": "praise-2",
++      "kind": "decide",
++      "title": "Lob auf „Geschafft!“ in Lernseite 2",
++      "why": "„Super gemacht!“ steht auch da, wenn jemand die Aufgaben übersprungen hat.",
++      "how": "Sagen Sie, ob das Lob bleibt oder neutral wird, z. B. „Du bist am Ende der Lernseite angekommen.“",
++      "href": "#prüfbericht-–-lernseite-2",
++      "label": "Prüfbericht ansehen",
++      "source": {
++        "check": 2
++      }
++    },
++    {
++      "key": "duration-2",
++      "kind": "decide",
++      "title": "Zeit für Lernseite 2",
++      "why": "Nach Faustregel dauert die Lernseite etwa 8 Minuten, geplant sind 15 Minuten.",
++      "how": "Sagen Sie, ob etwa 8 Minuten reichen oder ob etwas ergänzt werden soll.",
++      "href": "#2.-wolken-und-regen",
++      "label": "Planung ansehen"
++    },
++    {
++      "key": "view-2",
++      "kind": "prepare",
++      "title": "Lernseite 2 in der Ansicht der Lernenden ansehen",
++      "why": "Die Seite ist nur im Quelltext geprüft; Auswahllisten, Tipps und Vorlesen sind nicht ausprobiert.",
++      "how": "Öffnen Sie „So sehen es die Lernenden“ und probieren Sie die kleine Aufgabe und das Quiz einmal aus.",
++      "icon": "👁",
++      "href": "agent:teaching/preview?file=2",
++      "command": ":preview 2",
++      "label": "So sehen es die Lernenden"
+     }
+   ],
+   "explore": [
+@@ -515,7 +581,7 @@
+ --->
+ 
+ 1. Der Wasserkreislauf – geprüft ✅
+-2. Wolken und Regen – Planungsskizze ✅ · Material offen
++2. Wolken und Regen – bestanden – 3 Punkte zu entscheiden
+ 
+ <details><summary>Technische Übersicht</summary>
+ 
+@@ -523,7 +589,7 @@
+ | # | Title | Type | Method | Skeleton | Material | Done | Notes |
+ |---|-------|------|--------|----------|----------|------|-------|
+ | 1 | Der Wasserkreislauf | n/a | n/a | ✅ | ✅ | ✅ | geprüft ✅ |
+-| 2 | Wolken und Regen | wiederholung | cognitive-load | ✅ | ❌ | ❌ | Planungsskizze ✅ · Material offen |
++| 2 | Wolken und Regen | wiederholung | cognitive-load | ✅ | ✅ | ❌ | bestanden – 3 Punkte zu entscheiden |
+ 
+ </details>
+ 
+@@ -593,7 +659,7 @@
+ ### 2. Wolken und Regen
+ 
+ <!-- class="journal-actions" -->
+-[▶️ Lernseite 2 ausarbeiten](agent:teaching/coauthor-materials?number=2) `:coauthor-materials 2`
++[🔍 Lernseite 2 prüfen: Bedenken klären](agent:teaching/validate-course?number=2) `:validate-course 2` · [👁 So sehen es die Lernenden](agent:teaching/preview?file=2) `:preview 2`
+ 
+ <!--- Planning sketch written by :create-session on 24.11.2026 (outline: unit 2, learning goal 2; didactics: Wiederholungsseite, Cognitive Load Pacing). --->
+ 
+@@ -639,12 +705,108 @@
+ <!-- data-key="building-blocks" -->
+ **Bausteine:** keine – Auswahlaufgabe und Reihenfolge mit Auswahllisten bringt LiaScript selbst mit.
+ 
++<!-- data-key="decisions" -->
++**Entscheidungen:**
++
++- **24.11.2026:** Thema dieser Lernseite bleibt „Wolken und Regen“, wie in Gliederung und Planungsskizze; der Kursrahmen wird noch angepasst.
++- **24.11.2026:** vorbereitet in 3 Minuten (Ihre Zeit für die Planungsskizze: nicht gemessen)
++
+ <!-- data-key="references" -->
+ **Quellen:**
+ 
+ 1. Gliederung dieses Kurses, Lernziel 2, und Lernseite 1 „Der Wasserkreislauf“ (Wasserdampf und Verdunsten als Vorwissen).
+ 2. Die Abbildung des Wasserkreislaufs aus dem Unterricht, die die Lernenden kennen.
+ 
++#### Prüfbericht – Lernseite 2
++
++<section data-key="validation-report">
++
++**Ergebnis:** bestanden – 3 Punkte zu entscheiden (24.11.2026)
++
++**Jetzt mit den Lernenden nutzbar:** ja, mit Einschränkungen: Die Sachaussagen auf zwei Erklärseiten sind noch nicht von Ihnen bestätigt, und das Lob auf „Geschafft!“ erscheint auch ohne gelöste Aufgaben.
++
++**Was gut ist:**
++
++- Lernziel 2 (die vier Schritte ordnen) hat seine Folien: „Aus Wasserdampf wird eine Wolke“, „Aus der Wolke wird Regen“ und „Quiz: Bring die Schritte in die richtige Reihenfolge“.
++- Jeder Text, jede Antwort und jeder Tipp hat ▶ zum Vorlesen; jeder Text steht nur einmal auf der Seite.
++- Beide Aufgaben geben nach einem falschen Versuch über die Glühbirne 💡 einen Tipp aus dem Alltag, ohne Lösungsknopf; die Rückmeldungen stehen in den Worten der Lernenden.
++- Die Antworten verraten nichts: gleich lang und gleich gebaut; die Auswahllisten stehen nicht in der richtigen Reihenfolge.
++- Vier neue Begriffe (Wolkenbildung, Regen, Abfließen, Versickern), jeder mit einem Beispiel aus dem Alltag.
++
++**Noch offen:**
++
++- „Aus Wasserdampf wird eine Wolke“: Die Sachaussagen (oben ist die Luft kälter; der Dampf kühlt ab und wird zu winzigen Tröpfchen; Wasserdampf ist unsichtbar, eine Wolke besteht aus Tröpfchen) sind ohne Internet nicht nachgeprüft – Sie bestätigen oder korrigieren sie.
++- „Aus der Wolke wird Regen“: Die Sachaussagen (die Tröpfchen stoßen zusammen und werden schwer; das Wasser fließt über Bäche und Flüsse ins Meer; ein Teil versickert im Boden) sind ebenso nicht nachgeprüft – Sie bestätigen oder korrigieren sie.
++- „Geschafft!“: „Super gemacht!“ steht auch da, wenn jemand die Aufgaben übersprungen hat – Sie entscheiden, ob das Lob bleibt oder neutral wird (z. B. „Du bist am Ende der Lernseite angekommen.“).
++
++Hinweis: Nach Faustregel dauert die Seite etwa 8 Minuten – deutlich kürzer als die geplanten 15 Minuten.
++
++<details>
++<summary>Technischer Bericht</summary>
++
++- __Date:__ 2026-11-24
++- __Material:__ README.md → ## Lernseite: Wolken und Regen
++- __Result:__ PASS with concerns
++- __Mode:__ session
++
++**Content:**
++- Lernziel 2 (Verdunsten, Wolkenbildung, Regen, Abfließen ordnen): „Aus Wasserdampf wird eine Wolke“, „Aus der Wolke wird Regen“, „Quiz: Bring die Schritte in die richtige Reihenfolge“ – ✅
++- Keine Folie ohne Inhalt – ✅
++- Sachaussagen auf „Aus Wasserdampf wird eine Wolke“ und „Aus der Wolke wird Regen“: nicht nachgeprüft (kein Internet, kein reference-checker), keine Quelle auf der Seite – ❌ [pedagogical], offen bis zu Ihrer Bestätigung
++- Antwortmuster (check-material, Quelltext): keine Warnung auf den Folien dieser Lernseite – ✅
++- Quizze für junge Lernende: kein Lösungsknopf, Rückmeldungen aus @ok und @notyet, keine Matrix – ✅
++- Selbstkontrolle prüft anderes als die kleine Aufgabe (Reihenfolge statt Zusammensetzung der Wolke) – ✅
++- „Geschafft!“: Lob ohne Bedingung – ❌ [pedagogical]
++- Bilder: keine (Kursrahmen und Regeln für das Material); der Text erinnert nur an die Abbildung aus dem Unterricht – ✅
++- Bedienelemente: ▶ und 💡 so benannt, wie die Seite sie zeigt – ✅
++- Anzeige: nicht gerendert – der LiaScript-DevServer (liadev) startete nicht; Knöpfe, Tipps und Auswahllisten sind nicht ausprobiert, nur der Quelltext ist geprüft
++
++**Type Consistency:**
++- Session Type: wiederholung — Required (from `## Didactics` → `__Session Types:__`): eine Folie mit Vorlesetext je Lernziel; mindestens ein Quiz zur Selbstkontrolle mit Tipp nach dem ersten Fehler; eine Schlussfolie, die das Gelernte in einem Satz zusammenfasst
++- Folien mit Vorlesetext zu Lernziel 2: „Aus Wasserdampf wird eine Wolke“, „Aus der Wolke wird Regen“ – ✅
++- Quiz mit Tipp: „Quiz: Bring die Schritte in die richtige Reihenfolge“ – ✅
++- Schlusssatz: „Geschafft!“ – ✅
++
++**Persona & Style:**
++- Lernbegleiterin ohne Namen, „du“, kurze Sätze, höchstens ein neues Fachwort pro Satz – ✅
++- Fachwörter mit Alltagsbeispiel (Deckel über dem Topf, Gully, Blume gießen) – ✅
++- Begriff „Lernseite“ wie im Kursrahmen – ✅
++
++**LiaScript Syntax:**
++- Kopf (author, version, language, narrator; Makros @ok und @notyet ergänzt) – ✅
++- Überschriften: Kapitel `##` „Lernseite: Wolken und Regen“, vier `###` – ✅
++- Vorlesen: `{{|>}}`-Blöcke, `{|>}{…}` in Frage, Antworten und Tipps – ✅
++- Quizze: Einfachauswahl und Auswahllisten richtig gebildet, Selbsteinschätzung als Umfrage – ✅ (Auswahllisten stehen nicht im Nachschlageblatt; übliche LiaScript-Schreibweise, nicht gerendert)
++- Code, Hinweisboxen, Zitate, Medien, Diagramme, Formeln, Einbindungen, HTML-Blöcke: kommen nicht vor – ✅
++
++**Unit entry (journal):**
++- Felder vorhanden, Aktivitäten und Quellen nummeriert, Zusammenfassung und Inhalt beschreiben das Material – ✅
++- Hinweis: Die Zusammenfassung nennt „etwa 12 bis 13 Minuten“; die Faustregel dieses Berichts ergibt etwa 8 Minuten (siehe Dauer)
++
++**Method Consistency:**
++- Session Method: cognitive-load — Required (from `data/didactic-methods.md`): höchstens etwa 3–5 neue Kernbegriffe; schwierige Inhalte in Teilschritten; keine überflüssige Wiederholung derselben Information in mehreren Formen
++- Vier neue Begriffe (Wolkenbildung, Regen, Abfließen, Versickern) – ✅
++- Wolke und Regen in kleinen Teilschritten – ✅
++- Jeder Text steht einmal, ▶ liest ihn vor – ✅
++
++**Duration (advisory):** estimate 8 min vs. declared 15 min — Hinweis: Faustregel: etwa 325 Wörter bei 200 Wörtern pro Minute (knapp 2 Minuten) plus 1–2 Minuten für die kleine Aufgabe, 2–4 Minuten für die vier Auswahllisten und 1–2 Minuten für das Ankreuzen = etwa 8 Minuten; wiederholtes Anhören ist nicht mitgezählt. Das sind etwa 50 % der geplanten Zeit, unter 70 %.
++
++**Reference Check:** nicht geprüft – Skill oder Internetzugang fehlt
++
++**Templates:** keine Bausteine im Einsatz
++
++**Durchläufe:** Inhaltsprüfung 1 von höchstens 5 · Durchsicht aus Sicht der Lernenden übersprungen – keine Lernendenprofile · Bilder 0 von 0
++
++**Recommended Actions:**
++1. Sachaussagen auf „Aus Wasserdampf wird eine Wolke“ und „Aus der Wolke wird Regen“ bestätigen oder korrigieren.
++2. Lob auf „Geschafft!“ so lassen oder neutral formulieren (`:quick-fix 2`).
++3. Die Lernseite in der Ansicht der Lernenden ansehen (Auswahllisten, Tipps) – nicht gerendert geprüft.
++4. Zeit: entscheiden, ob etwa 8 Minuten reichen oder etwas ergänzt wird.
++
++</details>
++
++</section>
++
+ 
+ ---
+ 
