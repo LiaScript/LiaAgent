@@ -4524,6 +4524,8 @@ test("validator: a stale overview, Done ✅ and no recommended action while the 
     const output = validate().output;
     assert.match(output, /unit 1: Done ✅ while its report says the short re-check is open/);
     assert.match(output, /unit 1: the report's short re-check is open, but its recommended actions name none/);
+    assert.match(output, /unit 1: "usable with learners now" says yes while the short re-check is open/);
+    assert.match(output, /the course summary says Result: PASS while the short re-check of unit 1 is open/);
   });
 });
 

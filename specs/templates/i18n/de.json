@@ -368,6 +368,7 @@
   "passedMissing": "bestanden – es fehlt noch: {what}",
   "passedConcerns": "bestanden – {n} Punkt(e) zu entscheiden",
   "recheckDone": "nachgeprüft",
+  "courseRecheckOpen": "noch nicht bereit zum Veröffentlichen – kurze Nachprüfung von {unit} {n} offen",
   "validationReport": "Prüfbericht",
   "usableNow": "Jetzt mit den Lernenden nutzbar",
   "changedAfterCheck": "Nach der Prüfung geändert",

@@ -3467,7 +3467,9 @@ Use this task when:
 
 Fast, focused correction of a single well-defined issue in an existing material file, without running a full co-authoring session.
 
-**Change path after a check:** every change to a unit that already has a validation report — also changes asked for in the chat or after `:try-as-learner` — follows this task: full new wording shown → save confirmation → mini-validation of the changed area (`tasks/validate-syntax.md` scoped to the changed block, persona and figure rules from `## Didactics`, `node specs/dashboard/check-material.mjs <material file>` when a browser is available (without one: `data/chat-checks.md` → Offering the Rendered Check) — without one, say so in the dated line; the mini-check then rests on `validate-syntax` and the next `:validate-course`) → a dated line in the report's block "Changed after the check" (date · page title · change · how it was checked: mini-check, measured at {window}, or looked at by the instructor — `templates/session-validation.yaml`; a layout claim only as measured, `data/chat-checks.md` → Say how you checked); a fully fixed point leaves "Still missing", a partly fixed one stays there with what is still open, and the outcome line gets " – {n} point(s) changed since – short re-check open" (translated; explained where the instructor first meets it, `templates/session-validation.yaml` → `outcome_words`); a FAIL outcome then counts the points still open (`outcome_words`: "correction needed: {open} of {n} points open"), and the line "usable with learners now" follows the fix → in the same map Done ✅ in the technical table becomes ❌ and the report's recommended actions name the short re-check (`:validate-course {number}`) → on a light track the same map rewrites the course summary (`tasks/validate-course.md` → One unit, one run) → derive the unit state again (`tasks/update-dashboard.md` step 2; never hand-edit the dashboard data).
+**Change path after a check:** every change to a unit that already has a validation report — also changes asked for in the chat or after `:try-as-learner` — follows this task: full new wording shown → save confirmation → mini-validation of the changed area (`tasks/validate-syntax.md` scoped to the changed block, persona and figure rules from `## Didactics`, `node specs/dashboard/check-material.mjs <material file>` when a browser is available (without one: `data/chat-checks.md` → Offering the Rendered Check) — without one, say so in the dated line; the mini-check then rests on `validate-syntax` and the next `:validate-course`) → a dated line in the report's block "Changed after the check" (date · page title · change · how it was checked: mini-check, measured at {window}, or looked at by the instructor — `templates/session-validation.yaml`; a layout claim only as measured, `data/chat-checks.md` → Say how you checked); a fully fixed point leaves "Still missing", a partly fixed one stays there with what is still open, and the outcome line gets " – {n} point(s) changed since – short re-check open" (translated; explained where the instructor first meets it, `templates/session-validation.yaml` → `outcome_words`); a FAIL outcome then counts the points still open (`outcome_words`: "correction needed: {open} of {n} points open"), and the line "usable with learners now" follows the fix (while the short re-check is open: "yes, with limits: short re-check open") → in the same map Done ✅ in the technical table becomes ❌ and the report's recommended actions name the short re-check (`:validate-course {number}`) → on a light track the same map rewrites the course summary (`tasks/validate-course.md` → One unit, one run) → derive the unit state again (`tasks/update-dashboard.md` step 2; never hand-edit the dashboard data).
+
+**Findings outside the change:** a problem the fix or its mini-validation finds outside the changed passage (also one that contradicts the report) is neither fixed nor written into the report: it becomes one `decide` point of the overview — key `finding-{unit}-{topic}`, `how` with the page title, the finding in plain words and `:quick-fix {number}` — and is named once in the closing message.
 
 **Only changes are "changed after the check":** a confirmation that changes no material (the instructor accepts a statement as it is) is a dated entry in the session's decisions list, never a line in the block "Changed after the check".
 
@@ -3516,7 +3518,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 3. **Mini-validation of the affected section:**
    - Run `tasks/validate-syntax.md` scoped to the changed area — do not restate syntax rules here.
    - If the skill `liascript-syntax` is available (see `data/skills.md`), consult it when the fix touches a construct the cheat sheet does not cover.
-   - Persona/tone consistent with `journal.md` → `## Didactics`? (skip on the design track: Didactics waits)
+   - Persona/tone consistent with `journal.md` → `## Didactics`? (skip on the design track: Didactics waits) While Didactics waits on a mini or convert track: with `## Course Context` → Conventions (tone, person) and `### Coauthor`.
    - No unintended regression in surrounding content?
 
 4. **Report result:**
@@ -4434,6 +4436,8 @@ Run this task automatically after any task that changes project state:
    - Recommended actions of a unit's check report (the validator flags them `[report-action]`): what the
      instructor does herself (look at it on the learners' device, try it with a learner, provide something)
      → `prepare` with `source: {check: n}` and `how` in the report's words; what the assistant does → `internal`.
+   - A finding a task reported outside its change (`tasks/quick-fix.md` → Findings outside the change) → `decide`,
+     key `finding-{unit}-{topic}`; it stays until the instructor fixes or dismisses it.
    - A brief under `## Templates` that the validator flags → `decide`, key `template-brief-{id}`; `how` says
      what is missing and who completes it (the brief together with the instructor, the folder through the
      development assistant). Plain words: German "Baustein", never "Template" or "Vorlage".
@@ -6288,13 +6292,15 @@ template:
     "the point corrected" — a count always shows the points still open, never only the original findings) · PASS with concerns → "passed – {n} point(s) to decide"
     ({n} = the open concerns; it says what is left, never "with concerns") · PASS with ⏳ items → "passed – still missing: {what}" ({what} = what learners still miss, as a noun
     phrase with a number: "1 photo", "2 pictures for the self-check"; never a command or step name as subject) · PASS →
-    "passed" (all translated). Whether a draft still waits for the instructor's approval is never written into the
+    "passed" (all translated). The course summary of a light track whose only open point is a short re-check says
+    "not ready to publish yet – short re-check of {unit} {n} open" (`terms.courseRecheckOpen`). Whether a draft still waits for the instructor's approval is never written into the
     outcome line — the overview computes "passed – waiting for your approval" from the unit's decisions.
     Once the instructor approved a unit that still misses something, status line, Notes cell and card say
     "approved – still missing: {what}" (computed by write-dashboard; the report's outcome line stays as it is).
     "Usable with learners now" (mandatory, translated): "yes" (nothing open) · "yes, with limits: {what}" (⏳ items or open
     concerns that do not stop the learners) · "not yet: {why}" (an error or a task learners cannot solve yet). Derived from the
-    open ❌ and ⏳ items, never from the result word alone. The overview derives `units[].usable` from it (the first line
+    open ❌ and ⏳ items, never from the result word alone; while a short re-check is open: "yes, with limits: short re-check
+    open" (`terms.usableLimited` with the tail of `recheckShort`), back to the derived value with the re-check. The overview derives `units[].usable` from it (the first line
     of the unit's card); keep the line current when a change after the check fixes something.
     After a change made after the check (`tasks/quick-fix.md`) the outcome line stays until the re-check, followed by
     " – {n} point(s) changed since – short re-check open" (translated).

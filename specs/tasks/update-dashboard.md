@@ -95,6 +95,8 @@ Run this task automatically after any task that changes project state:
    - Recommended actions of a unit's check report (the validator flags them `[report-action]`): what the
      instructor does herself (look at it on the learners' device, try it with a learner, provide something)
      → `prepare` with `source: {check: n}` and `how` in the report's words; what the assistant does → `internal`.
+   - A finding a task reported outside its change (`tasks/quick-fix.md` → Findings outside the change) → `decide`,
+     key `finding-{unit}-{topic}`; it stays until the instructor fixes or dismisses it.
    - A brief under `## Templates` that the validator flags → `decide`, key `template-brief-{id}`; `how` says
      what is missing and who completes it (the brief together with the instructor, the folder through the
      development assistant). Plain words: German "Baustein", never "Template" or "Vorlage".
