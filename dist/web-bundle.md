@@ -3467,13 +3467,13 @@ Use this task when:
 
 Fast, focused correction of a single well-defined issue in an existing material file, without running a full co-authoring session.
 
-**Change path after a check:** every change to a unit that already has a validation report — also changes asked for in the chat or after `:try-as-learner` — follows this task: full new wording shown → save confirmation → mini-validation of the changed area (`tasks/validate-syntax.md` scoped to the changed block, persona and figure rules from `## Didactics`, `node specs/dashboard/check-material.mjs <material file>` when a browser is available (without one: `data/chat-checks.md` → Offering the Rendered Check) — without one, say so in the dated line; the mini-check then rests on `validate-syntax` and the next `:validate-course`) → a dated line in the report's block "Changed after the check" (date · page title · change · how it was checked: mini-check, measured at {window}, or looked at by the instructor — `templates/session-validation.yaml`; a layout claim only as measured, `data/chat-checks.md` → Say how you checked); a fully fixed point leaves "Still missing", a partly fixed one stays there with what is still open, and the outcome line gets " – {n} point(s) changed since – short re-check open" (translated; explained where the instructor first meets it, `templates/session-validation.yaml` → `outcome_words`); a FAIL outcome then counts the points still open (`outcome_words`: "correction needed: {open} of {n} points open"), and the line "usable with learners now" follows the fix → derive the unit state again (`tasks/update-dashboard.md` step 2; never hand-edit the dashboard data).
+**Change path after a check:** every change to a unit that already has a validation report — also changes asked for in the chat or after `:try-as-learner` — follows this task: full new wording shown → save confirmation → mini-validation of the changed area (`tasks/validate-syntax.md` scoped to the changed block, persona and figure rules from `## Didactics`, `node specs/dashboard/check-material.mjs <material file>` when a browser is available (without one: `data/chat-checks.md` → Offering the Rendered Check) — without one, say so in the dated line; the mini-check then rests on `validate-syntax` and the next `:validate-course`) → a dated line in the report's block "Changed after the check" (date · page title · change · how it was checked: mini-check, measured at {window}, or looked at by the instructor — `templates/session-validation.yaml`; a layout claim only as measured, `data/chat-checks.md` → Say how you checked); a fully fixed point leaves "Still missing", a partly fixed one stays there with what is still open, and the outcome line gets " – {n} point(s) changed since – short re-check open" (translated; explained where the instructor first meets it, `templates/session-validation.yaml` → `outcome_words`); a FAIL outcome then counts the points still open (`outcome_words`: "correction needed: {open} of {n} points open"), and the line "usable with learners now" follows the fix → on a light track the same map rewrites the course summary (`tasks/validate-course.md` → One unit, one run) → derive the unit state again (`tasks/update-dashboard.md` step 2; never hand-edit the dashboard data).
 
 **Only changes are "changed after the check":** a confirmation that changes no material (the instructor accepts a statement as it is) is a dated entry in the session's decisions list, never a line in the block "Changed after the check".
 
 **One journal write per fix:** every journal line the fix touches — report lines, image entries, and every line that still names the fixed item as open (unit summary, step `next`, an image entry's `__To do:__`) — goes into one replacement map (`node specs/dashboard/localize-journal.mjs <map.json>`); remove or update those lines, never leave a done to-do standing. **Find them first:** before the map is written, search the unit entry and its report with `node specs/dashboard/find.mjs` for the page title, the changed item and its old wording, and put every sentence that names the changed item or contradicts the change (summary, content, "What works", "Still missing") into the same map. **The Notes cell states the state, not a list of changes:** status line, Notes cell and `statusLabel` are not in the map — `write-dashboard.mjs` copies the report's outcome line, so the outcome line is the one place to get right. The overview is written last (`tasks/update-dashboard.md`), never before the journal lines it describes. Every change after a check makes the unit "short re-check open" (`tasks/validate-course.md` → Short re-check) — **unless the mini-validation already was that re-check:** it covered every changed page with `validate-syntax`, rendered them with `check-material.mjs`, and went through the Type and Method items those pages carry and every open point that names them. Then the dated line ends with "· re-checked: {how}" (`terms.recheckDone`, translated), the outcome line gets no "short re-check open", and no second save follows to add and remove it; such a re-check sets Done ✅/❌ as `tasks/validate-course.md` step 6 does, and the save summary names it. The outcome line states the check result only — whether the unit still waits for an approval is computed by the overview, never written there. Removing whole entries (e.g. image entries): `localize-journal.mjs --help` shows the map format, including removing a block by its heading — do not read the script's source. Publishing metadata in the header (`email:`, `version:`) set by `:create-project` / `:update-project` is not a content change and does not reopen a check.
 
-**Approval after a review:** when the fix comes from the instructor's own review of material that is not approved yet (no `material approved` entry in the session's decisions, e.g. a draft from `:build-session`), end the task — after the mini-validation and the overview update — with one form: "Is {unit} {n} fine like this now?" (translated, with the unit word) and the choices "Approve", "Change something" and "Look at it later" (translated). "Look at it later" writes nothing but keeps the approval open in the overview. Only "Approve" records the approval — a dated entry `- **{date}:** material approved` (translated) in the session's decisions list, one write; the overview then completes the check step (computed); "Change something" continues with the next fix. On a light track (`__Track:__` `mini` or `convert`) the approval write also refreshes the course summary (`tasks/validate-course.md` → One unit, one run), on the design track as `tasks/validate-course.md` → Design track says; after "Approve" offer `:try-as-learner 1` once if the chat has not offered it yet, except on the design track. Never infer an approval from a fix or from praise for a single page; an unasked "fine like this" for the whole unit brings this form at once (one click on "Approve") — never a silent entry. Not when called from `:build-session` (no instructor review there).
+**Approval after a review:** when the fix comes from the instructor's own review of material that is not approved yet (no `material approved` entry in the session's decisions, e.g. a draft from `:build-session`), end the task — after the mini-validation and the overview update — with one form: "Is {unit} {n} fine like this now?" (translated, with the unit word) and the choices "Approve", "Change something" and "Look at it later" (translated). "Look at it later" writes nothing but keeps the approval open in the overview. Only "Approve" records the approval — a dated entry `- **{date}:** material approved` (translated) in the session's decisions list, one write; the overview then completes the check step (computed); "Change something" continues with the next fix. On a light track (`__Track:__` `mini` or `convert`) the approval write also refreshes the course summary (`tasks/validate-course.md` → One unit, one run), on the design track as `tasks/validate-course.md` → Design track says; after "Approve" step 4 offers trying the unit as a learner. Never infer an approval from a fix or from praise for a single page; an unasked "fine like this" for the whole unit brings this form at once (one click on "Approve") — never a silent entry. Not when called from `:build-session` (no instructor review there).
 
 **Design track:** the suggestions of the overview items `layout-suggestions-{n}` (`tasks/review-images.md`) and `content-hints-{n}` (`tasks/validate-course.md` → Design track) run here as `:quick-fix {n}` in the Teaching-Agent, one change each, on the unit's recorded path; a done suggestion leaves its item. A suggestion larger than that is the track switch to "Content and structure" (`tasks/activate-section.md`), never `:coauthor-materials`.
 
@@ -3487,7 +3487,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 - The material document to change — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode (light track: the whole `README.md` is unit 1); on the design track the unit's recorded path (`data/file-structure-modes.md` → Recorded paths)
 - `journal.md` → `## Course Context` — for conventions and terminology
 - `tasks/validate-syntax.md` — for syntax mini-validation if the fix involves LiaScript (single source of truth for syntax rules)
-- When the fix writes learner text: `data/liascript-cheat-sheet.md` → "Quizzes for young learners / self-checks" and "Controls as learners see them", read completely
+- When the fix writes learner text: `data/liascript-cheat-sheet.md` → "Quizzes for young learners / self-checks" and "Controls as learners see them" (part `cheat-sheet/06-quizzes.md`), read completely
 - After a check: `templates/session-validation.yaml` (block "Changed after the check", outcome words) and `templates/session-skeleton.yaml` (status words), read completely
 - `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
@@ -3511,7 +3511,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 
 2a. **Show and confirm:** show the full new wording of every changed passage — page title, before → after, never only a description of the change — and ask "Save" / "Change something" (translated). This is the single write confirmation of this task; "Change something" returns to step 2.
 
-2b. **Save** after "Save": the material in one write; the journal lines in one map ("One journal write per fix" above).
+2b. **Save** after "Save": the material in one write. The journal lines follow in one map right after the mini-validation of step 3, because the dated line names how the change was checked ("One journal write per fix" above).
 
 3. **Mini-validation of the affected section:**
    - Run `tasks/validate-syntax.md` scoped to the changed area — do not restate syntax rules here.
@@ -3523,6 +3523,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
    - ✅ "Fix applied and validated — done."
    - ⚠️ "The problem is larger than expected: [describe]. Should I open `:coauthor-materials {number}`?"
    - After every save run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
+   - After "Approve": offer `:try-as-learner {number}` once if the chat has not offered it yet, except on the design track — a link with the MCP gate open, else named as the next step in the preview (`:open-chat`).
 
 5. **Escalate if scope grows:** If the fix reveals structural issues or multiple sections need rework, stop and escalate to `:coauthor-materials` — do NOT proceed silently.
 
@@ -4411,7 +4412,8 @@ Run this task automatically after any task that changes project state:
    line and run it again. After a course step was saved, quote the button word it lists in the step texts
    and the chat link.
 4. **The texts of each unit** (yours): `summary` never contradicts the unit's state and does not repeat
-   `usable`, the first line of its card. Fill each step's `why`, `result` (what exists, e.g. "{n} inserted"
+   `usable`, the first line of its card; it describes the unit, never the changes made to it (those stand in
+   the report's block "Changed after the check"). Fill each step's `why`, `result` (what exists, e.g. "{n} inserted"
    for the image step) and `next` (what remains, e.g. the `__To do:__` lines of the image entries) from
    evidence. A generated draft is not instructor approval, and a session PASS is not a course publication
    PASS. A step that is `done` returns to an earlier state only through a check result (FAIL, concerns);
@@ -4731,7 +4733,7 @@ Rules:
    **Short re-check:** if the report's outcome says "short re-check open" (changes after the check, `tasks/quick-fix.md` → Change path), check only the pages named in its "Changed after the check" block — `tasks/validate-syntax.md` for those pages, `check-material.mjs` (or say that no browser was available), the Type and Method items those pages carry (not on the design track), and every open point that names them; the result rules stay the same. Replace only the affected points, drop the " – {n} point(s) changed since – short re-check open" part of the outcome, status line, Notes cell and overview, and keep the dated lines as the record. Announce it with its duration (`templates/session-validation.yaml` → `recheckExplain`).
 1. Load `journal.md` → `## Course Context` for course type and conventions.
 2. Load the learning objectives and declared duration of this session (`data/session-types.md` → "Objectives and duration of a session" — from `## Agenda`, without an agenda from `## Outline`). Design track: skip (Design track: design check only).
-3. Load `data/liascript-cheat-sheet.md` as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
+3. Load `data/liascript-cheat-sheet.md` with all its parts (its index → Whole document) as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
 3b. Load `checklists/course-quality-checklist.md` and apply **every** item of the categories that concern one unit — Session Subsections, Session Materials, LiaScript Syntax — for this session, also items the checks below do not repeat. A session PASS must not hide a `[mechanical]` item the course check would fail later. Design track: only the items of the four design checks; every other item is a content hint.
 4. Open the material document for this session — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode (light track: the whole `README.md` is unit 1; design track: its recorded path) — and check (design track: only syntax, header, images and contrast count; every other check below is a content hint, Design track above):
 
@@ -4796,7 +4798,7 @@ Rules:
 
 1. Load `journal.md` → `## Course Context` to understand course type and applicable conventions.
 2. Load `checklists/course-quality-checklist.md` — apply only the checks relevant for this course type (skip sections marked with conditions that don't apply). The steps below group the checks; **every** applicable checklist item is applied, also one no step names — report it under the closest category of the summary.
-3. Load `data/liascript-cheat-sheet.md` as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
+3. Load `data/liascript-cheat-sheet.md` with all its parts (its index → Whole document) as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
 
 4. **Check Context & Foundation:**
    - `journal.md` → `## Course Context` complete (course type, terminology, agenda flag, conventions)
@@ -4864,7 +4866,7 @@ Rules:
    1. [Concrete action with file reference]
    ```
 
-   **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS. On the design track the design course result applies instead (Design track: design check only).
+   **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), a unit whose outcome says "short re-check open" gives PASS with concerns (resolved only by running the re-check, never accepted as is), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS. On the design track the design course result applies instead (Design track: design check only).
 10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
 11. After all session validation reports and the latest summary are created: suggest next step. The completion message links the summary's own heading (the full anchor of `### Latest Validation Summary…`), never the `## Validation` slide above it. A duration it names is measured (`data/agent-links.md` → Durations).
     - If issues exist: per unit as in session mode step 8 — ✏️ `:quick-fix {number}` when every open point of the unit is one quick-fix change, otherwise `:coauthor-materials {number}` — then rerun `:validate-course`.
@@ -4923,7 +4925,7 @@ This task is also invoked internally (not just via the command) by `tasks/valida
 - File Structure mode from `journal.md` → `## Course Context` → `__File Structure:__` — checks 1 and 2 differ by mode
 - the session's type — resolved from the session number as described in `data/session-types.md` → "Resolving a session's type"; never a command parameter
 - The material document for this session — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode
-- `data/liascript-cheat-sheet.md` as the syntax reference
+- `data/liascript-cheat-sheet.md` as the syntax reference — its index and the parts it names: every part for a whole document, `00-checks.md` plus the parts of the constructs in scope for a narrower scope (the index → How to read this guide)
 - Optionally, a narrower scope (e.g. "only the changed section") when called by `quick-fix.md`
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-checks.md`
 
@@ -4936,7 +4938,7 @@ This task is also invoked internally (not just via the command) by `tasks/valida
 ## Steps
 
 1. Resolve the material document (or the given narrower scope) per the Inputs above.
-2. Load `data/liascript-cheat-sheet.md` as the syntax reference.
+2. Load `data/liascript-cheat-sheet.md` as the syntax reference: the index, then its parts as the index says — all of them for the whole document; for a narrower scope `00-checks.md` and every part of a construct in that scope. Run only the checks below that concern the scope.
    - If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference for constructs the cheat sheet does not cover and for unclear findings. The check list below and the findings format stay as defined here.
 3. Run every check below against the material, noting rule, ✅/❌, and the page title of each finding.
 4. If invoked as a sub-procedure: return the findings list to the caller — do not ask the instructor anything.
@@ -7445,6 +7447,914 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
 ==================== END: specs/data/chat-wording.md ====================
 
 
+==================== START: specs/data/cheat-sheet/00-checks.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 15) Accessibility (A11y) – Quick Checklist
+
+- [ ] Alt text for all media
+- [ ] Clear language, short sentences
+- [ ] Maintain contrast/readability (for embedded HTML/CSS)
+- [ ] Audio/video have short content summaries
+- [ ] Logical navigation (heading hierarchy)
+
+---
+
+## 16) Common Mistakes & Pitfalls
+
+- ❌ Unclosed code blocks (always open/close with three backticks)
+- ❌ Wrong heading order (`###` without preceding `##`)
+- ❌ Media without alt text
+- ❌ Unencoded `(`, `)` or spaces in a link or image target (cuts the address, §5)
+- ❌ Image answer options without a size limit (one option fills the screen, §5)
+- ❌ Ambiguous or unclear quiz questions
+- ❌ Overly long sections without structure
+
+---
+
+## 17) Mini Validation Before Export
+
+- [ ] All code blocks properly closed
+- [ ] Exactly **one** course title with `#`
+- [ ] External links checked
+- [ ] Quiz questions tested
+- [ ] Course header metadata completed
+
+---
+
+==================== END: specs/data/cheat-sheet/00-checks.md ====================
+
+
+==================== START: specs/data/cheat-sheet/01-header-and-slides.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 1) Course Metadata (Header)
+
+```lia
+<!--
+author:   Firstname Lastname
+email:    user@example.org
+version:  1.0.0
+language: en
+narrator: English Female
+comment:  Short description of the course
+-->
+```
+
+**Notes**
+
+- `language` and `narrator` define TTS/voice output.
+- `comment` may be used as an abstract or summary.
+
+---
+
+## 2) Structure: Headings & Sections
+
+```lia
+# Main Title (Course Title Page)
+## Section
+### Subsection
+```
+
+**Rules**
+
+- Only one `#` heading per file (the course title).
+- Use hierarchical structure logically; avoid “jumps” in heading levels.
+
+---
+
+### Additional Rule: Subheadings within a Slide
+
+- Each `#`, `##` and `###` heading **always starts a new slide** — the heading depth is the slide hierarchy (a `###` is a sub-slide of the `##` above it).
+
+- Use bare `###` only where a new (sub-)slide is wanted, e.g. the parts of a unit in single-file mode (`templates/session-material.yaml` → `heading_levels`).
+
+- Subheadings from `####` down to `######` are only allowed if **embedded** inside:
+
+  - an **HTML block** (`<div>…</div>` or a semantic wrapper such as `<section>…</section>`)
+  - a **list** (`-`, `*`)
+  - a **blockquote** (`>`)
+
+- A “naked” `####`-or-deeper subheading outside such containers counts as a new slide/segment and is therefore **not allowed**.
+
+**Allowed patterns:**
+
+```lia
+## Slide 1
+
+### Bare subsection directly under the slide — no container needed
+
+<div>
+#### One level deeper — must be embedded
+</div>
+```
+
+```lia
+## Slide 2
+
+### Bare subsection — fine on its own
+
+<section>
+#### Subsection embedded in a semantic <section> wrapper
+</section>
+```
+
+```lia
+## Slide 3
+
+- List with content
+  - #### Subheading inside a list
+```
+
+```lia
+## Slide 4
+
+> #### Subheading in a blockquote
+```
+
+**Not allowed (`####`-or-deeper outside of containers):**
+
+```lia
+## Slide 5
+
+### Bare subsection — fine
+#### Subheading without container   ❌
+```
+
+---
+
+==================== END: specs/data/cheat-sheet/01-header-and-slides.md ====================
+
+
+==================== START: specs/data/cheat-sheet/02-text-lists-alerts-citations.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 3) Text, Lists, Quotes, Alerts & Citations
+
+```lia
+Normal text with **bold** and *italic*.
+
+- List item 1
+- List item 2
+
+> Quote / Key takeaway
+```
+
+**Tip:** Use short paragraphs and learner-friendly phrasing.
+
+---
+
+### Alerts
+
+LiaScript supports GitHub/GitLab-style alert blocks. Alerts are written as blockquotes whose first line contains an alert marker.
+
+```lia
+> [!NOTE]
+> Useful background information or a neutral hint.
+
+> [!TIP]
+> Practical advice or a helpful shortcut.
+
+> [!IMPORTANT]
+> Information that learners must not miss.
+
+> [!WARNING]
+> A warning about possible mistakes or risks.
+
+> [!CAUTION]
+> Strong caution about negative consequences.
+```
+
+**Supported alert types:**
+
+- `NOTE`
+- `TIP`
+- `IMPORTANT`
+- `WARNING`
+- `CAUTION`
+
+**Custom titles are allowed** by adding text after the alert type:
+
+```lia
+> [!NOTE] Keep this in mind
+> This alert uses a custom title.
+```
+
+An emoji or icon in the custom title can be used to visually override or emphasize the default alert icon:
+
+```lia
+> [!WARNING] ⚠️ Proceed with caution
+> This action cannot be undone.
+```
+
+**Best practices**
+
+- Use alerts sparingly.
+- Prefer `NOTE` for neutral explanations.
+- Use `TIP` for practical advice.
+- Use `IMPORTANT`, `WARNING`, and `CAUTION` only when the distinction matters.
+- Alerts are blockquotes, so every line of the alert should start with `>`.
+
+---
+
+### Citations
+
+LiaScript citations are also written as blockquotes. A citation consists of a quote followed by a separate citation line starting with `--`.
+
+```lia
+> “Live as if you were to die tomorrow.
+> Learn as if you were to live forever.”
+>
+> -- Mahatma Gandhi
+```
+
+The line beginning with `--` is interpreted as the citation/source line.
+
+**Pattern:**
+
+```lia
+> Quoted or referenced text.
+>
+> -- Author, source, year, or reference
+```
+
+**Examples:**
+
+```lia
+> “The medium is the message.”
+>
+> -- Marshall McLuhan
+```
+
+```lia
+> Historical sources should always be interpreted in their political,
+> social, and cultural context.
+>
+> -- Course note, Source Analysis
+```
+
+**Best practices**
+
+- Keep citations short and readable.
+- Use the `--` line only for the source or attribution.
+- Leave an empty blockquote line `>` between the quote and the citation.
+- Do not use citations as a replacement for bibliographies or full references.
+- For long sources, combine a short citation block with a separate reference list.
+
+---
+
+==================== END: specs/data/cheat-sheet/02-text-lists-alerts-citations.md ====================
+
+
+==================== START: specs/data/cheat-sheet/03-presentation-and-speech.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 4) Presentation Mode & Speech Output
+
+### Optimized Rules: Presentation Mode & Speech Output
+
+1. **Slide Structure**
+
+   - Every `##` heading creates a **new slide**.
+   - After each new slide (`##`), the **animation/comment numbering** (`--{{n}}--`, `{{n}}`) resets to **0**.
+   - Headings within `<div>…</div>`, lists, or blockquotes do **not** start new slides.
+
+2. **Animations**
+
+   - Each animation is controlled with `--{{n}}--` (comment/TTS) or `{{n}}` (visible content).
+   - Numbering starts at 0 for each slide.
+   - Ranges `{{a-b}}` mean: content appears at step `a` and disappears at step `b`.
+
+3. **Speech Output (TTS)**
+
+   - Each `--{{n}}--` block contains a **spoken comment** read aloud during the corresponding animation step.
+   - Comments should sound like **explanatory sentences**, not bullet points.
+   - **Optional:** `{{|>}}` creates a play button for manual playback (it shows a small play triangle ▶, no text — see section 10 → Controls as learners see them).
+   - The voice is defined in the header (`narrator`) but can be overridden per section via comment:
+
+     ```lia
+     <!--
+     narrator: English UK Female
+     -->
+     ```
+
+4. **Style**
+
+   - Structure each slide **like a PowerPoint slide**: clear title, short text, matching speaker comments.
+   - Each animated block should have its **own** TTS comment.
+   - Avoid long text blocks: maximum **one paragraph per animation**.
+
+---
+
+### Minimal Example (Optimized)
+
+```lia
+## Slide 5
+
+    --{{0}}--
+Introductory text read at slide start.
+
+    --{{1}}--
+This is read during the first animation step.
+
+      {{1}}
+> Quote appears at step 1.
+
+    --{{2}}--
+In the second step, a table is displayed.
+
+      {{2-3}}
+<div>
+### Table inside HTML block (no slide switch)
+
+| Column A | Column B |
+|----------|----------|
+| Value 1  | Value 2  |
+
+</div>
+
+    --{{3}}--
+Closing comment. The next slide starts again at 0.
+```
+
+---
+
+==================== END: specs/data/cheat-sheet/03-presentation-and-speech.md ====================
+
+
+==================== START: specs/data/cheat-sheet/04-media-and-links.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 5) Media: Images, Audio, Video, oEmbed
+
+Multimedia links can be included locally (relative paths) or externally (URLs).
+
+```lia
+![Alt text](assets/img/pic.jpg "Optional image caption")
+
+?[Audio / Link text](assets/audio/intro.mp3 "Optional audio caption")
+
+!?[Video / Link text](https://www.youtube.com/watch?v=dQw4w9WgXcQ "Optional video caption")
+
+??[oEmbed / Link text](https://example.org/resource "Optional oEmbed caption")
+```
+
+**Encode link targets.** LiaScript ends a link or image target at the first
+`(` — also balanced parentheses, which CommonMark allows — and a bare URL keeps
+its full text but gets a cut-off address. In every link and image target
+percent-encode `(` as `%28`, `)` as `%29` and spaces as `%20`, and write a bare
+URL as `[label](encoded URL)`:
+
+```lia
+![A leaf with jagged edges](https://commons.wikimedia.org/wiki/Special:FilePath/Leaf_%28example%29.jpg?width=330)
+```
+
+**Image size.** A style comment directly after the image (same line) sets its
+display size; it also works inside quiz options. Images that are answer options
+of one question get a height limit so the question and all options fit one
+screen of the target device; a large page photo may get one too:
+
+```lia
+Which picture shows a ripe fruit?
+
+- [( )] ![Picture 1: …](https://example.org/a.jpg)<!-- style="max-height: 30vh" -->
+- [(X)] ![Picture 2: …](https://example.org/b.jpg)<!-- style="max-height: 30vh" -->
+
+![A wide landscape photo](https://example.org/c.jpg)<!-- style="width: 30%" -->
+```
+
+Request a matching file size from the collection, too: Wikimedia Commons
+serves only standard thumbnail widths (e.g. `?width=330` for answer options and
+small pictures, `?width=500` for page photos); other widths are rounded up to a
+much larger file or rejected.
+
+A `vh` limit does not guarantee the fit: the page header, the introduction and
+the question do not shrink with the window, and image-only options stand one
+below the other. Whether a question fits is known only from a measurement at the
+learners' window size (the check script's viewport report) or from a look at the
+learners' device (`data/chat-checks.md` → Say how you checked).
+
+**Accessibility (A11y)**
+
+- Meaningful alt text and descriptive filenames.
+- For external videos: provide a brief summary.
+
+---
+
+**Galleries** can be created by adding multiple media elements in sequence:
+
+```lia
+![Alt text](assets/img/pic.jpg "Optional image caption")
+?[Audio / Link text](assets/audio/intro.mp3 "Optional audio caption")
+!?[Video / Link text](https://www.youtube.com/watch?v=dQw4w9WgXcQ "Optional video caption")
+??[oEmbed / Link text](https://example.org/resource "Optional oEmbed caption")
+```
+
+---
+
+
+### Link targets
+
+In every Markdown link or image target — chat, material,
+  and journal fields such as `__File:__`, `__Page:__`, `__Candidates:__` —
+  percent-encode `(` as `%28`, `)` as `%29` and spaces as `%20`; write a bare
+  URL as `[label](encoded URL)`. LiaScript cuts a target at the first
+  unencoded `(` (file names from photo collections often contain one), and the
+  chat cannot replace a sent message with a broken image.
+
+==================== END: specs/data/cheat-sheet/04-media-and-links.md ====================
+
+
+==================== START: specs/data/cheat-sheet/05-diagrams-formulas-code-tables.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 6) Diagrams
+
+Diagrams can be created using Mermaid. The `@mermaid` tag ensures proper rendering.
+
+````lia
+```mermaid   @mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
+````
+
+Alternatively, diagrams can be created with ASCII art. The syntax info `ascii` ensures correct formatting.
+
+````lia
+```ascii  Optional subtitle
+  +---+      +---+
+  | A | *--> | B |
+  +---+      +---+
+    ^          ^
+    |          |
+    |   .------'
+    v  /
+  +---+
+  | C |
+  +---+
+```
+````
+
+---
+
+## 7) Formulas & Equations
+
+Mathematical formulas use LaTeX syntax.
+
+Inline formula: $E = mc^2$
+
+A pair of `$` starts math everywhere outside code. Write spreadsheet references, prices or other text with `$` as inline code (`` `$C$7` ``), otherwise it is set as a formula.
+
+Block formula as separate paragraph:
+
+$$
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+$$
+
+---
+
+## 8) Code & Execution
+
+````lia
+```js
+console.log("Hello LiaScript!");
+```
+````
+
+**Note:** Use correct language tags (`js`, `py`, `html`, etc.).
+
+For interactive code with input fields, attach a `<script>` block or macro directly after the code block:
+
+````lia
+```js
+console.log("Hello LiaScript!");
+```
+<script>
+@input
+</script>
+````
+
+---
+
+## 9) Tables
+
+```lia
+| Era      | Feature         | Example      |
+|----------|-----------------|---------------|
+| Antiquity| Aulos, Lyre     | Seikilos Song |
+| Baroque  | Basso continuo  | J. S. Bach    |
+```
+
+---
+
+==================== END: specs/data/cheat-sheet/05-diagrams-formulas-code-tables.md ====================
+
+
+==================== START: specs/data/cheat-sheet/06-quizzes.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 10) Quizzes & Interaction
+
+**Single Choice**
+
+```lia
+Who composed the 9th Symphony?
+
+- [( )] Mozart
+- [(X)] __Beethoven__
+- [( )] Haydn
+```
+
+**Multiple Choice**
+
+```lia
+Select all Baroque composers.
+
+- [[X]] Bach
+- [[X]] Handel
+- [[ ]] Debussy
+```
+
+**Matrix Quiz (graded, for matching tasks)**
+
+```lia
+Which article belongs to the word?
+
+- [[der] [die] [das]]
+- [ ( )  (X)  ( ) ]  Frau
+- [ (X)  ( )  ( ) ]  Mann
+- [ ( )  ( )  (X) ]  Kind
+```
+
+- The first line holds the column labels; each row starts with `(` (one answer per row) or `[` (several answers per row) and ends with the row label.
+- This is a **quiz** with a solution. The matrix under Surveys (10b) looks similar but has no solution — never use it for a task with a right answer.
+
+**Text Quiz**
+
+```lia
+Composer of the 9th:
+
+[[Beethoven]]
+```
+
+**Open Question**
+
+```lia
+?[Briefly explain: Why was the Marseillaise politically significant?]
+```
+
+**Tips**
+
+- One question = one learning goal.
+- Optional feedback (explanation after the answer).
+
+**Quizzes for young learners / self-checks**
+
+Pick the pattern by the didactics. **Hint instead of solution** (no automatic solution): no `data-max-trials`.
+
+```lia
+Which one is right?
+
+<!-- data-hint-button="1" data-solution-button="false" -->
+- [( )] option A
+- [(X)] option B
+[[?]] a hint in plain words
+```
+
+**Solution after n tries** (the didactics allow it): `data-max-trials` plus a feedback line for the shown solution.
+
+```lia
+Which one is right?
+
+<!-- data-hint-button="1" data-max-trials="2" data-solution-button="false" data-text-resolved="Here is the solution – look at it again." -->
+- [( )] option A
+- [(X)] option B
+[[?]] a hint in plain words
+```
+
+- **The comment goes directly above the first answer line, not above the question.** An attribute comment belongs to the block that follows it; above the question it sets attributes on the question paragraph and the quiz ignores it. For a gap text it goes directly above the paragraph with the gaps.
+- Hints are their own lines after the options (`[[?]] …` or `- [[?]] …`), not indented under an option.
+- `data-hint-button="1"`: hint button after the 1st wrong try; `data-max-trials="2"`: the solution is shown automatically after the 2nd wrong try.
+- `data-solution-button="false"` hides the "show solution" button. **Without it the button is visible from the start**, also when `data-max-trials` is set.
+- Free-text tasks: always `data-solution-button="false"`.
+- Read answer options aloud with inline playback on the option (`{|>}{option text}`) instead of repeating them in the question text. Hint texts the same way where the target group needs read-aloud: `- [[?]] {|>}{Hint text}` — the play button appears when the hint is shown.
+- Every option has its own text (two equal options make the quiz unsolvable); an option that waits for an image carries a neutral word ("picture 1"), never the answer.
+- **No surface cues:** only understanding may find the answer. Options of one question are about equally long (the correct one never clearly the longest), built the same way (same subject, same grammatical form, the same first word where the others share one), and the correct one changes its position from question to question. Gap cards carry no article, case ending or capital letter that tells their gap — the article stays in the sentence. A sentence with gaps is not also written out as its own line on the page. `check-material.mjs` reports what it can measure ("Answer patterns").
+- **No matrix quiz in practice or self-check for young learners:** after a wrong check the matrix marks every row red, so the child cannot see which row is wrong. Use one single-choice question per row instead. Elsewhere: no table or matrix quiz wider than 3 short columns; on narrow screens prefer several single-choice questions.
+- **Feedback lines in the learners' words — required for young learners.** The player's default lines ("The correct answer has not been given yet") are not written for children. Define them once as header macros and set them on every quiz (since LiaScript 2.0: `data-text-solved`, `data-text-failed`, `data-text-resolved` — inline Markdown or a single emoji; an empty value hides the line):
+
+  ```lia
+  <!--
+  @ok: Right! ⭐
+  @notyet: Not quite yet. Tap the light bulb 💡.
+  -->
+  ```
+
+  (in the course language) and `<!-- data-text-solved="@ok" data-text-failed="@notyet" … -->` above the first option. A "light bulb" in such a line only where the quiz has a `[[?]]` hint. Surveys have no such attributes.
+- **Surveys answer with a fixed line:** after submitting, the player shows its own thank-you sentence (German: „Vielen Dank für dein Feedback!“) that cannot be changed. For young learners, an estimate or opinion question as a survey gets one sentence before it that says what happens ("When you have tapped, the page says thank you. Then go on."), or the text after it continues the thought ("Did you guess more than 100? Read on!").
+- Before writing the first quiz of a course, read the `liascript-syntax` skill's quiz part when it is installed (`data/skills.md`).
+
+**Controls as learners see them**
+
+| Control | What the page shows |
+|---|---|
+| read aloud (block or inline) | a small play triangle ▶ (⏸ while playing) without text — in a small box before a block, in a circle before an inline text or option |
+| hint (`[[?]]`) | a light bulb without text, after the first wrong check |
+| check | a button with the player's word for "check" (translated by the player), followed by the number of checks |
+| solution | hidden with `data-solution-button="false"` |
+
+- Learner texts, plans and the companion name a control by what the page shows, or show the symbol itself ("tap ▶", translated) — never "speaker", "loudspeaker" or another icon the page does not have. The tooltips are not visible on touch screens.
+- A hint appears only when the learner taps the light bulb: say so in plans and texts ("after a wrong try the light bulb gives a hint", translated) — never "a hint comes after the first mistake".
+
+---
+
+==================== END: specs/data/cheat-sheet/06-quizzes.md ====================
+
+
+==================== START: specs/data/cheat-sheet/07-surveys.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 10b) Surveys – Feedback without Solutions
+
+Surveys are like quizzes but **without a correct answer** — you provide a placeholder or options instead of a solution. State is stored if the course version is ≥ 1.0.0.
+
+### Text Input
+
+Single-line (comma-separated input):
+
+```lia
+[[___]]
+```
+
+Multi-line textarea — the **number of `___` groups** defines the number of lines:
+
+```lia
+[[___ ___ ___]]
+```
+
+---
+
+### Single-Choice Vector
+
+Uses **numbers or labels** in parentheses. Numbers → distribution plot in classroom; text labels → categorical chart.
+
+```lia
+How do you rate this session?
+
+[(1)] Excellent
+[(2)] Good
+[(3)] Neutral
+[(4)] Poor
+```
+
+Or with text labels:
+
+```lia
+[(very good)]  I like it very much
+[(good)]       It is ok
+[(bad)]        I don't like it
+```
+
+---
+
+### Multi-Choice Vector
+
+Uses **labels** in double square brackets. Labels only → categorical; start with numbers → continuous.
+
+```lia
+Which topics were useful?
+
+[[theory]]    Theory part
+[[examples]]  Code examples
+[[exercises]] Exercises
+```
+
+With numbers (continuous scale):
+
+```lia
+[[1 theory]]    Theory part
+[[2 examples]]  Code examples
+[[3 exercises]] Exercises
+```
+
+---
+
+### Single-Choice Matrix
+
+Define a **header row** of options in parentheses, then one row per question with empty brackets:
+
+```lia
+[(strongly agree)(agree)(neutral)(disagree)(strongly disagree)]
+[                                                             ] The pace was appropriate.
+[                                                             ] The examples were helpful.
+[                                                             ] I would recommend this course.
+```
+
+With numbered labels for distribution charts:
+
+```lia
+[(1 strongly agree)(2 agree)(3 neutral)(4 disagree)(5 strongly disagree)]
+[                 ] The pace was appropriate.
+[                 ] The examples were helpful.
+```
+
+---
+
+### Multi-Choice Matrix
+
+Same structure as single-choice matrix, but uses **double brackets** in header and body:
+
+```lia
+[[1][2][3][4][5]]
+[             ] I understood the learning objectives.
+[             ] I could apply the content right away.
+[             ] I would like more exercises.
+```
+
+---
+
+### Surveys and Scripting
+
+Attach a `<script>` to validate or forward the input (same as quizzes):
+
+```lia
+Please describe your main takeaway:
+
+[[___]]
+<script>
+  let input = `@input`.trim()
+  if (input.length > 4) {
+    true
+  } else if (input.length == 0) {
+    send.lia("Please enter some text.", [], false)
+  } else {
+    send.lia("Please provide a more detailed answer.", [], false)
+  }
+</script>
+```
+
+**`@input` values per type:**
+- Text input → string
+- Single-choice vector → number (index, -1 if nothing selected)
+- Multi-choice vector → array of 0/1 values
+- Single-choice matrix → array of numbers
+- Multi-choice matrix → array of arrays
+
+---
+
+==================== END: specs/data/cheat-sheet/07-surveys.md ====================
+
+
+==================== START: specs/data/cheat-sheet/08-includes-macros-task-pattern.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 11) Including External Content
+
+```lia
+@import(./snippets/task.md)
+@include(https://example.org/note.md)
+```
+
+- Use `@import` for local fragments, `@include` for external sources.
+
+---
+
+## 12) Variables & Simple Macros
+
+```lia
+<!--
+@myvar: __Music History__
+-->
+
+# Title
+
+Welcome to the @myvar course!
+```
+
+---
+
+## 13) Example Task Pattern
+
+```lia
+## Task: Source Analysis (Marseillaise)
+
+1. Read the text (excerpt linked).
+2. Highlight political keywords.
+3. Answer:
+
+   Which theme dominates?
+
+   - [(X)] Freedom
+   - [( )] Romanticism
+   - [( )] Commerce
+
+> Reflection: 2–3 sentences on its impact on contemporaries.
+```
+
+**Learning goal:** Clearly state what the task aims to achieve.
+
+---
+
+==================== END: specs/data/cheat-sheet/08-includes-macros-task-pattern.md ====================
+
+
+==================== START: specs/data/cheat-sheet/09-audio-sections.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 14) Audio-Supported Sections
+
+The animation pattern `{{|>}}` creates a play button. When clicked, the section below is read aloud via TTS.
+
+```lia
+    {{|>}}
+This section will be read aloud when the play button is clicked.
+```
+
+**Note:** The `narrator` in the header defines the voice for speech output; without it LiaScript reads with a default English voice, whatever `language:` says. Embedded snippets (e.g. a chat message with `{{|>}}`) need their own header comment with `narrator:` and `language:`. The narrator can be overridden per section:
+
+```lia
+...
+
+## Section 3
+<!--
+narrator: English UK Female
+-->
+
+    --{{1}}--
+I will be read aloud in English during the first animation step.
+
+    {{|> Russian Female 1-2}}
+This section will be read in Russian when the play button is clicked, visible only between animation steps 1 and 2.
+```
+
+---
+
+==================== END: specs/data/cheat-sheet/09-audio-sections.md ====================
+
+
+==================== START: specs/data/cheat-sheet/10-minimal-example.md ====================
+
+<!-- Part of data/liascript-cheat-sheet.md (see the index there). -->
+
+## 18) Minimal Example (Structure)
+
+````lia
+<!--
+author:   Erika Example
+email:    erika@example.org
+version:  1.0.0
+language: en
+narrator: English Female
+-->
+
+# Music & History – Introduction
+
+## Antiquity
+
+    --{{0}}--
+Brief overview of antiquity.
+
+    --{{1}}--
+Which instruments existed in antiquity? Check the correct one.
+
+      {{1}}
+<div>
+Instrument of antiquity?
+
+- [(X)] Aulos
+- [( )] Synthesizer
+</div>
+
+## Baroque
+
+--{{0}}--
+Run the following JavaScript example:
+
+```js
+console.log("Basso continuo = foundation");
+```
+<script>
+@input
+</script>
+````
+
+==================== END: specs/data/cheat-sheet/10-minimal-example.md ====================
+
+
 ==================== START: specs/data/didactic-methods.md ====================
 
 # Didactic Methods
@@ -8173,836 +9083,26 @@ A compact reference guide for agents to produce **syntactically and semantically
 
 ---
 
-## 1) Course Metadata (Header)
+## How to read this guide
 
-```lia
-<!--
-author:   Firstname Lastname
-email:    user@example.org
-version:  1.0.0
-language: en
-narrator: English Female
-comment:  Short description of the course
--->
-```
+The guide is split into parts under `data/cheat-sheet/`. A rule cited by name from this guide stands in the part whose line below names it.
 
-**Notes**
+- **Whole document** — a full syntax check (`:validate-syntax`, `:validate-course`), writing or rewriting a material document (`:promote-session`, `:create-mini-course`, `:coauthor-materials`), or no scope known: read **every part, in the order of the table**.
+- **A narrower scope** — a fix of one passage (`:quick-fix`), the short re-check of changed pages, a single cited rule: read `cheat-sheet/00-checks.md` and, completely, every part that covers a construct in the changed passage (a quiz → `06-quizzes.md`; read-aloud lines → `03-presentation-and-speech.md`; an image or link → `04-media-and-links.md`; a heading → `01-header-and-slides.md`). When unsure whether a construct is involved, read its part.
 
-- `language` and `narrator` define TTS/voice output.
-- `comment` may be used as an abstract or summary.
-
----
-
-## 2) Structure: Headings & Sections
-
-```lia
-# Main Title (Course Title Page)
-## Section
-### Subsection
-```
-
-**Rules**
-
-- Only one `#` heading per file (the course title).
-- Use hierarchical structure logically; avoid “jumps” in heading levels.
-
----
-
-### Additional Rule: Subheadings within a Slide
-
-- Each `#`, `##` and `###` heading **always starts a new slide** — the heading depth is the slide hierarchy (a `###` is a sub-slide of the `##` above it).
-
-- Use bare `###` only where a new (sub-)slide is wanted, e.g. the parts of a unit in single-file mode (`templates/session-material.yaml` → `heading_levels`).
-
-- Subheadings from `####` down to `######` are only allowed if **embedded** inside:
-
-  - an **HTML block** (`<div>…</div>` or a semantic wrapper such as `<section>…</section>`)
-  - a **list** (`-`, `*`)
-  - a **blockquote** (`>`)
-
-- A “naked” `####`-or-deeper subheading outside such containers counts as a new slide/segment and is therefore **not allowed**.
-
-**Allowed patterns:**
-
-```lia
-## Slide 1
-
-### Bare subsection directly under the slide — no container needed
-
-<div>
-#### One level deeper — must be embedded
-</div>
-```
-
-```lia
-## Slide 2
-
-### Bare subsection — fine on its own
-
-<section>
-#### Subsection embedded in a semantic <section> wrapper
-</section>
-```
-
-```lia
-## Slide 3
-
-- List with content
-  - #### Subheading inside a list
-```
-
-```lia
-## Slide 4
-
-> #### Subheading in a blockquote
-```
-
-**Not allowed (`####`-or-deeper outside of containers):**
-
-```lia
-## Slide 5
-
-### Bare subsection — fine
-#### Subheading without container   ❌
-```
-
----
-
-## 3) Text, Lists, Quotes, Alerts & Citations
-
-```lia
-Normal text with **bold** and *italic*.
-
-- List item 1
-- List item 2
-
-> Quote / Key takeaway
-```
-
-**Tip:** Use short paragraphs and learner-friendly phrasing.
-
----
-
-### Alerts
-
-LiaScript supports GitHub/GitLab-style alert blocks. Alerts are written as blockquotes whose first line contains an alert marker.
-
-```lia
-> [!NOTE]
-> Useful background information or a neutral hint.
-
-> [!TIP]
-> Practical advice or a helpful shortcut.
-
-> [!IMPORTANT]
-> Information that learners must not miss.
-
-> [!WARNING]
-> A warning about possible mistakes or risks.
-
-> [!CAUTION]
-> Strong caution about negative consequences.
-```
-
-**Supported alert types:**
-
-- `NOTE`
-- `TIP`
-- `IMPORTANT`
-- `WARNING`
-- `CAUTION`
-
-**Custom titles are allowed** by adding text after the alert type:
-
-```lia
-> [!NOTE] Keep this in mind
-> This alert uses a custom title.
-```
-
-An emoji or icon in the custom title can be used to visually override or emphasize the default alert icon:
-
-```lia
-> [!WARNING] ⚠️ Proceed with caution
-> This action cannot be undone.
-```
-
-**Best practices**
-
-- Use alerts sparingly.
-- Prefer `NOTE` for neutral explanations.
-- Use `TIP` for practical advice.
-- Use `IMPORTANT`, `WARNING`, and `CAUTION` only when the distinction matters.
-- Alerts are blockquotes, so every line of the alert should start with `>`.
-
----
-
-### Citations
-
-LiaScript citations are also written as blockquotes. A citation consists of a quote followed by a separate citation line starting with `--`.
-
-```lia
-> “Live as if you were to die tomorrow.
-> Learn as if you were to live forever.”
->
-> -- Mahatma Gandhi
-```
-
-The line beginning with `--` is interpreted as the citation/source line.
-
-**Pattern:**
-
-```lia
-> Quoted or referenced text.
->
-> -- Author, source, year, or reference
-```
-
-**Examples:**
-
-```lia
-> “The medium is the message.”
->
-> -- Marshall McLuhan
-```
-
-```lia
-> Historical sources should always be interpreted in their political,
-> social, and cultural context.
->
-> -- Course note, Source Analysis
-```
-
-**Best practices**
-
-- Keep citations short and readable.
-- Use the `--` line only for the source or attribution.
-- Leave an empty blockquote line `>` between the quote and the citation.
-- Do not use citations as a replacement for bibliographies or full references.
-- For long sources, combine a short citation block with a separate reference list.
-
----
-
-## 4) Presentation Mode & Speech Output
-
-### Optimized Rules: Presentation Mode & Speech Output
-
-1. **Slide Structure**
-
-   - Every `##` heading creates a **new slide**.
-   - After each new slide (`##`), the **animation/comment numbering** (`--{{n}}--`, `{{n}}`) resets to **0**.
-   - Headings within `<div>…</div>`, lists, or blockquotes do **not** start new slides.
-
-2. **Animations**
-
-   - Each animation is controlled with `--{{n}}--` (comment/TTS) or `{{n}}` (visible content).
-   - Numbering starts at 0 for each slide.
-   - Ranges `{{a-b}}` mean: content appears at step `a` and disappears at step `b`.
-
-3. **Speech Output (TTS)**
-
-   - Each `--{{n}}--` block contains a **spoken comment** read aloud during the corresponding animation step.
-   - Comments should sound like **explanatory sentences**, not bullet points.
-   - **Optional:** `{{|>}}` creates a play button for manual playback (it shows a small play triangle ▶, no text — see section 10 → Controls as learners see them).
-   - The voice is defined in the header (`narrator`) but can be overridden per section via comment:
-
-     ```lia
-     <!--
-     narrator: English UK Female
-     -->
-     ```
-
-4. **Style**
-
-   - Structure each slide **like a PowerPoint slide**: clear title, short text, matching speaker comments.
-   - Each animated block should have its **own** TTS comment.
-   - Avoid long text blocks: maximum **one paragraph per animation**.
-
----
-
-### Minimal Example (Optimized)
-
-```lia
-## Slide 5
-
-    --{{0}}--
-Introductory text read at slide start.
-
-    --{{1}}--
-This is read during the first animation step.
-
-      {{1}}
-> Quote appears at step 1.
-
-    --{{2}}--
-In the second step, a table is displayed.
-
-      {{2-3}}
-<div>
-### Table inside HTML block (no slide switch)
-
-| Column A | Column B |
-|----------|----------|
-| Value 1  | Value 2  |
-
-</div>
-
-    --{{3}}--
-Closing comment. The next slide starts again at 0.
-```
-
----
-
-## 5) Media: Images, Audio, Video, oEmbed
-
-Multimedia links can be included locally (relative paths) or externally (URLs).
-
-```lia
-![Alt text](assets/img/pic.jpg "Optional image caption")
-
-?[Audio / Link text](assets/audio/intro.mp3 "Optional audio caption")
-
-!?[Video / Link text](https://www.youtube.com/watch?v=dQw4w9WgXcQ "Optional video caption")
-
-??[oEmbed / Link text](https://example.org/resource "Optional oEmbed caption")
-```
-
-**Encode link targets.** LiaScript ends a link or image target at the first
-`(` — also balanced parentheses, which CommonMark allows — and a bare URL keeps
-its full text but gets a cut-off address. In every link and image target
-percent-encode `(` as `%28`, `)` as `%29` and spaces as `%20`, and write a bare
-URL as `[label](encoded URL)`:
-
-```lia
-![A leaf with jagged edges](https://commons.wikimedia.org/wiki/Special:FilePath/Leaf_%28example%29.jpg?width=330)
-```
-
-**Image size.** A style comment directly after the image (same line) sets its
-display size; it also works inside quiz options. Images that are answer options
-of one question get a height limit so the question and all options fit one
-screen of the target device; a large page photo may get one too:
-
-```lia
-Which picture shows a ripe fruit?
-
-- [( )] ![Picture 1: …](https://example.org/a.jpg)<!-- style="max-height: 30vh" -->
-- [(X)] ![Picture 2: …](https://example.org/b.jpg)<!-- style="max-height: 30vh" -->
-
-![A wide landscape photo](https://example.org/c.jpg)<!-- style="width: 30%" -->
-```
-
-Request a matching file size from the collection, too: Wikimedia Commons
-serves only standard thumbnail widths (e.g. `?width=330` for answer options and
-small pictures, `?width=500` for page photos); other widths are rounded up to a
-much larger file or rejected.
-
-A `vh` limit does not guarantee the fit: the page header, the introduction and
-the question do not shrink with the window, and image-only options stand one
-below the other. Whether a question fits is known only from a measurement at the
-learners' window size (the check script's viewport report) or from a look at the
-learners' device (`data/chat-checks.md` → Say how you checked).
-
-**Accessibility (A11y)**
-
-- Meaningful alt text and descriptive filenames.
-- For external videos: provide a brief summary.
-
----
-
-**Galleries** can be created by adding multiple media elements in sequence:
-
-```lia
-![Alt text](assets/img/pic.jpg "Optional image caption")
-?[Audio / Link text](assets/audio/intro.mp3 "Optional audio caption")
-!?[Video / Link text](https://www.youtube.com/watch?v=dQw4w9WgXcQ "Optional video caption")
-??[oEmbed / Link text](https://example.org/resource "Optional oEmbed caption")
-```
-
----
-
-
-### Link targets
-
-In every Markdown link or image target — chat, material,
-  and journal fields such as `__File:__`, `__Page:__`, `__Candidates:__` —
-  percent-encode `(` as `%28`, `)` as `%29` and spaces as `%20`; write a bare
-  URL as `[label](encoded URL)`. LiaScript cuts a target at the first
-  unencoded `(` (file names from photo collections often contain one), and the
-  chat cannot replace a sent message with a broken image.
-
-## 6) Diagrams
-
-Diagrams can be created using Mermaid. The `@mermaid` tag ensures proper rendering.
-
-````lia
-```mermaid   @mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;
-```
-````
-
-Alternatively, diagrams can be created with ASCII art. The syntax info `ascii` ensures correct formatting.
-
-````lia
-```ascii  Optional subtitle
-  +---+      +---+
-  | A | *--> | B |
-  +---+      +---+
-    ^          ^
-    |          |
-    |   .------'
-    v  /
-  +---+
-  | C |
-  +---+
-```
-````
-
----
-
-## 7) Formulas & Equations
-
-Mathematical formulas use LaTeX syntax.
-
-Inline formula: $E = mc^2$
-
-A pair of `$` starts math everywhere outside code. Write spreadsheet references, prices or other text with `$` as inline code (`` `$C$7` ``), otherwise it is set as a formula.
-
-Block formula as separate paragraph:
-
-$$
-\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
-$$
-
----
-
-## 8) Code & Execution
-
-````lia
-```js
-console.log("Hello LiaScript!");
-```
-````
-
-**Note:** Use correct language tags (`js`, `py`, `html`, etc.).
-
-For interactive code with input fields, attach a `<script>` block or macro directly after the code block:
-
-````lia
-```js
-console.log("Hello LiaScript!");
-```
-<script>
-@input
-</script>
-````
-
----
-
-## 9) Tables
-
-```lia
-| Era      | Feature         | Example      |
-|----------|-----------------|---------------|
-| Antiquity| Aulos, Lyre     | Seikilos Song |
-| Baroque  | Basso continuo  | J. S. Bach    |
-```
-
----
-
-## 10) Quizzes & Interaction
-
-**Single Choice**
-
-```lia
-Who composed the 9th Symphony?
-
-- [( )] Mozart
-- [(X)] __Beethoven__
-- [( )] Haydn
-```
-
-**Multiple Choice**
-
-```lia
-Select all Baroque composers.
-
-- [[X]] Bach
-- [[X]] Handel
-- [[ ]] Debussy
-```
-
-**Matrix Quiz (graded, for matching tasks)**
-
-```lia
-Which article belongs to the word?
-
-- [[der] [die] [das]]
-- [ ( )  (X)  ( ) ]  Frau
-- [ (X)  ( )  ( ) ]  Mann
-- [ ( )  ( )  (X) ]  Kind
-```
-
-- The first line holds the column labels; each row starts with `(` (one answer per row) or `[` (several answers per row) and ends with the row label.
-- This is a **quiz** with a solution. The matrix under Surveys (10b) looks similar but has no solution — never use it for a task with a right answer.
-
-**Text Quiz**
-
-```lia
-Composer of the 9th:
-
-[[Beethoven]]
-```
-
-**Open Question**
-
-```lia
-?[Briefly explain: Why was the Marseillaise politically significant?]
-```
-
-**Tips**
-
-- One question = one learning goal.
-- Optional feedback (explanation after the answer).
-
-**Quizzes for young learners / self-checks**
-
-Pick the pattern by the didactics. **Hint instead of solution** (no automatic solution): no `data-max-trials`.
-
-```lia
-Which one is right?
-
-<!-- data-hint-button="1" data-solution-button="false" -->
-- [( )] option A
-- [(X)] option B
-[[?]] a hint in plain words
-```
-
-**Solution after n tries** (the didactics allow it): `data-max-trials` plus a feedback line for the shown solution.
-
-```lia
-Which one is right?
-
-<!-- data-hint-button="1" data-max-trials="2" data-solution-button="false" data-text-resolved="Here is the solution – look at it again." -->
-- [( )] option A
-- [(X)] option B
-[[?]] a hint in plain words
-```
-
-- **The comment goes directly above the first answer line, not above the question.** An attribute comment belongs to the block that follows it; above the question it sets attributes on the question paragraph and the quiz ignores it. For a gap text it goes directly above the paragraph with the gaps.
-- Hints are their own lines after the options (`[[?]] …` or `- [[?]] …`), not indented under an option.
-- `data-hint-button="1"`: hint button after the 1st wrong try; `data-max-trials="2"`: the solution is shown automatically after the 2nd wrong try.
-- `data-solution-button="false"` hides the "show solution" button. **Without it the button is visible from the start**, also when `data-max-trials` is set.
-- Free-text tasks: always `data-solution-button="false"`.
-- Read answer options aloud with inline playback on the option (`{|>}{option text}`) instead of repeating them in the question text. Hint texts the same way where the target group needs read-aloud: `- [[?]] {|>}{Hint text}` — the play button appears when the hint is shown.
-- Every option has its own text (two equal options make the quiz unsolvable); an option that waits for an image carries a neutral word ("picture 1"), never the answer.
-- **No surface cues:** only understanding may find the answer. Options of one question are about equally long (the correct one never clearly the longest), built the same way (same subject, same grammatical form, the same first word where the others share one), and the correct one changes its position from question to question. Gap cards carry no article, case ending or capital letter that tells their gap — the article stays in the sentence. A sentence with gaps is not also written out as its own line on the page. `check-material.mjs` reports what it can measure ("Answer patterns").
-- **No matrix quiz in practice or self-check for young learners:** after a wrong check the matrix marks every row red, so the child cannot see which row is wrong. Use one single-choice question per row instead. Elsewhere: no table or matrix quiz wider than 3 short columns; on narrow screens prefer several single-choice questions.
-- **Feedback lines in the learners' words — required for young learners.** The player's default lines ("The correct answer has not been given yet") are not written for children. Define them once as header macros and set them on every quiz (since LiaScript 2.0: `data-text-solved`, `data-text-failed`, `data-text-resolved` — inline Markdown or a single emoji; an empty value hides the line):
-
-  ```lia
-  <!--
-  @ok: Right! ⭐
-  @notyet: Not quite yet. Tap the light bulb 💡.
-  -->
-  ```
-
-  (in the course language) and `<!-- data-text-solved="@ok" data-text-failed="@notyet" … -->` above the first option. A "light bulb" in such a line only where the quiz has a `[[?]]` hint. Surveys have no such attributes.
-- **Surveys answer with a fixed line:** after submitting, the player shows its own thank-you sentence (German: „Vielen Dank für dein Feedback!“) that cannot be changed. For young learners, an estimate or opinion question as a survey gets one sentence before it that says what happens ("When you have tapped, the page says thank you. Then go on."), or the text after it continues the thought ("Did you guess more than 100? Read on!").
-- Before writing the first quiz of a course, read the `liascript-syntax` skill's quiz part when it is installed (`data/skills.md`).
-
-**Controls as learners see them**
-
-| Control | What the page shows |
+| Part | Covers |
 |---|---|
-| read aloud (block or inline) | a small play triangle ▶ (⏸ while playing) without text — in a small box before a block, in a circle before an inline text or option |
-| hint (`[[?]]`) | a light bulb without text, after the first wrong check |
-| check | a button with the player's word for "check" (translated by the player), followed by the number of checks |
-| solution | hidden with `data-solution-button="false"` |
-
-- Learner texts, plans and the companion name a control by what the page shows, or show the symbol itself ("tap ▶", translated) — never "speaker", "loudspeaker" or another icon the page does not have. The tooltips are not visible on touch screens.
-- A hint appears only when the learner taps the light bulb: say so in plans and texts ("after a wrong try the light bulb gives a hint", translated) — never "a hint comes after the first mistake".
-
----
-
-## 10b) Surveys – Feedback without Solutions
-
-Surveys are like quizzes but **without a correct answer** — you provide a placeholder or options instead of a solution. State is stored if the course version is ≥ 1.0.0.
-
-### Text Input
-
-Single-line (comma-separated input):
-
-```lia
-[[___]]
-```
-
-Multi-line textarea — the **number of `___` groups** defines the number of lines:
-
-```lia
-[[___ ___ ___]]
-```
-
----
-
-### Single-Choice Vector
-
-Uses **numbers or labels** in parentheses. Numbers → distribution plot in classroom; text labels → categorical chart.
-
-```lia
-How do you rate this session?
-
-[(1)] Excellent
-[(2)] Good
-[(3)] Neutral
-[(4)] Poor
-```
-
-Or with text labels:
-
-```lia
-[(very good)]  I like it very much
-[(good)]       It is ok
-[(bad)]        I don't like it
-```
-
----
-
-### Multi-Choice Vector
-
-Uses **labels** in double square brackets. Labels only → categorical; start with numbers → continuous.
-
-```lia
-Which topics were useful?
-
-[[theory]]    Theory part
-[[examples]]  Code examples
-[[exercises]] Exercises
-```
-
-With numbers (continuous scale):
-
-```lia
-[[1 theory]]    Theory part
-[[2 examples]]  Code examples
-[[3 exercises]] Exercises
-```
-
----
-
-### Single-Choice Matrix
-
-Define a **header row** of options in parentheses, then one row per question with empty brackets:
-
-```lia
-[(strongly agree)(agree)(neutral)(disagree)(strongly disagree)]
-[                                                             ] The pace was appropriate.
-[                                                             ] The examples were helpful.
-[                                                             ] I would recommend this course.
-```
-
-With numbered labels for distribution charts:
-
-```lia
-[(1 strongly agree)(2 agree)(3 neutral)(4 disagree)(5 strongly disagree)]
-[                 ] The pace was appropriate.
-[                 ] The examples were helpful.
-```
-
----
-
-### Multi-Choice Matrix
-
-Same structure as single-choice matrix, but uses **double brackets** in header and body:
-
-```lia
-[[1][2][3][4][5]]
-[             ] I understood the learning objectives.
-[             ] I could apply the content right away.
-[             ] I would like more exercises.
-```
-
----
-
-### Surveys and Scripting
-
-Attach a `<script>` to validate or forward the input (same as quizzes):
-
-```lia
-Please describe your main takeaway:
-
-[[___]]
-<script>
-  let input = `@input`.trim()
-  if (input.length > 4) {
-    true
-  } else if (input.length == 0) {
-    send.lia("Please enter some text.", [], false)
-  } else {
-    send.lia("Please provide a more detailed answer.", [], false)
-  }
-</script>
-```
-
-**`@input` values per type:**
-- Text input → string
-- Single-choice vector → number (index, -1 if nothing selected)
-- Multi-choice vector → array of 0/1 values
-- Single-choice matrix → array of numbers
-- Multi-choice matrix → array of arrays
-
----
-
-## 11) Including External Content
-
-```lia
-@import(./snippets/task.md)
-@include(https://example.org/note.md)
-```
-
-- Use `@import` for local fragments, `@include` for external sources.
-
----
-
-## 12) Variables & Simple Macros
-
-```lia
-<!--
-@myvar: __Music History__
--->
-
-# Title
-
-Welcome to the @myvar course!
-```
-
----
-
-## 13) Example Task Pattern
-
-```lia
-## Task: Source Analysis (Marseillaise)
-
-1. Read the text (excerpt linked).
-2. Highlight political keywords.
-3. Answer:
-
-   Which theme dominates?
-
-   - [(X)] Freedom
-   - [( )] Romanticism
-   - [( )] Commerce
-
-> Reflection: 2–3 sentences on its impact on contemporaries.
-```
-
-**Learning goal:** Clearly state what the task aims to achieve.
-
----
-
-## 14) Audio-Supported Sections
-
-The animation pattern `{{|>}}` creates a play button. When clicked, the section below is read aloud via TTS.
-
-```lia
-    {{|>}}
-This section will be read aloud when the play button is clicked.
-```
-
-**Note:** The `narrator` in the header defines the voice for speech output; without it LiaScript reads with a default English voice, whatever `language:` says. Embedded snippets (e.g. a chat message with `{{|>}}`) need their own header comment with `narrator:` and `language:`. The narrator can be overridden per section:
-
-```lia
-...
-
-## Section 3
-<!--
-narrator: English UK Female
--->
-
-    --{{1}}--
-I will be read aloud in English during the first animation step.
-
-    {{|> Russian Female 1-2}}
-This section will be read in Russian when the play button is clicked, visible only between animation steps 1 and 2.
-```
-
----
-
-## 15) Accessibility (A11y) – Quick Checklist
-
-- [ ] Alt text for all media
-- [ ] Clear language, short sentences
-- [ ] Maintain contrast/readability (for embedded HTML/CSS)
-- [ ] Audio/video have short content summaries
-- [ ] Logical navigation (heading hierarchy)
-
----
-
-## 16) Common Mistakes & Pitfalls
-
-- ❌ Unclosed code blocks (always open/close with three backticks)
-- ❌ Wrong heading order (`###` without preceding `##`)
-- ❌ Media without alt text
-- ❌ Unencoded `(`, `)` or spaces in a link or image target (cuts the address, §5)
-- ❌ Image answer options without a size limit (one option fills the screen, §5)
-- ❌ Ambiguous or unclear quiz questions
-- ❌ Overly long sections without structure
-
----
-
-## 17) Mini Validation Before Export
-
-- [ ] All code blocks properly closed
-- [ ] Exactly **one** course title with `#`
-- [ ] External links checked
-- [ ] Quiz questions tested
-- [ ] Course header metadata completed
-
----
-
-## 18) Minimal Example (Structure)
-
-````lia
-<!--
-author:   Erika Example
-email:    erika@example.org
-version:  1.0.0
-language: en
-narrator: English Female
--->
-
-# Music & History – Introduction
-
-## Antiquity
-
-    --{{0}}--
-Brief overview of antiquity.
-
-    --{{1}}--
-Which instruments existed in antiquity? Check the correct one.
-
-      {{1}}
-<div>
-Instrument of antiquity?
-
-- [(X)] Aulos
-- [( )] Synthesizer
-</div>
-
-## Baroque
-
---{{0}}--
-Run the following JavaScript example:
-
-```js
-console.log("Basso continuo = foundation");
-```
-<script>
-@input
-</script>
-````
+| `cheat-sheet/00-checks.md` | §15 Accessibility (A11y) – Quick Checklist · §16 Common Mistakes & Pitfalls · §17 Mini Validation Before Export |
+| `cheat-sheet/01-header-and-slides.md` | §1 Course Metadata (Header) · §2 Structure: Headings & Sections (every `#`/`##`/`###` starts a slide; subheadings within a slide; allowed patterns) |
+| `cheat-sheet/02-text-lists-alerts-citations.md` | §3 Text, Lists, Quotes, Alerts & Citations |
+| `cheat-sheet/03-presentation-and-speech.md` | §4 Presentation Mode & Speech Output (`narrator:`, `--{{n}}--`, `{{|>}}`, table inside HTML block) |
+| `cheat-sheet/04-media-and-links.md` | §5 Media: Images, Audio, Video, oEmbed (Image size, Accessibility) · Link targets (Encode link targets) |
+| `cheat-sheet/05-diagrams-formulas-code-tables.md` | §6 Diagrams · §7 Formulas & Equations (`$` math) · §8 Code & Execution · §9 Tables |
+| `cheat-sheet/06-quizzes.md` | §10 Quizzes & Interaction: Single/Multiple Choice, Matrix Quiz, Text Quiz, Open Question, Tips · Quizzes for young learners / self-checks (No surface cues, feedback lines) · Controls as learners see them |
+| `cheat-sheet/07-surveys.md` | §10b Surveys – Feedback without Solutions |
+| `cheat-sheet/08-includes-macros-task-pattern.md` | §11 Including External Content · §12 Variables & Simple Macros · §13 Example Task Pattern |
+| `cheat-sheet/09-audio-sections.md` | §14 Audio-Supported Sections |
+| `cheat-sheet/10-minimal-example.md` | §18 Minimal Example (Structure) |
 
 ==================== END: specs/data/liascript-cheat-sheet.md ====================
 
@@ -10071,6 +10171,7 @@ Session commands identify a session by its number alone (`:promote-session 3`, `
 1. The session's subsection in `journal.md` → `## Sessions` (`**Type:**` in its technical details), once a skeleton exists.
 2. Otherwise the session's row in the technical table of `journal.md` → `## Agenda`.
 3. Otherwise (only `:create-session` without an agenda): if the course has exactly one Session Type, use it; else ask the instructor once, offering the display names from `## Didactics` → `__Session Types:__`.
+4. Otherwise, on a light track (`__Track:__` `mini`, `convert` or `design`; Didactics and Agenda wait): the type is `n/a` — the unit has no Type or Method items; never ask for one.
 
 - If subsection and agenda disagree, say so and ask which is right before continuing — never pick one silently.
 - An extra type argument (older typed commands, a `type` parameter in older `agent:` links) is accepted only if it matches the resolved type; otherwise stop and ask.

@@ -57,7 +57,7 @@ Rules:
    **Short re-check:** if the report's outcome says "short re-check open" (changes after the check, `tasks/quick-fix.md` → Change path), check only the pages named in its "Changed after the check" block — `tasks/validate-syntax.md` for those pages, `check-material.mjs` (or say that no browser was available), the Type and Method items those pages carry (not on the design track), and every open point that names them; the result rules stay the same. Replace only the affected points, drop the " – {n} point(s) changed since – short re-check open" part of the outcome, status line, Notes cell and overview, and keep the dated lines as the record. Announce it with its duration (`templates/session-validation.yaml` → `recheckExplain`).
 1. Load `journal.md` → `## Course Context` for course type and conventions.
 2. Load the learning objectives and declared duration of this session (`data/session-types.md` → "Objectives and duration of a session" — from `## Agenda`, without an agenda from `## Outline`). Design track: skip (Design track: design check only).
-3. Load `data/liascript-cheat-sheet.md` as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
+3. Load `data/liascript-cheat-sheet.md` with all its parts (its index → Whole document) as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
 3b. Load `checklists/course-quality-checklist.md` and apply **every** item of the categories that concern one unit — Session Subsections, Session Materials, LiaScript Syntax — for this session, also items the checks below do not repeat. A session PASS must not hide a `[mechanical]` item the course check would fail later. Design track: only the items of the four design checks; every other item is a content hint.
 4. Open the material document for this session — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode (light track: the whole `README.md` is unit 1; design track: its recorded path) — and check (design track: only syntax, header, images and contrast count; every other check below is a content hint, Design track above):
 
@@ -122,7 +122,7 @@ Rules:
 
 1. Load `journal.md` → `## Course Context` to understand course type and applicable conventions.
 2. Load `checklists/course-quality-checklist.md` — apply only the checks relevant for this course type (skip sections marked with conditions that don't apply). The steps below group the checks; **every** applicable checklist item is applied, also one no step names — report it under the closest category of the summary.
-3. Load `data/liascript-cheat-sheet.md` as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
+3. Load `data/liascript-cheat-sheet.md` with all its parts (its index → Whole document) as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
 
 4. **Check Context & Foundation:**
    - `journal.md` → `## Course Context` complete (course type, terminology, agenda flag, conventions)
@@ -190,7 +190,7 @@ Rules:
    1. [Concrete action with file reference]
    ```
 
-   **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS. On the design track the design course result applies instead (Design track: design check only).
+   **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), a unit whose outcome says "short re-check open" gives PASS with concerns (resolved only by running the re-check, never accepted as is), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS. On the design track the design course result applies instead (Design track: design check only).
 10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
 11. After all session validation reports and the latest summary are created: suggest next step. The completion message links the summary's own heading (the full anchor of `### Latest Validation Summary…`), never the `## Validation` slide above it. A duration it names is measured (`data/agent-links.md` → Durations).
     - If issues exist: per unit as in session mode step 8 — ✏️ `:quick-fix {number}` when every open point of the unit is one quick-fix change, otherwise `:coauthor-materials {number}` — then rerun `:validate-course`.
