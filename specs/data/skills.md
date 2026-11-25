@@ -60,8 +60,8 @@ command. This is the canonical rule; tasks and agents point here.
 
 | Skill | Agent | Task / step | Use |
 |---|---|---|---|
-| `liascript-syntax` | Teaching | `promote-session`, `coauthor-materials`, `quick-fix` | Authoring reference for every LiaScript construct (quizzes, surveys, effects, TTS, code execution, charts, presentation pattern), in addition to `data/liascript-cheat-sheet.md` |
-| `liascript-syntax` | Teaching | `validate-syntax`, `validate-course` | Second reference for constructs the cheat sheet does not cover and for unclear findings |
+| `liascript-syntax` | Teaching | `promote-session`, `coauthor-materials`, `quick-fix` | The syntax reference for every LiaScript construct (quizzes, surveys, effects, TTS, code execution, charts, presentation pattern) — Skill First below |
+| `liascript-syntax` | Teaching | `validate-syntax`, `validate-course` | The syntax reference for the checks (Skill First below); the check list and findings format stay the task's |
 | `reference-checker` | Teaching | `validate-course` (session and course mode), `coauthor-materials` when sources are added, `save-notes` for research notes | Verify the `References` / sources of a session; requires web access |
 | `liascript-templates` (older name: `template-development`) | Teaching | `suggest-templates`, `manage-templates` | When the instructor needs a macro or template that does not exist yet (own template, JS library integration) |
 | `liascript-templates` (older name: `template-development`) | Development | `develop-template` (**required**: without it the command offers the installation and otherwise stops) | Build and test a new template |
@@ -69,6 +69,15 @@ command. This is the canonical rule; tasks and agents point here.
 | `liascript-theming` | Artist | `create-visuals` | Turn the website palette and typography into a tested LiaScript theme header (`link:` + `@style` + `@custom`), or apply a bundled design by name |
 | `liascript-exporter` (older name: `exporter-workflow`) | Development | `create-project`, `update-project` | `project.yaml`, GitHub Actions, `liaex` exports (PDF, SCORM, ePub, …), in addition to `data/liascript-workflows.md` |
 | `oersi-metadata` | Development | `create-project`, `update-project` | Optional `metadata.yml` to publish the course as OER on OERSI |
+
+## Skill First: `liascript-syntax`
+
+When `liascript-syntax` is available, it is **the** syntax reference (it is checked against the LiaScript
+source); `data/liascript-cheat-sheet.md` then counts only for the agent's own rules, its sections marked
+**[agent rule]** in the cheat sheet's Purpose. Read the skill progressively: `SKILL.md` → "Top pitfalls" first,
+then only the section of the one `reference/` file a construct needs, found by its heading
+(`node specs/dashboard/find.mjs "^#" <reference file>`, then a line range) — never a whole reference file.
+Without the skill, the cheat sheet is the whole reference as before.
 
 ## Precedence
 

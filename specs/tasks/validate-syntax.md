@@ -29,8 +29,8 @@ This task is also invoked internally (not just via the command) by `tasks/valida
 ## Steps
 
 1. Resolve the material document (or the given narrower scope) per the Inputs above.
-2. Load `data/liascript-cheat-sheet.md` as the syntax reference.
-   - If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference for constructs the cheat sheet does not cover and for unclear findings. The check list below and the findings format stay as defined here.
+2. Load the syntax reference — with the skill `liascript-syntax` available: the skill (`data/skills.md` → Skill First) plus the cheat sheet's **[agent rule]** sections; without it: `data/liascript-cheat-sheet.md`.
+   - The check list below and the findings format stay as defined here; a check's "cheat sheet §n" points to the same construct in the skill when it is installed.
 3. Run every check below against the material, noting rule, ✅/❌, and the page title of each finding.
 4. If invoked as a sub-procedure: return the findings list to the caller — do not ask the instructor anything.
 5. If invoked directly: report the findings using the Output Format below.

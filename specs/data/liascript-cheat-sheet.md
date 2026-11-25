@@ -4,6 +4,8 @@
 
 A compact reference guide for agents to produce **syntactically and semantically correct LiaScript**.
 
+**[agent rule]** sections — the agent's own rules, read also when the skill `liascript-syntax` is installed (`data/skills.md` → Skill First): §10 "Quizzes for young learners / self-checks" and "Controls as learners see them", §15 Accessibility, §17 Mini Validation Before Export. With the skill installed, look up every other construct there instead of here.
+
 ---
 
 ## 1) Course Metadata (Header)

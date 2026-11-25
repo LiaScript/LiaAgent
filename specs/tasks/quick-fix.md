@@ -54,7 +54,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 
 3. **Mini-validation of the affected section:**
    - Run `tasks/validate-syntax.md` scoped to the changed area — do not restate syntax rules here.
-   - If the skill `liascript-syntax` is available (see `data/skills.md`), consult it when the fix touches a construct the cheat sheet does not cover.
+   - If the skill `liascript-syntax` is available, it is the syntax reference for the changed construct (`data/skills.md` → Skill First); the learner-text sections of the Inputs stay the cheat sheet's **[agent rule]** sections.
    - Persona/tone consistent with `journal.md` → `## Didactics`? (skip on the design track: Didactics waits) While Didactics waits on a mini or convert track: with `## Course Context` → Conventions (tone, person) and `### Coauthor`.
    - No unintended regression in surrounding content?
 

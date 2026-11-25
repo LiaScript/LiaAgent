@@ -3517,7 +3517,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 
 3. **Mini-validation of the affected section:**
    - Run `tasks/validate-syntax.md` scoped to the changed area — do not restate syntax rules here.
-   - If the skill `liascript-syntax` is available (see `data/skills.md`), consult it when the fix touches a construct the cheat sheet does not cover.
+   - If the skill `liascript-syntax` is available, it is the syntax reference for the changed construct (`data/skills.md` → Skill First); the learner-text sections of the Inputs stay the cheat sheet's **[agent rule]** sections.
    - Persona/tone consistent with `journal.md` → `## Didactics`? (skip on the design track: Didactics waits) While Didactics waits on a mini or convert track: with `## Course Context` → Conventions (tone, person) and `### Coauthor`.
    - No unintended regression in surrounding content?
 
@@ -4737,7 +4737,7 @@ Rules:
    **Short re-check:** if the report's outcome says "short re-check open" (changes after the check, `tasks/quick-fix.md` → Change path), check only the pages named in its "Changed after the check" block — `tasks/validate-syntax.md` for those pages, `check-material.mjs` (or say that no browser was available), the Type and Method items those pages carry (not on the design track), and every open point that names them; the result rules stay the same. Replace only the affected points, drop the " – {n} point(s) changed since – short re-check open" part of the outcome, status line, Notes cell and overview, remove the re-check from the recommended actions, set Done as step 6 does, and keep the dated lines as the record, each now ending " · re-checked: {how}" (`terms.recheckDone`, the words of its own check) — a dated line without it still counts as a change since. A problem found outside those pages (also one that contradicts the report or the course summary) follows `tasks/quick-fix.md` → Findings outside the change: not fixed, not written into the report or the course summary, one `decide` point, named once in the closing message. Announce it with its duration (`templates/session-validation.yaml` → `recheckExplain`).
 1. Load `journal.md` → `## Course Context` for course type and conventions.
 2. Load the learning objectives and declared duration of this session (`data/session-types.md` → "Objectives and duration of a session" — from `## Agenda`, without an agenda from `## Outline`). Design track: skip (Design track: design check only).
-3. Load `data/liascript-cheat-sheet.md` as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
+3. Load the syntax reference as `tasks/validate-syntax.md` step 2 says (with the skill `liascript-syntax`: `data/skills.md` → Skill First, for the constructs the material uses).
 3b. Load `checklists/course-quality-checklist.md` and apply **every** item of the categories that concern one unit — Session Subsections, Session Materials, LiaScript Syntax — for this session, also items the checks below do not repeat. A session PASS must not hide a `[mechanical]` item the course check would fail later. Design track: only the items of the four design checks; every other item is a content hint.
 4. Open the material document for this session — resolved from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`): `materials/{number}-{slug}/README.md` in multi-file mode, or the matching `##` chapter in root `/README.md` in single-file mode (light track: the whole `README.md` is unit 1; design track: its recorded path) — and check (design track: only syntax, header, images and contrast count; every other check below is a content hint, Design track above):
 
@@ -4802,7 +4802,7 @@ Rules:
 
 1. Load `journal.md` → `## Course Context` to understand course type and applicable conventions.
 2. Load `checklists/course-quality-checklist.md` — apply only the checks relevant for this course type (skip sections marked with conditions that don't apply). The steps below group the checks; **every** applicable checklist item is applied, also one no step names — report it under the closest category of the summary.
-3. Load `data/liascript-cheat-sheet.md` as syntax reference. If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference (see `tasks/validate-syntax.md`).
+3. Load the syntax reference as `tasks/validate-syntax.md` step 2 says (with the skill `liascript-syntax`: `data/skills.md` → Skill First, for the constructs the material uses).
 
 4. **Check Context & Foundation:**
    - `journal.md` → `## Course Context` complete (course type, terminology, agenda flag, conventions)
@@ -4942,8 +4942,8 @@ This task is also invoked internally (not just via the command) by `tasks/valida
 ## Steps
 
 1. Resolve the material document (or the given narrower scope) per the Inputs above.
-2. Load `data/liascript-cheat-sheet.md` as the syntax reference.
-   - If the skill `liascript-syntax` is available (see `data/skills.md`), use it as second reference for constructs the cheat sheet does not cover and for unclear findings. The check list below and the findings format stay as defined here.
+2. Load the syntax reference — with the skill `liascript-syntax` available: the skill (`data/skills.md` → Skill First) plus the cheat sheet's **[agent rule]** sections; without it: `data/liascript-cheat-sheet.md`.
+   - The check list below and the findings format stay as defined here; a check's "cheat sheet §n" points to the same construct in the skill when it is installed.
 3. Run every check below against the material, noting rule, ✅/❌, and the page title of each finding.
 4. If invoked as a sub-procedure: return the findings list to the caller — do not ask the instructor anything.
 5. If invoked directly: report the findings using the Output Format below.
@@ -8180,6 +8180,8 @@ Status` gets none.
 
 A compact reference guide for agents to produce **syntactically and semantically correct LiaScript**.
 
+**[agent rule]** sections — the agent's own rules, read also when the skill `liascript-syntax` is installed (`data/skills.md` → Skill First): §10 "Quizzes for young learners / self-checks" and "Controls as learners see them", §15 Accessibility, §17 Mini Validation Before Export. With the skill installed, look up every other construct there instead of here.
+
 ---
 
 ## 1) Course Metadata (Header)
@@ -10173,8 +10175,8 @@ command. This is the canonical rule; tasks and agents point here.
 
 | Skill | Agent | Task / step | Use |
 |---|---|---|---|
-| `liascript-syntax` | Teaching | `promote-session`, `coauthor-materials`, `quick-fix` | Authoring reference for every LiaScript construct (quizzes, surveys, effects, TTS, code execution, charts, presentation pattern), in addition to `data/liascript-cheat-sheet.md` |
-| `liascript-syntax` | Teaching | `validate-syntax`, `validate-course` | Second reference for constructs the cheat sheet does not cover and for unclear findings |
+| `liascript-syntax` | Teaching | `promote-session`, `coauthor-materials`, `quick-fix` | The syntax reference for every LiaScript construct (quizzes, surveys, effects, TTS, code execution, charts, presentation pattern) — Skill First below |
+| `liascript-syntax` | Teaching | `validate-syntax`, `validate-course` | The syntax reference for the checks (Skill First below); the check list and findings format stay the task's |
 | `reference-checker` | Teaching | `validate-course` (session and course mode), `coauthor-materials` when sources are added, `save-notes` for research notes | Verify the `References` / sources of a session; requires web access |
 | `liascript-templates` (older name: `template-development`) | Teaching | `suggest-templates`, `manage-templates` | When the instructor needs a macro or template that does not exist yet (own template, JS library integration) |
 | `liascript-templates` (older name: `template-development`) | Development | `develop-template` (**required**: without it the command offers the installation and otherwise stops) | Build and test a new template |
@@ -10182,6 +10184,15 @@ command. This is the canonical rule; tasks and agents point here.
 | `liascript-theming` | Artist | `create-visuals` | Turn the website palette and typography into a tested LiaScript theme header (`link:` + `@style` + `@custom`), or apply a bundled design by name |
 | `liascript-exporter` (older name: `exporter-workflow`) | Development | `create-project`, `update-project` | `project.yaml`, GitHub Actions, `liaex` exports (PDF, SCORM, ePub, …), in addition to `data/liascript-workflows.md` |
 | `oersi-metadata` | Development | `create-project`, `update-project` | Optional `metadata.yml` to publish the course as OER on OERSI |
+
+## Skill First: `liascript-syntax`
+
+When `liascript-syntax` is available, it is **the** syntax reference (it is checked against the LiaScript
+source); `data/liascript-cheat-sheet.md` then counts only for the agent's own rules, its sections marked
+**[agent rule]** in the cheat sheet's Purpose. Read the skill progressively: `SKILL.md` → "Top pitfalls" first,
+then only the section of the one `reference/` file a construct needs, found by its heading
+(`node specs/dashboard/find.mjs "^#" <reference file>`, then a line range) — never a whole reference file.
+Without the skill, the cheat sheet is the whole reference as before.
 
 ## Precedence
 
