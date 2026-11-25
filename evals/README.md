@@ -8,6 +8,7 @@ Branch („Variante“), alle Varianten laufen durch dieselben Szenarien, mehrma
 ```bash
 # 1. Läufe vorbereiten: je Szenario × Variante × Wiederholung ein frischer Projektordner
 node evals/run.mjs prepare --variants base=main,e1=experiment/e1-record-change --reps 3 --out evals/.runs/e1
+# mit installiertem Skill (gleich für jede Variante):  … prepare … --with /pfad/zu/skills/liascript-syntax=.claude/skills/liascript-syntax
 
 # 2. Agenten laufen lassen – ohne Oberfläche, mit Trace (Lesemenge und Tokens werden daraus gemessen)
 node evals/run.mjs exec --out evals/.runs/e1 --parallel 2 \

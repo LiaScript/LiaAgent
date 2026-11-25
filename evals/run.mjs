@@ -32,6 +32,7 @@ function prepare() {
   const variants = (option("variants") ?? "base=HEAD").split(",").map(item => { const [name, ref] = item.split("="); return { name, ref: ref ?? name }; });
   const scenarios = (option("scenarios") ?? scenarioIds().join(",")).split(",").map(loadScenario);
   const reps = Number(option("reps", "3"));
+  const withs = (option("with") ?? "").split(",").filter(Boolean).map(item => { const [from, to] = item.split("="); return { from: resolve(from), to }; });
   for (const scenario of scenarios) for (const variant of variants) for (let rep = 1; rep <= reps; rep++) {
     const dir = join(out, scenario.id, variant.name, String(rep));
     const project = join(dir, "project");
@@ -44,9 +45,11 @@ function prepare() {
       if (!text.includes(patch.remove)) throw new Error(`${scenario.id}: patch text not found in ${patch.file}`);
       writeFileSync(file, text.replace(patch.remove, ""));
     }
+    // --with <folder>=<path in project>: e.g. an installed skill, the same for every variant.
+    for (const extra of withs) cpSync(extra.from, join(project, extra.to), { recursive: true });
     cpSync(project, join(dir, "pristine"), { recursive: true });
     writeFileSync(join(dir, "PROMPT.md"), promptFor(scenario, project));
-    writeFileSync(join(dir, "meta.json"), JSON.stringify({ scenario: scenario.id, variant: variant.name, ref: variant.ref, commit, rep }, null, 1));
+    writeFileSync(join(dir, "meta.json"), JSON.stringify({ scenario: scenario.id, variant: variant.name, ref: variant.ref, commit, rep, ...(withs.length ? { with: withs.map(extra => extra.to) } : {}) }, null, 1));
     console.log(`prepared ${scenario.id} · ${variant.name} (${commit}) · ${rep}`);
   }
   console.log(`\nRuns in ${out}\nNext: node evals/run.mjs exec --out ${out} --cmd "…"  (or run the prompts of "list" by hand), then node evals/grade.mjs --out ${out}`);
