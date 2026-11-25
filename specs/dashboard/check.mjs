@@ -4595,5 +4595,11 @@ test("close-recheck (E12): closes a passed short re-check in one write, overview
   const validate = spawnSync(process.execPath, [join(here, "validate-journal.mjs"), "journal.md"], { cwd: dir, encoding: "utf8" });
   assert.doesNotMatch(validate.stdout + validate.stderr, /Warnings/, validate.stdout);
   assert.equal(close().status, 2, "a second run has nothing to close");
+  // --date in ISO form: the same day in both places, the visible one in the course language's form.
+  assert.equal(record("Geschafft!").status, 0);
+  assert.equal(spawnSync(process.execPath, [join(here, "close-recheck.mjs"), "1", "--checked", "Quelltext", "--date", "2026-11-26"], { cwd: dir, encoding: "utf8" }).status, 0);
+  const again = readFileSync(join(dir, "journal.md"), "utf8");
+  assert.match(again, /^- Date: 2026-11-26$/m);
+  assert.match(again, /bereit zum Veröffentlichen \(26\.11\.2026\)/);
   rmSync(dir, { recursive: true, force: true });
 });

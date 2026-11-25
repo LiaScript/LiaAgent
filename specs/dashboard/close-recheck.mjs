@@ -130,10 +130,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!existsSync(file)) { console.error("no journal.md – run from the course project root"); process.exit(2); }
   const source = readFileSync(file, "utf8");
   const journal = readJournal(source, { projectDir: dirname(file), packs: loadPacks() });
-  const given = option("date")?.match(/^(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4})$/);
-  const isoDate = given ? `${given[3]}-${given[2].padStart(2, "0")}-${given[1].padStart(2, "0")}` : localTime(new Date(), "Europe/Berlin").text.split(" ")[1];
+  // --date in any of the journal's forms (24.11.2026, 11/24/2026, 2026-11-24); the visible date in the
+  // course language's form, the ISO date for the technical part – the two never disagree.
+  const given = option("date");
+  const de = given?.match(/^(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4})$/);
+  const us = given?.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const isoDate = de ? `${de[3]}-${de[2].padStart(2, "0")}-${de[1].padStart(2, "0")}`
+    : us ? `${us[3]}-${us[1].padStart(2, "0")}-${us[2].padStart(2, "0")}`
+    : /^\d{4}-\d{2}-\d{2}$/.test(given ?? "") ? given
+    : localTime(new Date(), "Europe/Berlin").text.split(" ")[1];
   const [y, m, d] = isoDate.split("-");
-  const date = option("date") ?? (journal.language === "de" ? `${d}.${m}.${y}` : isoDate);
+  const date = journal.language === "de" ? `${d}.${m}.${y}` : isoDate;
   try {
     const terms = journal.terms ?? {};
     const { text, changes } = closeRecheck(source, { unit, checked, date, isoDate, terms, unitWord: journal.terminology ?? "unit", track: journal.track, language: journal.language });
