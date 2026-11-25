@@ -1128,6 +1128,11 @@ test("validate-journal asks for an open point with source {check: n} when a unit
   const done = validate({ title: "Kurs", next, units }, sessions(["✅ erledigt: Lösungsknopf ausgeblendet.", "Erledigt am 23.10.2026: Fotos verkleinert.", "Done: hints read aloud."]));
   assert.doesNotMatch(done.output, /report-action/, done.output);
   assert.doesNotMatch(validate({ title: "Kurs", next, units }, sessions(["keine"])).output, /report-action/);
+  // "None" with a reason, or "no further steps", is no action (measuring run 25.11.2026); a real action that
+  // only starts with the word still is.
+  for (const none of ["Keine – die Lernseite ist geprüft und freigegeben.", "Keine offenen Schritte für die Lernseite.", "None: all done."])
+    assert.doesNotMatch(validate({ title: "Kurs", next, units }, sessions([none])).output, /report-action/, none);
+  assert.match(validate({ title: "Kurs", next, units }, sessions(["Keine Fotos verwenden, die Kinder zeigen."])).output, /report-action/);
   assert.doesNotMatch(validate({ title: "Kurs", next, units }, sessions(["—"])).output, /report-action/);
   assert.match(validate({ title: "Kurs", next, units }, sessions(["Erledigt am 23.10.2026: Fotos verkleinert. Noch offen: das Foto auf Seite 2."])).output, /\[report-action\]/);
   // The course summary under ## Validation is no unit report.
@@ -4557,4 +4562,15 @@ test("record-change: dated line, outcome suffix, usable, Done ❌, recommended a
   const rechecked = recordChange(mini, { ...base, rechecked: true }).text;
   assert.match(rechecked, /· Quelltext geprüft · nachgeprüft: Quelltext geprüft/);
   assert.match(rechecked, /\*\*Ergebnis:\*\* bestanden \(12\.11\.2026\)\n/);
+});
+
+test("record-change: a given --date also sets the course summary's ISO date (measuring run 25.11.2026)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "record-change-date-"));
+  writeFileSync(join(dir, "journal.md"), readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fixtures/journal-mini-approved.md"), "utf8"));
+  const run = spawnSync(process.execPath, [join(dirname(fileURLToPath(import.meta.url)), "record-change.mjs"), "1", "--page", "Wo ist das Wasser?", "--change", "Tippfehler", "--checked", "Quelltext", "--date", "3.11.2026"], { cwd: dir, encoding: "utf8" });
+  assert.equal(run.status, 0, run.stderr);
+  const journal = readFileSync(join(dir, "journal.md"), "utf8");
+  assert.match(journal, /^- 3\.11\.2026 · Wo ist das Wasser\?/m);
+  assert.match(journal, /^- Date: 2026-11-03$/m);
+  rmSync(dir, { recursive: true, force: true });
 });

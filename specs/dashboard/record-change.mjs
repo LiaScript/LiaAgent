@@ -127,14 +127,22 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const unit = Number(args[0]);
   const page = option("page"), change = option("change"), checked = option("checked");
   if (!unit || !page || !change || !checked) {
-    console.error('usage: node specs/dashboard/record-change.mjs <unit> --page "<page title>" --change "<what changed>" --checked "<how it was checked>" [--rechecked] [--date <date>]');
+    console.error('usage: node specs/dashboard/record-change.mjs <unit> --page "<page title>" --change "<what changed>" --checked "<how it was checked>" [--rechecked] [--date <date>] [--iso-date <YYYY-MM-DD>]');
     process.exit(2);
   }
   const file = resolve("journal.md");
   if (!existsSync(file)) { console.error("no journal.md – run from the course project root"); process.exit(2); }
   const source = readFileSync(file, "utf8");
   const journal = readJournal(source, { projectDir: dirname(file), packs: loadPacks() });
-  const isoDate = option("iso-date") ?? localTime(new Date(), "Europe/Berlin").text.split(" ")[1];
+  // A given --date also sets the ISO date of the course summary, so the two never disagree.
+  const isoFrom = text => {
+    const de = text?.match(/^(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4})$/);
+    if (de) return `${de[3]}-${de[2].padStart(2, "0")}-${de[1].padStart(2, "0")}`;
+    const us = text?.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (us) return `${us[3]}-${us[1].padStart(2, "0")}-${us[2].padStart(2, "0")}`;
+    return /^\d{4}-\d{2}-\d{2}$/.test(text ?? "") ? text : null;
+  };
+  const isoDate = option("iso-date") ?? isoFrom(option("date")) ?? localTime(new Date(), "Europe/Berlin").text.split(" ")[1];
   const [y, m, d] = isoDate.split("-");
   const date = option("date") ?? (journal.language === "de" ? `${d}.${m}.${y}` : isoDate);
   try {

@@ -204,7 +204,9 @@ const actionLabels = ["Recommended Actions", ...packs.map(pack => pack.terms?.re
 const actionLabel = new RegExp(`^\\s*(\\*\\*|__)(?:${actionLabels.join("|")})(?![\\p{L}])[^*_\\n]*\\1\\s*:?\\s*$`, "iu");
 const actionDone = /^(?:\*\*)?(?:✅|☑️?|✔️?|(?:erledigt|umgesetzt|behoben|done|resolved|fixed)(?![\p{L}]))/iu;
 const actionStillOpen = /noch offen|still open|(?<![\p{L}])(?:offen|open)\s*:/iu;
-const actionNone = /^(?:[—–-]+|keine?|nichts|none|nothing|n\/a)\.?$/iu;
+// "None" alone, "None – <reason>" / "Keine: …", or "no further/open steps …" – never a real action that only
+// starts with the word ("Keine Fotos verwenden, die …").
+const actionNone = /^(?:(?:[—–-]+|keine?|nichts|none|nothing|n\/a)\.?|(?:keine?|nichts|none|nothing)\s*[—–:-]\s.*|(?:keine|no)\s+(?:weiteren|offenen|further|open|other)\s+(?:Schritte|Punkte|Aktionen|Empfehlungen|steps|actions|points|recommendations)(?![\p{L}]).*)$/iu;
 function openReportActions(body) {
   const lines = body.split("\n");
   const start = lines.findIndex(line => actionLabel.test(line));
