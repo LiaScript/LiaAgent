@@ -120,15 +120,16 @@ export const checks = {
     const block = journal.split(/\*\*(?:Nach der Prüfung geändert|Changed after the check):\*\*\n\n?/)[1] ?? "";
     const datedLines = (block.match(/^(?:- [^\n]*\n?)+/)?.[0] ?? "").split("\n").filter(line => /^- \d/.test(line));
     const dated = datedLines.length;
-    const unmarked = datedLines.filter(line => !/·\s*(?:nachgeprüft|re-checked):/i.test(line)).length;
+    const unmarked = datedLines.filter(line => !/·\s*(?:nachgeprüft|re-checked)\b/i.test(line)).length;
     const actions = (journal.match(/^\d+\.\s*(?:Kurze Nachprüfung der geänderten Seiten|Short re-check of the changed pages)/gim) ?? []).length;
     const row = journal.match(/^\|\s*1\s*\|[^\n]*$/m)?.[0] ?? "";
     const done = row.split("|").map(cell => cell.trim())[6] ?? "";
     const dashboard = journal.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}";
     let points = 0;
-    try { points = (JSON.parse(dashboard).decisions ?? []).filter(item => item.source?.check === 1).length; } catch { points = -1; }
+    // Only a point about the re-check itself must be gone; a point for another recommended action may stay.
+    try { points = (JSON.parse(dashboard).decisions ?? []).filter(item => item.source?.check === 1 && /nachprüf|re-?check/i.test(`${item.key} ${item.title}`)).length; } catch { points = -1; }
     const pass = open === 0 && dated === params.lines && unmarked === 0 && actions === 0 && done === "✅" && points === 0;
-    return { pass, detail: `"open" mentions ${open}, dated ${dated} (${unmarked} not marked re-checked), re-check actions ${actions}, Done ${done || "?"}, open points of check ${points}` };
+    return { pass, detail: `"open" mentions ${open}, dated ${dated} (${unmarked} not marked re-checked), re-check actions ${actions}, Done ${done || "?"}, open re-check points ${points}` };
   },
 
   "approvals": (params, run) => {
