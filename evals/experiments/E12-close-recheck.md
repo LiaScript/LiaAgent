@@ -20,4 +20,18 @@ Läufe: 2 je Variante.
 
 ## Ergebnis
 
-(nach dem Lauf)
+Lauf 25.11.2026, `/home/claude/runs/m4` (2 Läufe je Variante, blinder Richter).
+
+| | develop | e12 |
+|---|---|---|
+| Tokens | 177.127 | 172.678 (−2,5 %) |
+| Dauer | 215 s | 196 s (−9 %) |
+| Spec-Wörter | 29.808 | 28.937 (−3 %) |
+| Code-Prüfungen | 2/2 | 2/2 |
+| Richter `false` | 0 | 0 |
+
+**Entscheidung: noch nicht übernehmen.** Das Ziel (−10 % Tokens und Dauer) ist verfehlt; die Qualität ist gleich.
+`develop` schließt die Nachprüfung inzwischen selbst verlässlich (Regel aus 777e7ba), der Zugewinn an Sicherheit
+ist darum klein. Ein Lauf fand einen Datumsfehler im Skript (`--date` nur deutsch), behoben auf dem Branch. Sinnvoll
+zusammen mit E10b: wenn beide Skripte die Übersicht schreiben, entfällt das Lesen der Dashboard-Regeln in beiden
+Befehlen.
