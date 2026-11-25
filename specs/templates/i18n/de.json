@@ -370,6 +370,7 @@
   "recheckDone": "nachgeprüft",
   "recheckAction": "Kurze Nachprüfung der geänderten Seiten",
   "courseRecheckOpen": "noch nicht bereit zum Veröffentlichen – kurze Nachprüfung von {unit} {n} offen",
+  "courseReady": "bereit zum Veröffentlichen",
   "validationReport": "Prüfbericht",
   "usableNow": "Jetzt mit den Lernenden nutzbar",
   "changedAfterCheck": "Nach der Prüfung geändert",
