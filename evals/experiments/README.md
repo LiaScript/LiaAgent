@@ -13,4 +13,7 @@ ein Lauf der Prüfstrecke mit `base=main` und der Variante. Kennzahlen und Ziel 
 | E6 | build-session mit Subagenten | Hauptkontext, Ergebnis | braucht Umgebung mit Subagenten |
 | E7 | Automatisch vorgeschlagene, einzelne Textänderungen an quick-fix (GEPA/ACE) | Prüfungen + Richter | nach E1 |
 | E8 | Caveman: Grundlast (`CLAUDE.md`, Agent-YAML) komprimiert, Regelblätter mit Wortlauten unverändert | Tokens gesamt | gelaufen: verworfen – keine Token-Ersparnis, knapperer Lerntext im Quiz |
+| E10 | `record-change.mjs` schreibt die Übersicht mit; Dashboard-Regeln nur für Einträge von Hand | gelesene Spec-Wörter | gelaufen: noch nicht – Ziel in 1 von 2 Szenarien, Qualität gleich; weiter mit E10b |
+| E12 | `close-recheck.mjs` schließt eine bestandene Nachprüfung in einem Schritt | Tokens, Dauer | gelaufen: noch nicht – −2,5 % Tokens, −9 % Zeit, Qualität gleich |
+| E13 | Skill zuerst: `liascript-syntax` als Syntax-Referenz, Cheat-Sheet nur für eigene Regeln | Tokens | gelaufen: verworfen – +2 bis +7 % Tokens, ersetzt nichts, kommt dazu |
 | E9 | Caveman intern: Subagenten und Terminal knapp, Chat mit der Lehrkraft normal | Tokens, Dauer | braucht Umgebung mit Subagenten |
