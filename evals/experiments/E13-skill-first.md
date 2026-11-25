@@ -25,4 +25,22 @@ Läufe: 2 je Variante und Szenario. Nebenbei sichtbar: was `develop` mit Skill g
 
 ## Ergebnis
 
-(nach dem Lauf)
+Lauf 25.11.2026, `/home/claude/runs/m5` (2 Läufe je Variante und Szenario, beide mit installiertem Skill).
+
+| Szenario | Tokens develop+Skill | e13 | Code-Prüfungen develop · e13 |
+|---|---|---|---|
+| quickfix-quiz | 165.296 | 174.841 (+6 %) | 1/2 · 2/2 (develop: einmal Freigabe gesperrt, einmal richtige Antwort am kürzesten) |
+| quickfix-second-change | 140.654 | 146.589 (+4 %) | 2/2 · 2/2 |
+| quickfix-typo | 149.317 | 146.383 (−2 %) | 2/2 · 2/2 |
+| recheck-short | 181.604 | 194.218 (+7 %) | 2/2 · **1/2** (e13 hat einen Befund außerhalb der Seiten im Material behoben) |
+
+**Entscheidung: nicht übernehmen.** Hauptkennzahl verfehlt (e13 kostet 2–7 % mehr), ein Schutz verletzt. Auf den
+Richter wurde verzichtet: das Ergebnis steht ohne ihn fest.
+
+Warum: `develop` liest den installierten Skill **gar nicht** (0 von 8 Läufen) und vom Cheat-Sheet nur einzelne
+Abschnitte. E13 liest zusätzlich `SKILL.md` ganz (1.400 Wörter) und einen Referenzabschnitt, und weiterhin die
+**[agent rule]**-Abschnitte – es ersetzt also nichts, es kommt dazu. Nebenbefund: der installierte Skill kostet
+`develop` praktisch nichts (+0,7 bis +2,5 % Tokens gegenüber Messlauf m4 ohne Skill, im Rauschen).
+
+Was bleibt: der Wert des Skills liegt bei LiaAgent nicht im Token-Sparen, sondern in Richtigkeit und Pflege (eine
+Quelle für Syntax). Das ließe sich nur mit Szenarien messen, deren Fehler das Cheat-Sheet nicht kennt.
