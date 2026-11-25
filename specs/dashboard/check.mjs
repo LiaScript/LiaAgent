@@ -4621,3 +4621,21 @@ test("close-recheck (E12): closes a passed short re-check in one write, overview
   assert.match(again, /bereit zum Veröffentlichen \(26\.11\.2026\)/);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("add-point (E10b): one decide point for a finding outside a change, overview derived, replaced not doubled", async () => {
+  const { findingPoint } = await import("./add-point.mjs");
+  const item = findingPoint({ unit: 1, topic: "Quiz Tipp", title: "Tipp wird nicht vorgelesen", page: "Quiz", finding: "Der Tipp hat kein ▶", fix: "Tipp vorlesen", language: "de" });
+  assert.equal(item.key, "finding-1-quiz-tipp");
+  assert.match(item.how, /^Seite „Quiz“: Der Tipp hat kein ▶\. Entscheiden Sie, ob ich das mit `:quick-fix 1` behebe/);
+  assert.equal(item.command, ":quick-fix 1 Tipp vorlesen");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "add-point-"));
+  writeFileSync(join(dir, "journal.md"), readFileSync(join(here, "fixtures/journal-mini-approved.md"), "utf8"));
+  const add = () => spawnSync(process.execPath, [join(here, "add-point.mjs"), "1", "--topic", "quiz-tipp", "--title", "Tipp", "--page", "Quiz: Was passiert zuerst?", "--finding", "Der Tipp hat kein ▶"], { cwd: dir, encoding: "utf8" });
+  assert.equal(add().status, 0);
+  assert.equal(add().status, 0);
+  const data = JSON.parse(readFileSync(join(dir, "journal.md"), "utf8").match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
+  assert.equal(data.decisions.filter(entry => entry.key === "finding-1-quiz-tipp").length, 1);
+  assert.equal(spawnSync(process.execPath, [join(here, "derive-dashboard.mjs"), "--check", "journal.md"], { cwd: dir, encoding: "utf8" }).status, 0);
+  rmSync(dir, { recursive: true, force: true });
+});
