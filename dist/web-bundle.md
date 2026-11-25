@@ -3522,8 +3522,8 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
    - No unintended regression in surrounding content?
 
 4. **Report result:**
-   - ✅ "Fix applied and validated — done."
-   - ⚠️ "The problem is larger than expected: [describe]. Should I open `:coauthor-materials {number}`?"
+   - ✅ the fix is applied and checked — said in the course language, with how it was checked
+   - ⚠️ the problem is larger than expected: [describe], with the offer to open `:coauthor-materials {number}` — in the course language
    - After every save run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
    - After "Approve": offer `:try-as-learner {number}` once if the chat has not offered it yet, except on the design track — a link with the MCP gate open, else named as the next step in the preview (`:open-chat`).
 
