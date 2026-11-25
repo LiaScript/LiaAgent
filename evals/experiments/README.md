@@ -13,4 +13,6 @@ ein Lauf der Prüfstrecke mit `base=main` und der Variante. Kennzahlen und Ziel 
 | E6 | build-session mit Subagenten | Hauptkontext, Ergebnis | braucht Umgebung mit Subagenten |
 | E7 | Automatisch vorgeschlagene, einzelne Textänderungen an quick-fix (GEPA/ACE) | Prüfungen + Richter | nach E1 |
 | E8 | Caveman: Grundlast (`CLAUDE.md`, Agent-YAML) komprimiert, Regelblätter mit Wortlauten unverändert | Tokens gesamt | gelaufen: verworfen – keine Token-Ersparnis, knapperer Lerntext im Quiz |
+| E10 | `record-change.mjs` schreibt die Übersicht mit; Dashboard-Regeln nur für Einträge von Hand | gelesene Spec-Wörter | Branch gebaut, Messlauf offen |
+| E12 | `close-recheck.mjs` schließt eine bestandene Nachprüfung in einem Schritt | Tokens, Dauer | Branch gebaut, Messlauf offen |
 | E9 | Caveman intern: Subagenten und Terminal knapp, Chat mit der Lehrkraft normal | Tokens, Dauer | braucht Umgebung mit Subagenten |
