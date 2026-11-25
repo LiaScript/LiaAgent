@@ -4574,3 +4574,21 @@ test("record-change: a given --date also sets the course summary's ISO date (mea
   assert.match(journal, /^- Date: 2026-11-03$/m);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("record-change (E10): the overview in the same write – one re-check point, derived fields current, no doubling", () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "record-change-overview-"));
+  writeFileSync(join(dir, "journal.md"), readFileSync(join(here, "fixtures/journal-mini-approved.md"), "utf8"));
+  const run = args => spawnSync(process.execPath, [join(here, "record-change.mjs"), "1", ...args, "--checked", "Quelltext", "--date", "24.11.2026"], { cwd: dir, encoding: "utf8" });
+  assert.equal(run(["--page", "Wo ist das Wasser?", "--change", "Tippfehler"]).status, 0);
+  assert.equal(run(["--page", "Quiz: Was passiert zuerst?", "--change", "Antworten angeglichen"]).status, 0);
+  const journal = readFileSync(join(dir, "journal.md"), "utf8");
+  const data = JSON.parse(journal.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]);
+  assert.equal(data.decisions.filter(item => item.source?.check === 1).length, 1);
+  assert.match(JSON.stringify(data), /2 Punkte seither geändert/);
+  const check = spawnSync(process.execPath, [join(here, "derive-dashboard.mjs"), "--check", "journal.md"], { cwd: dir, encoding: "utf8" });
+  assert.equal(check.status, 0, check.stdout);
+  const validate = spawnSync(process.execPath, [join(here, "validate-journal.mjs"), "journal.md"], { cwd: dir, encoding: "utf8" });
+  assert.doesNotMatch(validate.stdout + validate.stderr, /report-action|Warnings/, validate.stdout);
+  rmSync(dir, { recursive: true, force: true });
+});
