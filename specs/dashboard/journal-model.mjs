@@ -54,6 +54,7 @@ export const englishTerms = {
   buildRunning: "being prepared – planning sketch ✅", buildRunningStep: "The assistant writes, illustrates and checks the material on its own; then you look at it together.", buildRequested: "preparation requested",
   recheckDone: "re-checked",
   courseRecheckOpen: "not ready to publish yet – short re-check of {unit} {n} open",
+  courseReady: "ready to publish",
   recheckAction: "Short re-check of the changed pages",
   recheckShort: "{n} point(s) changed since – short re-check open",
   correctionOpen: "correction needed: {open} of {n} points open",
