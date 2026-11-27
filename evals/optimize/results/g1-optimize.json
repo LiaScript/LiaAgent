@@ -1,0 +1,687 @@
+{
+ "baseline": "base",
+ "front": [
+  "c3"
+ ],
+ "variants": [
+  {
+   "variant": "base",
+   "candidate": null,
+   "size": {
+    "files": [
+     "specs/tasks/create-outline.md"
+    ],
+    "words": 1084,
+    "tokens_est": 1730
+   },
+   "coverage": {
+    "missing": [],
+    "checked": true
+   },
+   "train": {
+    "runs": 10,
+    "success_rate": 0.7,
+    "critical": 4,
+    "tokens_median": 138321,
+    "spec_words_read": 14278,
+    "cost_median": null,
+    "duration_median_s": 211.5355,
+    "questions_median": 3,
+    "tokens_per_success": 193742
+   },
+   "holdout": null,
+   "runs": [
+    {
+     "scenario": "outline-s1-complete",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14127,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 128123,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 201246,
+     "questions": 1,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s1-complete",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 14127,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 128269,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 202915,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s2-missing-goals",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14127,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete",
+      "language"
+     ],
+     "critical": [],
+     "tokens": 128877,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 204175,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s2-missing-goals",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 14809,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "content_before_save",
+      "language"
+     ],
+     "critical": [
+      "content_before_save"
+     ],
+     "tokens": 124275,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 184874,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s3-vague-goals",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14127,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "observable",
+      "one_action",
+      "content_before_save",
+      "preview_complete",
+      "language"
+     ],
+     "critical": [
+      "observable",
+      "content_before_save"
+     ],
+     "tokens": 139135,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 249082,
+     "questions": 7,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s3-vague-goals",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 14278,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 137507,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 229995,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s4-unrealistic-time",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14278,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "your_words",
+      "one_action"
+     ],
+     "critical": [],
+     "tokens": 143658,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 253123,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s4-unrealistic-time",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 14288,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "your_words",
+      "one_action"
+     ],
+     "critical": [],
+     "tokens": 139438,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 243275,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s5-revise",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14540,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [],
+     "critical": [],
+     "tokens": 142058,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 210757,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s5-revise",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 15222,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "save_confirm"
+     ],
+     "critical": [
+      "save_confirm"
+     ],
+     "tokens": 144851,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 212314,
+     "questions": 4,
+     "judged": true
+    }
+   ],
+   "status": "dominated"
+  },
+  {
+   "variant": "c1",
+   "candidate": "evals/optimize/candidates/c1-md",
+   "size": {
+    "files": [
+     "specs/tasks/create-outline.md"
+    ],
+    "words": 1350,
+    "tokens_est": 2193
+   },
+   "coverage": {
+    "missing": [],
+    "checked": true
+   },
+   "train": {
+    "runs": 10,
+    "success_rate": 0.6,
+    "critical": 6,
+    "tokens_median": 130559,
+    "spec_words_read": 12920,
+    "cost_median": null,
+    "duration_median_s": 201.5225,
+    "questions_median": 4.5,
+    "tokens_per_success": 218442
+   },
+   "holdout": null,
+   "runs": [
+    {
+     "scenario": "outline-s1-complete",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12920,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [],
+     "tokens": 120498,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 173481,
+     "questions": 2,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s1-complete",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12920,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "reuse_given",
+      "one_action",
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [],
+     "tokens": 129039,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 226657,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s2-missing-goals",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12920,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 121744,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 207352,
+     "questions": 5,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s2-missing-goals",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12920,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 123241,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 203615,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s3-vague-goals",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12920,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "observable",
+      "one_action",
+      "content_before_save",
+      "preview_complete"
+     ],
+     "critical": [
+      "observable",
+      "content_before_save"
+     ],
+     "tokens": 134698,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 234828,
+     "questions": 5,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s3-vague-goals",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12920,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "content_before_save",
+      "preview_complete"
+     ],
+     "critical": [
+      "content_before_save"
+     ],
+     "tokens": 131475,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 195631,
+     "questions": 7,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s4-unrealistic-time",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 13226,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action"
+     ],
+     "critical": [],
+     "tokens": 132635,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 199430,
+     "questions": 5,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s4-unrealistic-time",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12920,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [],
+     "critical": [],
+     "tokens": 129643,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 199283,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s5-revise",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14282,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "time_check",
+      "save_confirm",
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [
+      "time_check",
+      "save_confirm"
+     ],
+     "tokens": 140361,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 197572,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s5-revise",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 14012,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "save_confirm",
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [
+      "save_confirm"
+     ],
+     "tokens": 147320,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 241454,
+     "questions": 6,
+     "judged": true
+    }
+   ],
+   "status": "excluded"
+  },
+  {
+   "variant": "c3",
+   "candidate": "evals/optimize/candidates/c3-ail",
+   "size": {
+    "files": [
+     "specs/tasks/create-outline.md"
+    ],
+    "words": 1269,
+    "tokens_est": 2031
+   },
+   "coverage": {
+    "missing": [],
+    "checked": true
+   },
+   "train": {
+    "runs": 10,
+    "success_rate": 0.8,
+    "critical": 3,
+    "tokens_median": 130005,
+    "spec_words_read": 12839,
+    "cost_median": null,
+    "duration_median_s": 206.918,
+    "questions_median": 5,
+    "tokens_per_success": 162636
+   },
+   "holdout": null,
+   "runs": [
+    {
+     "scenario": "outline-s1-complete",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12990,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action"
+     ],
+     "critical": [],
+     "tokens": 128241,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 204704,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s1-complete",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 119461,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 167180,
+     "questions": 1,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s2-missing-goals",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 116980,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 167350,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s2-missing-goals",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [],
+     "tokens": 117755,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 178061,
+     "questions": 5,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s3-vague-goals",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12839,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "observable",
+      "time_check",
+      "preview_complete",
+      "language"
+     ],
+     "critical": [
+      "observable",
+      "time_check"
+     ],
+     "tokens": 132534,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 236832,
+     "questions": 6,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s3-vague-goals",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 131769,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 209132,
+     "questions": 6,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s4-unrealistic-time",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 135579,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 222514,
+     "questions": 6,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s4-unrealistic-time",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "language"
+     ],
+     "critical": [],
+     "tokens": 127901,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 194243,
+     "questions": 5,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s5-revise",
+     "set": "train",
+     "rep": 1,
+     "spec_words": 14124,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "save_confirm",
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [
+      "save_confirm"
+     ],
+     "tokens": 142719,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 241472,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-s5-revise",
+     "set": "train",
+     "rep": 2,
+     "spec_words": 14168,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [],
+     "critical": [],
+     "tokens": 148149,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 268068,
+     "questions": 7,
+     "judged": true
+    }
+   ],
+   "status": "pareto"
+  }
+ ]
+}

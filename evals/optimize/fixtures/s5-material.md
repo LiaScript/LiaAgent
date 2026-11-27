@@ -15,7 +15,9 @@ Hallo! Heute geht es um das Wasser. Es ist immer unterwegs.
 
 Klicke auf ▶, dann lese ich dir den Text vor.
 
-## Wo ist das Wasser?
+## Der Wasserkreislauf
+
+### Wo ist das Wasser?
 
     --{{0}}--
 Wasser gibt es an vielen Orten. Im Meer, in Flüssen und in Seen. In den Wolken. Und sogar im Boden.
@@ -30,7 +32,7 @@ Welche Orte kennst du noch? Schreibe einen auf:
 
 [[___]]
 
-## Quiz: Was passiert zuerst?
+### Quiz: Was passiert zuerst?
 
     --{{0}}--
 Die Sonne scheint auf das Meer. Was passiert zuerst?
@@ -42,7 +44,7 @@ Die Sonne scheint auf das Meer. Was passiert zuerst?
 - [( )] Es schneit.
 - [[?]] Denk an einen Topf mit Wasser auf dem Herd.
 
-## Geschafft!
+### Geschafft!
 
     --{{0}}--
 Super gemacht! Das Wasser verdunstet, bildet Wolken und fällt als Regen wieder herunter.

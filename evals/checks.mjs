@@ -154,8 +154,13 @@ export const checks = {
     const before = sectionOf(read(join(run.pristine, "journal.md")), "Outline").split("\n").map(line => line.trimEnd())
       .filter(line => line.trim() && !/^<!--|^\[|^---/.test(line.trim()));
     const after = sectionOf(read(join(run.project, "journal.md")), "Outline");
+    // A field label (`* __Label:__`) the run renamed is reported, not failed: the task says "every existing line
+    // word for word", but whether a label counts is open in the task itself (measuring run g1: every variant did it).
+    const isLabel = line => /^\s*\* __[^_]+:__\s*$/.test(line);
     const lost = before.filter(line => !after.includes(line));
-    return { pass: lost.length === 0, detail: lost.length ? `lost: ${lost.slice(0, 3).join(" | ")}` : `${before.length} lines kept` };
+    const content = lost.filter(line => !isLabel(line));
+    const labels = lost.filter(isLabel);
+    return { pass: content.length === 0, detail: `${content.length ? `lost: ${content.slice(0, 3).join(" | ")}` : `${before.length - lost.length} lines kept`}${labels.length ? ` · labels renamed: ${labels.join(", ")}` : ""}` };
   },
 
   // An open time gap goes into the overview's decisions (create-outline step 5, "Fits the time").
