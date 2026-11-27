@@ -30,4 +30,4 @@ Die Einsparung beim Journal ist deutlich (−60 %), am Gesamtverbrauch aber klei
 den Großteil ausmachen. Sie wächst mit dem Kurs: der Dashboard-Block nimmt je Einheit rund 200 Wörter zu.
 Nebenbefund: die Skripte nehmen das Datum von der Systemuhr; ein Lauf nutzte `--iso-date`, die anderen schrieben
 27.11. statt des Szenario-Datums (bekannt, Test-Datumsvariable offen).
-Der Blindrichter wurde noch nicht befragt (Code-Prüfungen alle gleich).
+Blindrichter (12 Läufe): alle acht anwendbaren Fragen 3/3 in beiden Varianten und beiden Szenarien – keine Qualitätseinbuße.
