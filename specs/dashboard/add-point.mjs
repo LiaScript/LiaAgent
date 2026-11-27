@@ -7,6 +7,8 @@
 //   node specs/dashboard/add-point.mjs <unit> --topic <slug> --title "<short title>" --page "<page title>"
 //        --finding "<the finding in plain words>" [--why "<why it matters>"] [--fix "<quick-fix description>"]
 //        [--label "<button label>"]
+//   node specs/dashboard/add-point.mjs <unit> --from <findings.json>
+//        several findings in one write: a JSON list of {topic, title, page, finding, why?, fix?, label?}
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -65,9 +67,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const args = process.argv.slice(2);
   const option = name => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
   const unit = Number(args[0]);
+  const from = option("from");
   const [topic, title, page, finding] = ["topic", "title", "page", "finding"].map(option);
-  if (!unit || !topic || !title || !page || !finding) {
-    console.error('usage: node specs/dashboard/add-point.mjs <unit> --topic <slug> --title "<short title>" --page "<page title>" --finding "<the finding in plain words>" [--why "…"] [--fix "<quick-fix description>"] [--label "…"]');
+  if (!unit || !(from || (topic && title && page && finding))) {
+    console.error('usage: node specs/dashboard/add-point.mjs <unit> --topic <slug> --title "<short title>" --page "<page title>" --finding "<the finding in plain words>" [--why "…"] [--fix "<quick-fix description>"] [--label "…"]\n       node specs/dashboard/add-point.mjs <unit> --from <findings.json>   (several findings, one write)');
     process.exit(2);
   }
   const file = resolve("journal.md");
@@ -75,11 +78,20 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const source = readFileSync(file, "utf8");
   const journal = readJournal(source, { projectDir: dirname(file), packs: loadPacks() });
   try {
-    const item = findingPoint({ unit, topic, title, page, finding, why: option("why"), fix: option("fix"), label: option("label"), language: journal.language });
-    const result = addPoint(source, item, dirname(file));
-    writeFileSync(file, result.text);
+    const list = from ? JSON.parse(readFileSync(resolve(from), "utf8")) : [{ topic, title, page, finding, why: option("why"), fix: option("fix"), label: option("label") }];
+    if (!Array.isArray(list) || !list.length) throw new Error("--from needs a JSON list of findings");
+    let text = source, fields = 0;
+    const done = [];
+    for (const entry of list) {
+      for (const key of ["topic", "title", "page", "finding"]) if (!entry?.[key]) throw new Error(`a finding lacks "${key}"`);
+      const item = findingPoint({ unit, ...entry, language: journal.language });
+      const result = addPoint(text, item, dirname(file));
+      text = result.text; fields = result.fields;
+      done.push(`${result.replaced ? "replaced" : "added"} ${item.key} (${item.title})`);
+    }
+    writeFileSync(file, text);
     countWrite(dirname(file), "add-point.mjs", "journal.md");
-    console.log(`${result.replaced ? "Replaced" : "Added"} the open point ${item.key} (${item.title}) in one write; ${result.fields} derived field${result.fields === 1 ? "" : "s"} set.`);
+    console.log(`${done.length === 1 ? done[0][0].toUpperCase() + done[0].slice(1) : `${done.length} open points: ${done.join("; ")}`} – one write; ${fields} derived field${fields === 1 ? "" : "s"} set.`);
     const check = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), "validate-journal.mjs"), file], { encoding: "utf8" });
     console.log((check.stdout + check.stderr).trim().split("\n").filter(line => /^(- |Warnings|Hints|ERRORS|Exit code)/.test(line)).join("\n"));
   } catch (error) {

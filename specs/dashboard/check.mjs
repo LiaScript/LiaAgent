@@ -4670,3 +4670,28 @@ test("a slide list that grew a second unit counts its units; a flat slide list s
     "  2. Lernseite 2: Wasser im Alltag", "", "     1. Wofür brauchen wir Wasser?", "     2. Geschafft!", ""].join("\n"));
   assert.equal(readJournal(grown).unitsInOutline, 2);
 });
+
+test("approve.mjs records the approval and the overview in one write, refuses a second time; add-point --from writes several points at once (E19)", () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "approve-"));
+  mkdirSync(join(dir, "specs"));
+  symlinkSync(join(here, "../templates"), join(dir, "specs/templates"));
+  writeFileSync(join(dir, "journal.md"), readFileSync(join(here, "fixtures/journal-mini-approved.md"), "utf8").replace("- **12.11.2026:** Material freigegeben\n", ""));
+  const run = (script, ...args) => spawnSync(process.execPath, [join(here, script), ...args], { cwd: dir, encoding: "utf8" });
+  const first = run("approve.mjs", "1", "--date", "24.11.2026");
+  assert.equal(first.status, 0, first.stderr);
+  const journal = readFileSync(join(dir, "journal.md"), "utf8");
+  assert.equal((journal.match(/^- \*\*24\.11\.2026:\*\* Material freigegeben$/gm) ?? []).length, 1);
+  assert.equal(readJournal(journal).units[0].approved, true);
+  assert.equal(JSON.parse(journal.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]).units[0].approved, true);
+  assert.match(first.stdout, /course summary lines that name this unit/);
+  assert.equal(run("approve.mjs", "1").status, 2, "a second approval is refused");
+  writeFileSync(join(dir, "f.json"), JSON.stringify([
+    { topic: "vorlesen", title: "Vorlesetext unvollständig", page: "Wo ist das Wasser?", finding: "Die Aufgabe wird nicht vorgelesen" },
+    { topic: "tippfehler", title: "Tippfehler", page: "Wo ist das Wasser?", finding: "Grundwaser", fix: "Tippfehler Grundwaser" }]));
+  const batch = run("add-point.mjs", "1", "--from", "f.json");
+  assert.equal(batch.status, 0, batch.stderr);
+  const keys = JSON.parse(readFileSync(join(dir, "journal.md"), "utf8").match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]).decisions.map(item => item.key);
+  assert.ok(keys.includes("finding-1-vorlesen") && keys.includes("finding-1-tippfehler"), keys.join(", "));
+  rmSync(dir, { recursive: true, force: true });
+});
