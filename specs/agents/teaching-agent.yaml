@@ -48,7 +48,7 @@ epistemic_rules:
       - Tool versions, compatibility, or availability questions
       - Any factual claim that depends on post-training-cutoff information
     output_format: |
-      Generate a research prompt block in this format:
+      Generate a research prompt block in this format — labels and text in the course language (`## Course Context` → Language), as every message:
 
       ---
       🔍 **Research Request**
