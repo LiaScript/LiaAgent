@@ -4670,3 +4670,20 @@ test("a slide list that grew a second unit counts its units; a flat slide list s
     "  2. Lernseite 2: Wasser im Alltag", "", "     1. Wofür brauchen wir Wasser?", "     2. Geschafft!", ""].join("\n"));
   assert.equal(readJournal(grown).unitsInOutline, 2);
 });
+
+test("add-point --from writes several open points in one write (E19)", () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "points-"));
+  mkdirSync(join(dir, "specs"));
+  symlinkSync(join(here, "../templates"), join(dir, "specs/templates"));
+  writeFileSync(join(dir, "journal.md"), readFileSync(join(here, "fixtures/journal-mini-approved.md"), "utf8"));
+  const run = (script, ...args) => spawnSync(process.execPath, [join(here, script), ...args], { cwd: dir, encoding: "utf8" });
+  writeFileSync(join(dir, "f.json"), JSON.stringify([
+    { topic: "vorlesen", title: "Vorlesetext unvollständig", page: "Wo ist das Wasser?", finding: "Die Aufgabe wird nicht vorgelesen" },
+    { topic: "tippfehler", title: "Tippfehler", page: "Wo ist das Wasser?", finding: "Grundwaser", fix: "Tippfehler Grundwaser" }]));
+  const batch = run("add-point.mjs", "1", "--from", "f.json");
+  assert.equal(batch.status, 0, batch.stderr);
+  const keys = JSON.parse(readFileSync(join(dir, "journal.md"), "utf8").match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)[1]).decisions.map(item => item.key);
+  assert.ok(keys.includes("finding-1-vorlesen") && keys.includes("finding-1-tippfehler"), keys.join(", "));
+  rmSync(dir, { recursive: true, force: true });
+});
