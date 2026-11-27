@@ -118,7 +118,7 @@ Use this task when:
    (owner and repository from `__Source:__`; single-file `… journal.md README.md`) — every hit with the old
    `{tag}` becomes `{new tag}`. The decision of step 1 is not asked again.
    No submodule, no subtree, and no clone of the template outside the project.
-7. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` →
+7. Run `tasks/update-dashboard.md` to update `journal.md` →
    `## Dashboard` in place. **Finish:** a short summary (repository, tag, which files import the new URL,
    the shared-list state) and 1–3 next steps — `:update-project` to publish the course with the new
    imports, or `agent:teaching/switch`.

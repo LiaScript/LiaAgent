@@ -8,7 +8,7 @@
 // A variant is a git ref of this repository; its specs are exported into a fresh project folder per run, the
 // scenario's fixture comes from the harness checkout (the same for every variant).
 import { mkdirSync, writeFileSync, readFileSync, existsSync, cpSync, rmSync, createWriteStream } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
 import { spawnSync, spawn } from "node:child_process";
 import { harnessRoot, loadScenario, scenarioIds, runDirs, promptFor, readJson } from "./lib.mjs";
 
@@ -29,7 +29,14 @@ function exportRef(ref, target) {
 
 function prepare() {
   const out = resolve(option("out") ?? `evals/.runs/${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}`);
-  const variants = (option("variants") ?? "base=HEAD").split(",").map(item => { const [name, ref] = item.split("="); return { name, ref: ref ?? name }; });
+  // A variant is a git ref, optionally with an instruction candidate laid over it: name=ref+evals/optimize/candidates/<id>
+  // (every file under the candidate's overlay/ folder replaces the file at the same path; the original stays
+  // the baseline variant without "+").
+  const variants = (option("variants") ?? "base=HEAD").split(",").map(item => {
+    const [name, spec] = item.split("=");
+    const [ref, candidate] = (spec ?? name).split("+");
+    return { name, ref, candidate };
+  });
   const scenarios = (option("scenarios") ?? scenarioIds().join(",")).split(",").map(loadScenario);
   const reps = Number(option("reps", "3"));
   const withs = (option("with") ?? "").split(",").filter(Boolean).map(item => { const [from, to] = item.split("="); return { from: resolve(from), to }; });
@@ -38,7 +45,8 @@ function prepare() {
     const project = join(dir, "project");
     rmSync(dir, { recursive: true, force: true });
     const commit = exportRef(variant.ref, project);
-    for (const [target, source] of Object.entries(scenario.fixture)) writeFileSync(join(project, target), readFileSync(join(harnessRoot, source)));
+    if (variant.candidate) cpSync(join(harnessRoot, variant.candidate, "overlay"), project, { recursive: true });
+    for (const [target, source] of Object.entries(scenario.fixture)) { mkdirSync(dirname(join(project, target)), { recursive: true }); writeFileSync(join(project, target), readFileSync(join(harnessRoot, source))); }
     for (const patch of scenario.patches ?? []) {
       const file = join(project, patch.file);
       const text = readFileSync(file, "utf8");
@@ -49,7 +57,7 @@ function prepare() {
     for (const extra of withs) cpSync(extra.from, join(project, extra.to), { recursive: true });
     cpSync(project, join(dir, "pristine"), { recursive: true });
     writeFileSync(join(dir, "PROMPT.md"), promptFor(scenario, project));
-    writeFileSync(join(dir, "meta.json"), JSON.stringify({ scenario: scenario.id, variant: variant.name, ref: variant.ref, commit, rep, ...(withs.length ? { with: withs.map(extra => extra.to) } : {}) }, null, 1));
+    writeFileSync(join(dir, "meta.json"), JSON.stringify({ scenario: scenario.id, variant: variant.name, ref: variant.ref, ...(variant.candidate ? { candidate: variant.candidate } : {}), commit, rep, ...(withs.length ? { with: withs.map(extra => extra.to) } : {}) }, null, 1));
     console.log(`prepared ${scenario.id} · ${variant.name} (${commit}) · ${rep}`);
   }
   console.log(`\nRuns in ${out}\nNext: node evals/run.mjs exec --out ${out} --cmd "…"  (or run the prompts of "list" by hand), then node evals/grade.mjs --out ${out}`);

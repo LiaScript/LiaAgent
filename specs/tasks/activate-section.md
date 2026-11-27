@@ -20,7 +20,7 @@ Tier: **confirm in chat** (it writes only `journal.md`, and from mini to full al
 - `templates/journal.md` → the same section of the empty template: its default content
 - `templates/i18n/{code}.json` → `replace` when the course language has a language pack: the translated lines of that default content
 - Track switch only: `tasks/init-course.md` → When-Needed Markers (the lists per track) and, from mini to full, its step 3 and the root `README.md` (its headings); from mini to full also `journal.md` → `## Validation` → `### Latest Validation Summary`, unit 1's decisions and report (by `find.mjs`), and `data/file-structure-modes.md` → single-file; from design to full also `### Latest Validation Summary` and step 2a of `tasks/init-course.md` ("Content and structure")
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — read right before the overview is written
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/journal-links.md`
 
 ## Output
@@ -80,7 +80,7 @@ When the instructor wants another track — on request ("make it a full course",
    - `## Course Context`: the summary row on what should get better names the new scope (e.g. "content and structure; the new look and images stay", translated), and one Additional Notes line says that look and images were revised first (with their dates);
    - the one-line note of `## Sessions`: "_The {units} exist; the next step is the outline._" (translated, with the course's unit word) below the authoring comment, never the empty template's "No units yet" note; the `## Course Context` action line gets `:analyze-existing` after `:init-course` (`data/journal-links.md`: improve-existing courses), and its lead line as above.
    Never delete content: material, units, reports and notes stay.
-3. Steps 4 and 5 as above; the overview's step list follows the new track (`tasks/update-dashboard.md` → Rules → Process steps per track), with a `note`.
+3. Steps 4 and 5 as above; the overview's step list follows the new track (`data/dashboard-cases.md` → Process steps), with a `note`.
 
 ## Growth offer
 

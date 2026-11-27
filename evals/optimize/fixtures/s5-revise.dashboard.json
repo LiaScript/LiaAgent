@@ -1,0 +1,163 @@
+{
+  "title": "Der Wasserkreislauf",
+  "context": "Klasse 6 · 24 Lernende · je Lernseite 15 Minuten allein am Laptop",
+  "subtitle": "Aus der kleinen Seite wird ein Kurs mit zwei Lernseiten. Lernseite 1 „Der Wasserkreislauf“ ist geprüft und freigegeben; sie beginnt jetzt mit einer Zwischenfolie. Für Lernseite 2 fehlen noch Lernziele und Folien.",
+  "next": {
+    "icon": "▶️",
+    "title": "Gliederung und Lernziele",
+    "why": "Für Lernseite 2 fehlen noch Lernziele und Folienplan. Die legen wir zuerst fest – dann weiß der Assistent, was er schreiben soll.",
+    "label": "Gliederung ergänzen",
+    "href": "agent:teaching/create-outline",
+    "command": ":create-outline"
+  },
+  "labels": {
+    "decide": "Noch zu entscheiden",
+    "prepare": "Vor dem Einsatz vorbereiten",
+    "viewMaterial": "So sehen es die Lernenden"
+  },
+  "units": [
+    {
+      "id": 1,
+      "title": "Der Wasserkreislauf",
+      "summary": "Eine Zwischenfolie und drei Folien mit einem Quiz, jeder Text zum Vorlesen.",
+      "process": {
+        "title": "Der Wasserkreislauf",
+        "steps": [
+          {
+            "title": "Planen",
+            "state": "done",
+            "why": "Die Planungsskizze legt Inhalte, Aufgaben und Selbstkontrolle fest, bevor Material entsteht.",
+            "result": "in der Gliederung geplant: zwei Lernziele, drei Folien"
+          },
+          {
+            "title": "Material ausarbeiten",
+            "state": "done",
+            "why": "Texte, Aufgaben und Selbstkontrolle entstehen gemeinsam; jeder Teil wird vorher gezeigt.",
+            "result": "eine Zwischenfolie, drei Folien, ein Quiz"
+          },
+          {
+            "title": "Bilder einfügen",
+            "state": "done",
+            "why": "Bilder helfen beim Verstehen, wo ein Wort noch nicht sicher sitzt.",
+            "result": "keine Bilder – Ihre Entscheidung vom 11.11.2026"
+          },
+          {
+            "title": "Prüfen und freigeben",
+            "state": "done",
+            "why": "Die Prüfung zeigt, ob das Material zu den Zielen und zur Zeit passt; danach geben Sie es frei.",
+            "result": "bestanden und am 12.11.2026 von Ihnen freigegeben; die Zwischenfolie ist nachgeprüft"
+          }
+        ]
+      },
+      "state": "done",
+      "href": "#1.-der-wasserkreislauf",
+      "view": {
+        "href": "agent:teaching/preview?file=1",
+        "command": ":preview 1"
+      },
+      "statusLabel": "geprüft ✅",
+      "usable": {
+        "state": "yes"
+      },
+      "approved": true
+    }
+  ],
+  "process": {
+    "title": "So entsteht Ihr Kurs",
+    "description": "Die Schritte vom Thema bis zum geprüften Material. Diese Übersicht zeigt immer, wo wir gerade stehen.",
+    "steps": [
+      {
+        "title": "Den Rahmen festlegen",
+        "state": "done",
+        "why": "Thema, Zielgruppe, Format und Sprache prägen alles, was folgt.",
+        "result": "Kursrahmen für einen Kurs mit zwei Lernseiten"
+      },
+      {
+        "title": "Gliederung und Lernziele",
+        "state": "current",
+        "why": "Klare Lernziele sagen, was die Lernenden am Ende können.",
+        "result": "zwei Lernziele und drei Folien für „Der Wasserkreislauf“",
+        "next": "Lernziele und Folien für Lernseite 2 ergänzen"
+      },
+      {
+        "title": "Didaktik",
+        "state": "planned",
+        "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen passen."
+      },
+      {
+        "title": "Bausteine für Aktivitäten",
+        "state": "planned",
+        "why": "Fertige Bausteine wie eine Zeichenfläche oder eine Karte – oder ein eigener, wenn nichts passt."
+      },
+      {
+        "title": "Material erstellen",
+        "state": "planned",
+        "why": "Erklärungen, Aufgaben und Selbstkontrollen entstehen aus der Planung.",
+        "result": "Lernseite 1 „Der Wasserkreislauf“",
+        "next": "Lernseite 2 entsteht nach der Didaktik"
+      },
+      {
+        "title": "Prüfen und überarbeiten",
+        "state": "planned",
+        "why": "Verständlichkeit und Passung zu den Lernzielen werden geprüft, bevor das Material eingesetzt wird.",
+        "result": "Lernseite 1 geprüft",
+        "statusLabel": "Kursprüfung nach der letzten Lernseite · schon freigegeben: Lernseite 1"
+      },
+      {
+        "title": "Veröffentlichen",
+        "state": "planned",
+        "why": "Der geprüfte Kurs bekommt einen Link für die Lernenden.",
+        "next": "kommt nach der Prüfung des ganzen Kurses"
+      }
+    ],
+    "note": "Sie können jederzeit einen Schritt zurückgehen. Fertig ist eine Lernseite erst, wenn ihre Prüfung bestanden ist und Sie sie freigegeben haben. Seit dem 13.11.2026 ist aus der kleinen Seite ein Kurs mit mehreren Lernseiten geworden, deshalb stehen hier jetzt die Schritte eines Kurses. Einen Ablaufplan gibt es nicht – so haben Sie es entschieden.",
+    "later": [
+      {
+        "label": "Ablaufplan",
+        "href": "agent:teaching/activate-section?section=agenda",
+        "command": ":activate-section agenda"
+      }
+    ]
+  },
+  "explore": [
+    {
+      "icon": "💬",
+      "title": "Einfach fragen",
+      "description": "Fragen Sie in eigenen Worten, wann immer etwas unklar ist.",
+      "label": "Was kann der Assistent?",
+      "href": "agent:teaching/help",
+      "command": ":help"
+    }
+  ],
+  "selected": "",
+  "links": [
+    {
+      "label": "Kursrahmen",
+      "href": "#course-context-–-kursrahmen"
+    },
+    {
+      "label": "Gliederung",
+      "href": "#outline-–-gliederung"
+    },
+    {
+      "label": "Didaktik",
+      "href": "#didactics-–-didaktik"
+    },
+    {
+      "label": "Lernseiten",
+      "href": "#sessions-–-lernseiten"
+    },
+    {
+      "label": "Notizen",
+      "href": "#notes-backup-–-notizen"
+    }
+  ],
+  "unitsTitle": "Lernseiten",
+  "unitLabel": {
+    "one": "Lernseite",
+    "many": "Lernseiten"
+  },
+  "footer": "Stand: 13.11.2026",
+  "unitsPlanned": 2,
+  "_journalHash": "7a3c3c25275948d6"
+}

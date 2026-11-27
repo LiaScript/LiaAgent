@@ -53,7 +53,7 @@ rewrite, summarize, or infer settings from sibling agent subsections.
 7. On "Save": create the missing `## Agents` / subsection (step 3) and update only the selected scope.
    Set `* __Customization Status:__ active` if any meaningful customization exists.
 
-8. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update
+8. Run `tasks/update-dashboard.md` to update
    `journal.md` -> `## Dashboard` in place.
 
 9. Confirm:

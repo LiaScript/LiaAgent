@@ -46,4 +46,4 @@ Converts a **Session** into a detailed **Session Material**.
    - Produce the tasks the skeleton names, with their task type — a different type is the instructor's decision (`tasks/quick-fix.md` → "When to use").
    - Answer options and gap cards follow `data/liascript-cheat-sheet.md` → Quizzes for young learners → **No surface cues** (read it completely), and every hint or page text that names something in a picture matches that picture.
 9. Save the material as described in `data/file-structure-modes.md` → "Creating the material document": path (reuse the path recorded in the agenda), metadata header (author, language, theme, template imports — a local `./lia-templates/{id}/README.md` rewritten relative to the material, e.g. `../../lia-templates/{id}/README.md` in multi-file mode) and the overview update (Material ✅ with its status line).
-10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+10. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.

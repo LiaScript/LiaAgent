@@ -19,7 +19,7 @@ Can be run in two modes:
 - `templates/session-validation.yaml` — template for each stored session validation report (heading, outcome words, layout), read completely
 - `templates/session-skeleton.yaml` — read completely: status words of the overview and `section_layout.entry_order` (where the report goes)
 - `data/session-types.md` — read completely: objectives and duration of a session, resolving its type (step 2)
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written (step 6)
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — read right before the overview is written (step 6)
 - File Structure mode from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`)
 - For session mode: the material document for this session (resolved per File Structure mode), matching overview row in `journal.md` → `## Sessions`, and matching `### {number}. {title}` subsection in `journal.md` → `## Sessions`
 - For course mode: `journal.md` sections (`## Outline`, `## Didactics`, `## Agenda`, `## Sessions`) and all material documents (`materials/` in multi-file mode, or the `##` chapters of root `README.md` in single-file mode)
@@ -108,7 +108,7 @@ Rules:
 6. Create or replace the rendered report — heading plus `<section data-key="validation-report">…</section>` (see Validation Storage rules above) — in the matching session subsection under `journal.md` → `## Sessions`, after the skeleton fields and before `#### Images` (`templates/session-skeleton.yaml` → `section_layout.entry_order`).
    Update the overview table in `## Sessions`: set **Done ✅** only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item; otherwise set Done ❌ — also when it was ✅ before. The status line follows the report (computed).
    Right after this write send "✅ Saved: …" with the outcome and the line "usable with learners now" as two paragraphs (a blank line between them — a single line break becomes a space in the chat), plus the anchor link to the report — never hold the result back until the overview is written. Details follow in step 7.
-   Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+   Then run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 7. **Chat summary:** name every ❌, every ⏳ with its step, every `[pedagogical]` finding (also those you consider minor) and every `[advisory]` hint in plain words. Never write "everything else is fine" while the report lists open points; a checklist item is never downgraded to a "hint". A `check-material` warning about another unit (an older unit that breaks a project rule) is named here once, with the offer to fix it (`:quick-fix`) — never only in the terminal.
    If no issues found: confirm "Session {number} ({type}) — ✅ Syntax and content verified." with the anchor link to the report heading, and offer `:try-as-learner {number}` once (only when the MCP gate is open). Design track: "Session {number} — ✅ design checked; content not checked." (translated), and no `:try-as-learner` offer.
    **Only own photos left** (PASS, the only ⏳ items are pictures the instructor supplies): the approval does not wait for them. After the result, ask once in a form "Do you approve {unit} {n} – your photo can follow later?" (translated) with "Approve", "Look at it first" (👁 the learners' view) and "Later". "Approve" records `- **{date}:** material approved` (translated) in the session's decisions list — one write, then `write-dashboard`.
@@ -191,7 +191,7 @@ Rules:
    ```
 
    **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), a unit whose outcome says "short re-check open" gives PASS with concerns (resolved only by running the re-check, never accepted as is), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS. On the design track the design course result applies instead (Design track: design check only).
-10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
+10. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
 11. After all session validation reports and the latest summary are created: suggest next step. The completion message links the summary's own heading (the full anchor of `### Latest Validation Summary…`), never the `## Validation` slide above it. A duration it names is measured (`data/agent-links.md` → Durations).
     - If issues exist: per unit as in session mode step 8 — ✏️ `:quick-fix {number}` when every open point of the unit is one quick-fix change, otherwise `:coauthor-materials {number}` — then rerun `:validate-course`.
     - If no issues: "Course is ready for publishing. Next step: `:agent development` → `:create-project`"

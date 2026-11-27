@@ -1,0 +1,39 @@
+{
+  "id": "outline-h1-observable-alone",
+  "set": "holdout",
+  "title": "create-outline: practical skill, learners alone with headphones",
+  "fixture": {
+    "journal.md": "evals/optimize/fixtures/h1-observable-alone.journal.md"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-27",
+  "command": ":create-outline",
+  "replies": [
+    "A question whether someone can watch or check the learners → \"Nein, die Lernenden sind allein, eine Begleitung gibt es nicht.\"",
+    "A question about the abstract → \"Die wichtigsten Notfälle bei Kleinkindern: Atemstillstand, Bewusstlosigkeit, Notruf.\"",
+    "A proposal → \"Ja, so passt es.\"",
+    "A creativity / ideation offer → \"1\" (structured interview)",
+    "A logo question → \"Nein, kein Logo\"",
+    "The save preview (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "Any other question → the option you would present as the recommended default; a free-text question → a short, sensible answer a teacher in this situation would give, consistent with the course frame; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    {
+      "id": "validator-ok"
+    },
+    {
+      "id": "no-stage-word"
+    },
+    {
+      "id": "foreign-untouched"
+    },
+    {
+      "id": "outline-filled",
+      "min": 3,
+      "max": 5,
+      "time": false
+    }
+  ],
+  "judge": "evals/judges/create-outline.md"
+}

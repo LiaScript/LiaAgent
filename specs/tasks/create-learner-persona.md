@@ -86,7 +86,7 @@ and serve as the basis for `:review-as-persona` feedback sessions.
     - If `## Agents` does not exist: create it from `templates/agents.yaml`
     - If `### Learner Personas` does not exist inside `## Agents`: create that subsection
     - Append as a new `#### Persona: {icon} {name}` subsection: the `####` heading stays outside, everything below it is wrapped in `<section>…</section>`, as in the **Persona Structure** template below
-12. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+12. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 13. Suggest next step:
     > "Persona saved. [Icon] [Name] can now review a unit: `:agent learner` → `:review-as-persona [Name] [number]`."
 

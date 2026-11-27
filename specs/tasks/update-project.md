@@ -55,7 +55,7 @@ Only if installed (see `data/skills.md`); a missing one is offered once per conv
 
 ### after the push (both modes)
 
-8. Set `journal.md` → `## Publishing` → `__State:__ published on {date} (commit {short hash})` and run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+8. Set `journal.md` → `## Publishing` → `__State:__ published on {date} (commit {short hash})` and run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ## Usage
 

@@ -65,5 +65,5 @@ Creates a **skeleton** for one session (or unit/block/lesson — see `journal.md
    - Add a new row: `| {number} | {title} | {type} | {method} | ✅ | ❌ | ❌ | |` (the Notes cell stays empty for `write-dashboard.mjs`; omit the Method column entirely, matching the table header, if no method is in use)
    - If a row for this session already exists, update the Skeleton column to ✅.
    - Keep the overview (status list and table) before all `### {number}. {title}` subsections.
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+9. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 10. **Show the new unit** (MCP gate open): after the overview is updated, the completion message carries the anchor link to the new unit (`data/chat-wording.md` → Point, don't describe — `goto` only if verified by title), says in one line what the instructor finds there, and offer the next step (work out the material together).

@@ -37,7 +37,7 @@ export function laterOf(track = "full", mode = null, { agendaRequired = null } =
   return agendaRequired === "no" ? ["Agenda"] : [];
 }
 
-// The step titles of the light tracks in English (tasks/update-dashboard.md → Process steps per track); a language
+// The step titles of the light tracks in English (data/dashboard-cases.md → Process steps); a language
 // pack translates them under `lightStepTitles`. The full track's titles are those of the empty journal.
 export const englishLightStepTitles = {
   frame: "Frame and learning objectives", outline: "Outline and learning objectives", look: "Look", material: "Write the material",

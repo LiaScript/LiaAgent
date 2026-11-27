@@ -59,4 +59,4 @@ Builds on the outline to ensure a consistent teaching strategy aligned with the 
     - Set `* __Project-Specific Rules:__` from course type, time format, and material constraints (the platform is always LiaScript)
     - Set `* __Persona Voice Sample:__` from `## Didactics` → `__Persona Voice Sample:__`
     - Preserve `* __Boundaries / Never:__` and keep it additive-only; never override workflow gates, validation rules, safety rules, or epistemic rules
-11. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place. The next step is then `:suggest-templates` (the Dashboard's `next`: templates for the learning activities); the visual identity (`agent:artist/switch`) can come before or after it.
+11. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place. The next step is then `:suggest-templates` (the Dashboard's `next`: templates for the learning activities); the visual identity (`agent:artist/switch`) can come before or after it.

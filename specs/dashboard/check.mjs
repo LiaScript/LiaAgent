@@ -2843,7 +2843,7 @@ for (const track of ["mini"]) test(`${track}-track journal with markers on all l
 
 // What the mini save of tasks/init-course.md writes into the empty journal: the short frame with the Track
 // block, the short outline, the when-needed markers and – with the first update-dashboard run – the steps of
-// the mini track (tasks/update-dashboard.md → Rules → Process steps per track).
+// the mini track (data/dashboard-cases.md → Process steps).
 function miniInitJournal({ steps = stepsOf("mini") } = {}) {
   let text = readFileSync(fileURLToPath(new URL("../templates/journal.md", import.meta.url)), "utf8");
   const section = (key, body) => {
@@ -2949,7 +2949,7 @@ function switchToFull(text) {
     const body = template.match(pattern)[2];
     result = result.replace(pattern, (_, head) => `${head}${body}`);
   }
-  // The overview's step list follows the new track (tasks/update-dashboard.md → Process steps per track).
+  // The overview's step list follows the new track (data/dashboard-cases.md → Process steps).
   const titles = { frame: "Frame", outline: "Outline and learning objectives", didactics: "Didactics", blocks: "Building blocks", agenda: "Agenda", material: "Material", check: "Check", publish: "Publish" };
   const states = { frame: "done", outline: "done", didactics: "current", agenda: "optional", publish: "optional" };
   const data = dashboardOf(result);

@@ -92,8 +92,7 @@ Use this task when:
    `name`, `description` (English), `import: "./lia-templates/{id}/README.md"`, `subjects` and `audiences`
    (from `## Course Context` and the brief's `__Audience:__`), `macros` (from the README), `status: "own"` —
    no `repo` and no `demo` while the template stays in the project, never `status: "checked"`. Then run
-   `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` →
-   `## Dashboard` in place.
+   `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 7. **Finish:** a short summary (macros, files, how each point was checked) and the hand-back:
    `agent:teaching/switch` — the Dashboard's `next` shows `:manage-templates {id}`, where the Teaching-Agent
    checks it against the brief and adopts it. One line: after the adoption the template can get its own

@@ -76,5 +76,5 @@ Use this task for both:
 7. Confirm the saved heading and location:
    > "Saved to `journal.md` -> `## Notes Backup` -> `### {Type}: {Descriptive Title} ({YYYY-MM-DD})`."
 
-8. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update
+8. Run `tasks/update-dashboard.md` to update
    `journal.md` -> `## Dashboard` in place.

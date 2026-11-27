@@ -1,0 +1,20 @@
+{
+  "task": "create-outline",
+  "original": "specs/tasks/create-outline.md",
+  "requirements": "evals/optimize/requirements/create-outline.md",
+  "generations": 3,
+  "variants_per_generation": 3,
+  "reps": 2,
+  "smoke_test": { "scenarios": ["outline-s1-complete"], "reps": 1, "variants": ["base", "c1"] },
+  "train": ["outline-s1-complete", "outline-s2-missing-goals", "outline-s3-vague-goals", "outline-s4-unrealistic-time", "outline-s5-revise"],
+  "holdout": ["outline-h1-observable-alone", "outline-h2-heterogeneous"],
+  "selection": {
+    "objectives": ["success_rate:max", "tokens_per_success:min", "instruction_tokens:min"],
+    "exclude": ["missing critical requirement (coverage.json)", "more critical violations than the original"]
+  },
+  "adapters": {
+    "claude-code": "claude -p --output-format stream-json --verbose --permission-mode acceptEdits",
+    "codex": "codex exec --json --full-auto",
+    "subagent": "manual: one subagent per PROMPT.md (this environment)"
+  }
+}

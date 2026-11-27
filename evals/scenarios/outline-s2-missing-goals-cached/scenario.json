@@ -1,0 +1,40 @@
+{
+  "id": "outline-s2-missing-goals-cached",
+  "set": "cache",
+  "title": "create-outline: objectives missing – the agent must ask first (fresh overview cache)",
+  "fixture": {
+    "journal.md": "evals/optimize/fixtures/s2-missing-goals.journal.md",
+    ".cache/dashboard.json": "evals/optimize/fixtures/s2-missing-goals.dashboard.json"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-27",
+  "command": ":create-outline",
+  "replies": [
+    "The question what learners should be able to do at the end → \"Die Studierenden sollen deskriptive Kennwerte berechnen und interpretieren, einen t-Test durchführen und das Ergebnis im APA-Stil berichten und begründen können, warum eine Korrelation keine Kausalität belegt.\"",
+    "A question about the abstract → \"Grundlagen der deskriptiven und schließenden Statistik für psychologische Studien, mit Übungen in R.\"",
+    "A proposal of objectives or a self-check change → \"Ja, so passt es.\"",
+    "A creativity / ideation offer → \"1\" (structured interview)",
+    "A logo question → \"Nein, kein Logo\"",
+    "The save preview (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "Any other question → the option you would present as the recommended default; a free-text question → a short, sensible answer a teacher in this situation would give, consistent with the course frame; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    {
+      "id": "validator-ok"
+    },
+    {
+      "id": "no-stage-word"
+    },
+    {
+      "id": "foreign-untouched"
+    },
+    {
+      "id": "outline-filled",
+      "min": 3,
+      "max": 5,
+      "time": true
+    }
+  ],
+  "judge": "evals/judges/create-outline.md"
+}

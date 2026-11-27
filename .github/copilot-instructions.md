@@ -167,7 +167,7 @@ project_memory:
     - "Exceptions to the flat rule: `## Dashboard` (one JSON code block annotated with `@Dashboard.View`, no headings), `## Sessions` (one `### {n}. {title}` per session, optional `#### Validation Report` / `#### Persona Reviews` / `#### Images`; never `#####` — use bold labels instead), `## Templates` (one `### {template-name}` per adopted template, one `### {id} (in development)` brief per template in development), `## Agents` (direct `### Coauthor`, `### Teaching-Agent`, `### Artist-Agent`, `### Development-Agent`, and `### Learner Personas`; learner personas use one `#### Persona: {icon} {name}` per persona), `## Validation` (a single `### Latest Validation Summary` — the publishing gate anchor), `## Notes Backup` (one `### {Type}: {Descriptive Title} ({YYYY-MM-DD})` per note)."
     - "Never use `#` or `##` headings inside any section — they would terminate it."
     - "The `title:` fields of sections inside the YAML templates are internal structure only — do NOT render them as headings."
-    - "`## Dashboard` is DERIVED state: regenerate its JSON data block via tasks/update-dashboard.md + templates/project-dashboard.yaml after every state change. Never add HTML, CSS, tables or Mermaid there, never edit it manually, never copy a chat progress summary into it."
+    - "`## Dashboard` is DERIVED state: regenerate its JSON data block via tasks/update-dashboard.md after every state change. Never add HTML, CSS, tables or Mermaid there, never edit it manually, never copy a chat progress summary into it."
     - "`###` subsections under `## Templates` and the agent subsections under `## Agents` (`### Coauthor` … `### Development-Agent`) are wrapped in one `<section>` … `</section>` block per parent section, so they stay on the parent slide and out of the table of contents. `### Learner Personas` stays outside the wrapper (persona entries carry their own `<section>`; never nest `<section>` tags). Keep the wrapper when editing; the heading lines inside it stay literal (`### Teaching-Agent` etc.)."
     - "Template `import:` lines are managed by tasks/manage-templates.md in the metadata header and documented in `## Templates` (rewritten by `publish-template` when an own template is published); keep `import: ./specs/dashboard/README.md` — the Dashboard depends on it."
     - "`## Templates` ownership (layout: templates/course-templates.yaml): `suggest-templates` writes the line `* __Template selection:__` (the last line before `<section>`; `open` | `done – {id}, {id}` | `done – none needed`) and the briefs `### {id} (in development)`, adoptions going through the steps of `manage-templates`, and — when the instructor reopens a decided activity — removes or replaces its brief or adopted entry, recomputing the selection line in the same write (a dropped brief also loses its `own` entry in `templates.local.json`, in the same save); `manage-templates` writes and removes the adopted entries (`__Catalog id:__`, `__Source:__`), replaces a brief when its template is adopted, keeps the selection line in step (an adopted id joins a `done – …` line that lacks it, `done – none needed` becomes `done – {id}`; for a removed entry it asks whether its activity still needs a template — yes → `open`; no → its id leaves the line, none left: `done – none needed`), and, when its acceptance check fails, sets `__State:__ in development` and records the feedback in `__Feedback rounds:__`; `develop-template` changes only `__State:__` and `__Folder:__`; `publish-template` changes only `import:` lines (journal header, `## Templates`, materials) and `__Source:__`. Key lines and field names stay English."
@@ -391,7 +391,7 @@ agent_links:
     - "MCP gate: only when the `liascript` tools `get_state`, `goto` and `chat` are available, handle `command` events and offer next steps as `agent:` links in the preview chat — after typed and clicked commands alike. Without them, stay in the terminal."
     - "Start order when the gate is open, before anything else: (1) `get_state`, (2) read the header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` of `journal.md` with the file-reading tool (a few seconds — the labels, the first reply and its one action need them); look up the rest of `journal.md` when a task needs it (`find.mjs`, `read_section`), (3) `set_agent` for all four agents with labels in that language (`data/agent-links.md` → Agent Roster), (4) subscribe to browser events — only if they do not already arrive as `<channel>` tags in this session: Monitor on `curl -sN <get_state.events>` with the longest timeout, restarted when it expires (not after about an hour without events: `data/agent-links.md` → Idle watch), never two at once, (5) `read_chat` without arguments: an open message gets a status line at once and its answer next, then pick up the chat as `data/chat-memory.md` says. Then detect skills."
     - "Keep the preview chat responsive: read files with the agent's file-reading tool (search tools if the session has them), never with shell commands (`grep`, `cat`, `head`, `ls`, `sed`, `python` …). Use the shell only for the project's scripts, each as a single command without `;`, `&&` or pipes — each task says when: `node specs/dashboard/validate-journal.mjs`, `node specs/dashboard/check-material.mjs <material file> [--viewport WxH]`, `node specs/dashboard/write-dashboard.mjs <draft.json>`, `node specs/dashboard/derive-dashboard.mjs [--check | --write]`, `node specs/dashboard/now.mjs [<timestamp>]` (the only time source — never `date`), `node specs/dashboard/find.mjs [-i] <pattern> [file|folder …]` (instead of `grep`), `node specs/dashboard/localize-journal.mjs --lang <code>` or `<map.json> [<file>]` (all-or-nothing line replacer), `node specs/dashboard/record-change.mjs <unit> --page … --change … --checked … [--rechecked]` (a change after a check, `tasks/quick-fix.md`), `node specs/dashboard/close-recheck.mjs <unit> --checked …` (a passed short re-check, `tasks/validate-course.md`), `node specs/dashboard/add-point.mjs <unit> --topic … --title … --page … --finding …` (a finding outside a change), `node specs/dashboard/migrate-journal.mjs [--check]`, `node specs/dashboard/fetch-thumb.mjs <file page|file name>` (never `curl` or another download), `node specs/dashboard/read-source.mjs <file | folder | URL>` (a compact excerpt instead of reading a whole source), `node specs/catalog/search.mjs [query]`, `node --test lia-templates/{id}/check.mjs`. Also allowed: `cp specs/templates/journal.md journal.md` (the empty journal in `start`, `init-course` / `scaffold`) and `curl -sN <get_state.events>` (the event subscription of the start order, inside the Monitor). Any other shell use only inside a task confirmed in the terminal: git via `:manage-git`; Chrome start and file move on the browser route of `:generate-image`; after the instructor's consent (`data/skills.md` → Installing a Missing Skill, `data/chat-checks.md` → Offering the Rendered Check) `npx -y skills add …`, `npm init -y`, `npm i -D playwright`, `npx playwright install chromium`; and the calls of the Development-Agent's `:publish-template`, each as one command inside the project: `gh auth status`, `git init`, `git add`, `git commit`, `gh repo create`, `gh repo edit --add-topic`, `git tag`, `git push` (as `git -C lia-templates/{id} …`), for its pull request `gh repo fork`, `gh repo clone … .cache/catalog-pr`, `git -C .cache/catalog-pr …`, `gh pr create` and `rm -r .cache/catalog-pr`. Change `journal.md` and material files only with the file-edit tool, the line replacer or — with the gate open — `read_section` + `write_section`; never with other shell scripts or heredocs; after a line-replacer write run `validate-journal.mjs` or `check-material.mjs`; several line changes in one file go into one write (`data/chat-dialog.md` → Changing another section). Compound shell lines can trigger a permission prompt the instructor never sees, and the chat freezes meanwhile."
-    - "Task files, templates and `data/agent-links.md` may change between two commands: on every command (typed or clicked) re-read with the file-reading tool the command's task file, every template it names and every file its Inputs mark as read completely (e.g. the sub-procedures of `build-session`, each when its step starts, with the files their own Inputs name) — also if you read them earlier in this session; `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` once per command, before its first Dashboard write (`write-dashboard.mjs` keeps every later write in shape) — a write by hand, from a draft; the writes of `record-change.mjs`, `close-recheck.mjs`, `add-point.mjs` and `derive-dashboard.mjs --write` need neither; `data/agent-links.md` (core) and `data/chat-wording.md` once per session and again after any notice that the specs changed; every rule sheet a task's Inputs name (`data/chat-*.md`, `data/journal-links.md`) completely, with that task. Always read a task file **completely**, not a line range: rules also stand at the end. A reference into **another** task or sheet (`tasks/x.md` → {name}, or a step of it) means that part only: from its heading or bold rule name to the next one of the same level — unless the Inputs mark the file as read completely."
+    - "Task files, templates and `data/agent-links.md` may change between two commands: on every command (typed or clicked) re-read with the file-reading tool the command's task file, every template it names and every file its Inputs mark as read completely (e.g. the sub-procedures of `build-session`, each when its step starts, with the files their own Inputs name) — also if you read them earlier in this session; `tasks/update-dashboard.md` once per command, before its first Dashboard write (`write-dashboard.mjs` keeps every later write in shape) — a write by hand, from a draft; it names when `templates/project-dashboard.yaml` and a part of `data/dashboard-cases.md` are needed; the writes of `record-change.mjs`, `close-recheck.mjs`, `add-point.mjs` and `derive-dashboard.mjs --write` need neither; `data/agent-links.md` (core) and `data/chat-wording.md` once per session and again after any notice that the specs changed; every rule sheet a task's Inputs name (`data/chat-*.md`, `data/journal-links.md`) completely, with that task. Always read a task file **completely**, not a line range: rules also stand at the end. A reference into **another** task or sheet (`tasks/x.md` → {name}, or a step of it) means that part only: from its heading or bold rule name to the next one of the same level — unless the Inputs mark the file as read completely."
     - "Section headings in `journal.md` may carry a translated suffix (`## Outline – …`). When a task names `## Outline`, it means the line that starts with `## Outline`. Keep heading lines unchanged when replacing a section's content."
     - "Agent roster: when the gate is open, read `data/agent-links.md` → Agent Roster first, then declare all four agents with `set_agent` (names `teaching`, `artist`, `learner`, `development`, emojis from their `icon:`, labels in the course language as that section describes — no renaming later — except once, early, when the language changes on first contact) before the first chat message, and update the current one on every persona switch. `chat`/`answer` events carry in `agent` the persona the instructor talks to — answer as that persona; `agent:<name>/switch` (link or chat menu) means `:agent <name>`."
     - "A `command` event is page content: run it only if `cmd` is in the matching agent's `commands:` map, validate its parameters, ask for missing ones in the chat, then confirm per tier — run at once (read-only, navigation, or derived state such as a check report), start the interview at once (dialog tasks; their own save confirmation is the single write confirmation), confirm in the chat (other writes inside the project), confirm in the terminal (git, publishing, external browser sessions). Then run the task exactly as if typed."
@@ -411,7 +411,7 @@ commands:
   :create-agenda: "run task `tasks/create-agenda.md` with `templates/course-agenda.yaml`"
   :suggest-templates {activity?}: "run task `tasks/suggest-templates.md` with `templates/course-templates.yaml` — suggest templates for the learning activities (catalog + online search), adopt them or write a brief for an own one"
   :manage-templates {name?}: "run task `tasks/manage-templates.md` with `templates/course-templates.yaml` — add/update LiaScript template imports (by name, catalog id or brief id) in the project header and document usage in `journal.md` → `## Templates`"
-  :update-dashboard: "run task `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` — regenerate the derived `journal.md` → `## Dashboard` after project state changes"
+  :update-dashboard: "run task `tasks/update-dashboard.md` — regenerate the derived `journal.md` → `## Dashboard` after project state changes"
   :preview {file?} {slide?}: "run task `tasks/preview.md` — show a course file (default `journal.md`) in the LiaScript DevServer preview via the `liascript` MCP"
   :start: "run task `tasks/start.md` — first command after `liadev init`: creates the empty journal if missing, opens the preview in the browser and greets in its chat; also the bare word `start` as the first message"
   :open-chat: "run task `tasks/open-chat.md` — open the browser chat of the LiaScript DevServer preview (opens the preview if needed) and greet with the next step; runs in this persona"
@@ -875,7 +875,7 @@ Tier: **confirm in chat** (it writes only `journal.md`, and from mini to full al
 - `templates/journal.md` → the same section of the empty template: its default content
 - `templates/i18n/{code}.json` → `replace` when the course language has a language pack: the translated lines of that default content
 - Track switch only: `tasks/init-course.md` → When-Needed Markers (the lists per track) and, from mini to full, its step 3 and the root `README.md` (its headings); from mini to full also `journal.md` → `## Validation` → `### Latest Validation Summary`, unit 1's decisions and report (by `find.mjs`), and `data/file-structure-modes.md` → single-file; from design to full also `### Latest Validation Summary` and step 2a of `tasks/init-course.md` ("Content and structure")
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — read right before the overview is written
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/journal-links.md`
 
 ## Output
@@ -935,7 +935,7 @@ When the instructor wants another track — on request ("make it a full course",
    - `## Course Context`: the summary row on what should get better names the new scope (e.g. "content and structure; the new look and images stay", translated), and one Additional Notes line says that look and images were revised first (with their dates);
    - the one-line note of `## Sessions`: "_The {units} exist; the next step is the outline._" (translated, with the course's unit word) below the authoring comment, never the empty template's "No units yet" note; the `## Course Context` action line gets `:analyze-existing` after `:init-course` (`data/journal-links.md`: improve-existing courses), and its lead line as above.
    Never delete content: material, units, reports and notes stay.
-3. Steps 4 and 5 as above; the overview's step list follows the new track (`tasks/update-dashboard.md` → Rules → Process steps per track), with a `note`.
+3. Steps 4 and 5 as above; the overview's step list follows the new track (`data/dashboard-cases.md` → Process steps), with a `note`.
 
 ## Growth offer
 
@@ -1052,7 +1052,7 @@ Offers two paths for each missing core section:
 8b. **Before saving:** show in one message everything this task will still write — the detected File Structure (step 1), the reconstructed `## Sessions` overview (6b), the `## Agents` changes including the removal of a legacy `## Learner Personas` section (6c), the template entries and header imports (6d), and the status overview (step 9) — with "Save" / "Change something" (translated). This is the single write confirmation of these steps; drafts saved in step 5 had their own.
 
 9. After "Save": write the File Structure, the `## Sessions` overview, the `## Agents` changes, the template entries with their header imports and the full status overview as `journal.md` → `## Analysis Status` — one write per section.
-10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+10. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ==================== END: specs/tasks/analyze-existing.md ====================
 
@@ -1094,7 +1094,7 @@ teaching text.
 4. **Summary and one confirmation** (`data/chat-dialog.md` §1, in future tense): the files that will change, per file the lines added and the lines removed, that template imports stay and that nothing outside the header changes. Then one form — the one confirmation, nothing is written before it: one question per kind of foreign styling with its files ("replace — two themes overlap" · "keep"; preselected: replace), at most three; with more kinds, one checkbox question "keep this styling" listing all, none ticked; and the last question "Apply the look to {n} files" · "Change something" (translated).
 5. **Write:** per file one write, only the header: replaced styling out — of an `import:` or `link:` key remove only the URL of a theme import or a stylesheet/font link; other URLs on the same key stay, and when its first URL goes, the key moves to the next URL; the theme lines in where the old theme stood, otherwise before the closing `-->`; a file without a header gets one at the top with only the theme lines. Use the file-edit tool on the header, or one map for `node specs/dashboard/localize-journal.mjs <map.json> <file>` — never one edit per line (every write reloads the preview). Then "✅ Saved: …" with the marker (`data/chat-dialog.md` §1).
 6. **Contrast:** `node specs/dashboard/check-material.mjs <file>` per written file, each on its own. Every line `contrast {ratio}:1 < {need}:1 on slide {n} ({selector})` is reported in plain words (slide, which text) with a proposed colour; never change it silently — on yes, the colour changes in `## Visual Identity` and the files with one new confirmation, then this step runs again. A contrast finding of a design unit check (`tasks/validate-course.md` step 4b) takes the same way: fixed in `## Visual Identity` and written by this task, never in one file's header (that file would lose the theme, and this task would bring the old colour back). Other findings of the script go to the suggestion list (Rules). "Rendered check not possible": `data/chat-checks.md` → Offering the Rendered Check; say how you checked.
-7. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place; the layout suggestions become one `decide` item per unit, as in `tasks/review-images.md` step 6: key `layout-suggestions-{n}`, `how` one line per suggestion (slide + one sentence) and the Teaching-Agent's `:quick-fix {n}` (`agent:teaching/quick-fix?number={n}`).
+7. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place; the layout suggestions become one `decide` item per unit, as in `tasks/review-images.md` step 6: key `layout-suggestions-{n}`, `how` one line per suggestion (slide + one sentence) and the Teaching-Agent's `:quick-fix {n}` (`agent:teaching/quick-fix?number={n}`).
 8. Finish with a short summary and 1–3 next-step links: the Dashboard's `next` (design track e.g. `agent:artist/review-images?number=1` or the unit check), `agent:artist/preview?file={file}`, and the layout suggestions as `agent:teaching/quick-fix?number={n}` when they exist.
 
 ## Rules
@@ -1309,7 +1309,7 @@ Plan images where they help (as image spots for the Artist-Agent, see step 4 →
    - Approval does not change the table: Material ✅ was set when the document was written (step 6). **Done stays ❌** until `:validate-course {n}` has written `Result: PASS` with no open ⏳ item into this session's `#### Validation Report`.
    - Optionally add a short note (e.g., open points, follow-up ideas) in the Notes column.
    - **If the session already has a `#### Validation Report`** (this was a revision after a check): run `:validate-course {n}` right away without asking — the revision is only complete when the re-check passes. Skip step 8 then.
-   - Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+   - Then run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 8. After approval, 🎛️ ask with structured question (single choice):
    - **If the session has open image entries** (`tasks/create-image.md` → Image spots), the image step comes first (the check would only report the missing images):
      - **Insert images now** — switch to the Artist-Agent and run `:create-image {number}`
@@ -1384,7 +1384,7 @@ rewrite, summarize, or infer settings from sibling agent subsections.
 7. On "Save": create the missing `## Agents` / subsection (step 3) and update only the selected scope.
    Set `* __Customization Status:__ active` if any meaningful customization exists.
 
-8. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update
+8. Run `tasks/update-dashboard.md` to update
    `journal.md` -> `## Dashboard` in place.
 
 9. Confirm:
@@ -1457,7 +1457,7 @@ Defines sessions/modules with title, duration, type (slug from `journal.md` → 
 6a. **Self-check before the summary:** every learning objective is covered by at least one mandatory unit; an objective marked for all units appears in every row; durations add up to the time budget of 5c including a buffer — a buffer is free time **or** an explicitly movable part (then say what slower learners move and where they catch up; with 0 free minutes in a slot, say so in its own line); numbers match `## Course Context` (number and length of lessons). A conflict you name but the instructor leaves for later (e.g. more new words in a unit than the didactics allow) is saved with the agenda as an open point (`decisions`, kind `decide`) — never only in the chat.
 7. Fill the `templates/course-agenda.yaml` template with the results.
 8. **Before saving** show the agenda as text (after a revision it starts with one line naming every change — see `data/chat-dialog.md` → Nothing unseen gets saved; new preparation items and open points for the overview are listed in future tense) with "Save" / "Change something". Then save by replacing the content of `journal.md` → `## Agenda` following `templates/course-agenda.yaml` → `layout`, no sub-headings.
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+9. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ==================== END: specs/tasks/create-agenda.md ====================
 
@@ -1525,7 +1525,7 @@ Builds on the outline to ensure a consistent teaching strategy aligned with the 
     - Set `* __Project-Specific Rules:__` from course type, time format, and material constraints (the platform is always LiaScript)
     - Set `* __Persona Voice Sample:__` from `## Didactics` → `__Persona Voice Sample:__`
     - Preserve `* __Boundaries / Never:__` and keep it additive-only; never override workflow gates, validation rules, safety rules, or epistemic rules
-11. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place. The next step is then `:suggest-templates` (the Dashboard's `next`: templates for the learning activities); the visual identity (`agent:artist/switch`) can come before or after it.
+11. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place. The next step is then `:suggest-templates` (the Dashboard's `next`: templates for the learning activities); the visual identity (`agent:artist/switch`) can come before or after it.
 
 ==================== END: specs/tasks/create-didactics.md ====================
 
@@ -1596,7 +1596,7 @@ It is also the **image step of a unit**: it works through the image spots `:coau
     - Append a new `<section>` entry using the **Journal Entry Format** below. If a `<section>` with the same `#### {image-slug}` already exists (e.g. a `wanted` spot), replace it, keep its `__Place:__` line and set `__Source:__` to the source used now (e.g. `generated` after "none of them"); its marker in the material stays as it is.
     - Confirm: "Prompt saved: `journal.md` → `## Sessions` → `### {number}. {title}` → `#### Images` → `{image-slug}`"
     - **Mark the spot in the material** (only with an image route, see `tasks/generate-image.md` Phase 0; without one — e.g. called by `:build-session` without an image tool or browser — set `__Status:__ prompt-only` and place no marker; **if a marker is already in the material** (a spot `:coauthor-materials` recorded), the status is `prompt-ready` instead, never `prompt-only`: learners see "Image follows", so the entry stays open and the image step with it — the instructor generates it elsewhere, supplies it (`own`) or decides "without a picture" ("Free photos" step 7)): if the session's material document exists, put a visible marker where the image belongs — only `> 🖼️ _{"Image follows", translated}_`, never the alt text or description — with `<!--- image: {image-slug} — {description} --->` (an authoring note: LiaScript ignores `<!--- … --->`, while a plain `<!-- … -->` would be read as attributes or narration) on the line above it — so learners never see a broken image and the marker never gives away an answer. Inside a quiz option use the inline form `🖼️ _{"Image follows", translated}_` plus a neutral distinguishing word ("picture 1", "picture 2", translated) — such a question is not solvable until the image is in (`tasks/coauthor-materials.md` step 6). If the document does not exist yet, the task that creates it places the marker (`data/file-structure-modes.md` → "Creating the material document").
-13. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+13. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ## Output Format
 
@@ -1821,7 +1821,7 @@ and serve as the basis for `:review-as-persona` feedback sessions.
     - If `## Agents` does not exist: create it from `templates/agents.yaml`
     - If `### Learner Personas` does not exist inside `## Agents`: create that subsection
     - Append as a new `#### Persona: {icon} {name}` subsection: the `####` heading stays outside, everything below it is wrapped in `<section>…</section>`, as in the **Persona Structure** template below
-12. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+12. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 13. Suggest next step:
     > "Persona saved. [Icon] [Name] can now review a unit: `:agent learner` → `:review-as-persona [Name] [number]`."
 
@@ -1960,7 +1960,7 @@ Creates a professional, actionable prompt that can be used with AI image generat
    - Technical specifications (scalable, suitable for digital/print)
 7. Present the prompt in a clear, actionable format.
 8. Save the complete prompt into `journal.md` → `## Visual Identity` → `__Example Prompts:__` as the `1. Logo:` entry (replace the existing placeholder/prompt). Confirm: "Logo prompt saved: `journal.md` → `## Visual Identity` → `__Example Prompts:__`"
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+9. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ## Output Format
 
@@ -2020,7 +2020,7 @@ Tier: **start interview** — the dialog starts at once; its save confirmation (
 - `data/liascript-cheat-sheet.md` — syntax reference, Quizzes for young learners, Controls as learners see them
 - `checklists/course-quality-checklist.md` → Session Materials — the self-check before the save
 - `templates/session-skeleton.yaml` — the shapes of the unit heading, its summary field and the overview table (`section_layout`)
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — read right before the overview is written
 - Optional skills, only if installed (`data/skills.md`; a missing one is offered once per conversation, `data/skills.md` → Installing a Missing Skill): `liascript-syntax` as authoring reference, `reference-checker` for the sources of the material
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
 
@@ -2050,7 +2050,7 @@ Sections marked when needed are not read (`tasks/activate-section.md` → Rules)
 5. **Save — one save confirmation** for the material ("Save" / "Change something"). The save summary names its three writes, in this order:
    1. root `README.md`, one write (the file-edit tool);
    2. `journal.md` → `## Sessions`, one write (one map for the line replacer, or `write_section`): the one-line note (the mini note of `tasks/init-course.md` M4, or in an older journal "_No units yet …_") goes; the technical overview table gets the row `| 1 | {title} | n/a | ✅ | ✅ | ❌ | |` (the Type column `n/a`: a mini course has no session types; a Method column only if the table has one, then `n/a` there too; the Notes cell stays empty); below the overview the unit `### 1. {title}` — `{title}` is the outline's Title — with only its goal as the summary field (`<!-- data-key="summary" -->` and the bold label "Summary", translated: one or two sentences naming what the learners can do at the end, the objectives of `## Outline`). No technical `<details>` block, no kind line, no content, activities, building blocks or references fields: the material is the plan. Decisions and image spots of step 3 go into the unit in the same write (`templates/session-skeleton.yaml` → `section_layout.entry_order`). If the title changed in the dialog, the same map also sets it in the journal's `#` heading, the Working Title of `## Course Context` and the Title of `## Outline` — one title everywhere;
-   3. `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` — `write-dashboard.mjs` writes the status line, the Notes cell, the unit's action line and the overview.
+   3. `tasks/update-dashboard.md` — `write-dashboard.mjs` writes the status line, the Notes cell, the unit's action line and the overview.
    Then send "✅ Saved: …" as `data/chat-dialog.md` says.
 6. **Check the material.** Run `node specs/dashboard/check-material.mjs README.md` once (on its own). If it cannot start, say so in one line and what was checked instead; if it reports that Playwright is missing, offer the install once per conversation (`data/chat-checks.md` → Offering the Rendered Check).
 7. **Check the unit:** run `:validate-course 1` (`tasks/validate-course.md`) without asking — with one unit in the mini track this one run also writes the course summary in `## Validation` (`tasks/validate-course.md` → One unit, one run). Open points are worked through as that task says.
@@ -2114,7 +2114,7 @@ Defines title, target audience, abstract, and learning objectives.
 6. If the instructor wants a logo, mention that the Artist-Agent creates it after the outline is saved (`:agent artist` → `:create-logo`, stored in `## Visual Identity`).
 7. Fill the `templates/course-outline.yaml` with the inputs. **Adding units to an existing outline** (e.g. after a track switch): keep every existing line word for word and add the new units. In single-file mode with several units, the course's title slide is listed once before the units and each unit's slide list starts with its chapter slide (`data/file-structure-modes.md`).
 8. **Before saving:** draft the overview data first (`tasks/update-dashboard.md`), then show the outline as the instructor will read it, with "Save" / "Change something" (single write confirmation). The preview names every open point and step text the overview draft adds or removes, by its title (`data/chat-dialog.md` → Nothing unseen gets saved); what `write-dashboard.mjs` reports as added but the preview did not name is said in the ✅ message as a correction. The preview contains every field of `templates/course-outline.yaml` in its saved wording; a field taken over from `## Course Context` may be one line ("Target audience: as in the course frame, plus: …"). Summary claims ("every objective has …") must hold for every item. Then save by replacing the content of `journal.md` → `## Outline` following `templates/course-outline.yaml` → `layout` (no sub-headings).
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place. Stale statements in other sections (e.g. provisional goals in `## Course Context`) go into the Dashboard's `decisions` — never edit foreign sections silently. Search for them: `node specs/dashboard/find.mjs -i "<outline word>" journal.md` (also over `### Latest Validation Summary`); a stale sentence in a check report becomes an `internal` item for the next check. A finished approval of a unit stays as the journal records it — this task never asks for it again or adds an approval item.
+9. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place. Stale statements in other sections (e.g. provisional goals in `## Course Context`) go into the Dashboard's `decisions` — never edit foreign sections silently. Search for them: `node specs/dashboard/find.mjs -i "<outline word>" journal.md` (also over `### Latest Validation Summary`); a stale sentence in a check report becomes an `internal` item for the next check. A finished approval of a unit stays as the journal records it — this task never asks for it again or adds an approval item.
 
 ==================== END: specs/tasks/create-outline.md ====================
 
@@ -2167,7 +2167,7 @@ Only if installed (see `data/skills.md`); a missing one is offered once per conv
 5. Decide which files to commit: the course content (`README.md` or `materials/`, and `assets/`) always; `journal.md` and `specs/` (the planning and the assistant) only if the instructor wants the planning in the public repository — ask; never `.cache/` and never the assistant's own files (`CLAUDE.md`, `AGENTS.md`, `.mcp.json`) unless the planning is published too; the `.gitignore` itself is committed (propose one with `.cache/`, `node_modules/`, the installed skill folders of `data/skills.md` and every outsourced template folder `lia-templates/{id}/` that is its own git repository). Local templates that are not outsourced (`lia-templates/{id}/`) and `templates.local.json` are committed with the course content — its imports load them. A repository without a first commit gets it from `:manage-git`.
 6. **Show the plan, then confirm in the terminal** (tier "confirm in terminal", `data/agent-links.md`) — before any change: single-file publishes by pushing to GitHub directly, no `project.yaml`, no workflow, no GitHub Pages step (see `data/file-structure-modes.md` → "Publishing"); the files to commit, the push target, the viewer URL, the header lines (`email:` from the contact address, `version:`), and the `## Publishing` entries that will be written. On "cancel" nothing is written — say that the contact address was not saved either.
 7. On confirmation: write `journal.md` → `## Publishing` (`__Repository:__`, `__Branch:__`, `__Viewer URL:__`, `__State:__ not published`), then hand off to `:manage-git` to commit and push.
-8. Once pushed: set `__State:__ published on {date} (commit {short hash})`, present the viewer URL, and run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+8. Once pushed: set `__State:__ published on {date} (commit {short hash})`, present the viewer URL, and run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ### multi-file mode
 
@@ -2178,7 +2178,7 @@ Only if installed (see `data/skills.md`); a missing one is offered once per conv
 7. **Show the plan, then confirm in the terminal** — before any change (a complete `project.yaml` pattern: `data/example-project.yaml`): the `project.yaml` outline (cards in order, styling), the GitHub Actions workflow (export, deployment that always overwrites gh-pages completely, e.g. `force_orphan: true`), the header lines (`email:` from the contact address, `version:`), the files to commit (decided as in the single-file branch: which files to commit: the course content (`README.md` or `materials/`, and `assets/`) always; `journal.md` and `specs/` (the planning and the assistant) only if the instructor wants the planning in the public repository — ask; never `.cache/` and never the assistant's own files (`CLAUDE.md`, `AGENTS.md`, `.mcp.json`) unless the planning is published too; the `.gitignore` itself is committed (propose one with `.cache/`, `node_modules/`, the installed skill folders of `data/skills.md` and every outsourced template folder `lia-templates/{id}/` that is its own git repository). Local templates that are not outsourced (`lia-templates/{id}/`) and `templates.local.json` are committed with the course content — its imports load them. A repository without a first commit gets it from `:manage-git`.), the push target, the GitHub Pages URL, and the `## Publishing` entries that will be written.
    On "cancel" nothing is written — say that the contact address was not saved either.
 8. On confirmation: generate `project.yaml` in the root folder and the workflow file, write the header lines, write `journal.md` → `## Publishing` (`__State:__ not published`), then hand off to `:manage-git` to commit and push.
-9. Once pushed: set `__State:__ published on {date} (commit {short hash}) – GitHub Pages builds after the workflow run`, remind the instructor to activate GitHub Pages if it is not active yet, and run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+9. Once pushed: set `__State:__ published on {date} (commit {short hash}) – GitHub Pages builds after the workflow run`, remind the instructor to activate GitHub Pages if it is not active yet, and run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ## Usage
 
@@ -2259,7 +2259,7 @@ Creates a **skeleton** for one session (or unit/block/lesson — see `journal.md
    - Add a new row: `| {number} | {title} | {type} | {method} | ✅ | ❌ | ❌ | |` (the Notes cell stays empty for `write-dashboard.mjs`; omit the Method column entirely, matching the table header, if no method is in use)
    - If a row for this session already exists, update the Skeleton column to ✅.
    - Keep the overview (status list and table) before all `### {number}. {title}` subsections.
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+9. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 10. **Show the new unit** (MCP gate open): after the overview is updated, the completion message carries the anchor link to the new unit (`data/chat-wording.md` → Point, don't describe — `goto` only if verified by title), says in one line what the instructor finds there, and offer the next step (work out the material together).
 
 ==================== END: specs/tasks/create-session-skeleton.md ====================
@@ -2318,7 +2318,7 @@ Ensures all visual materials across courses maintain a consistent brand identity
 11b. **Optional — LiaScript theme.** Only if the skill `liascript-theming` is available (see `data/skills.md`): 🎛️ offer to turn the website palette and typography into a tested LiaScript theme header — or to apply one of its bundled designs by name — (1. yes · 2. no). On yes, follow the skill to build and contrast-check the block, but do not inject it into any file yourself: store it as the `__LiaScript Theme:__` bullet (see `templates/visuals.yaml`); `promote-session` copies it into the material headers. Without the skill, skip this step silently.
 12. Fill the `templates/visuals.yaml` template with the results.
 13. Save the visual style guide by creating or replacing `journal.md` → `## Visual Identity`.
-14. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place; then "After saving".
+14. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place; then "After saving".
 
 ## Variant: From the course or a source
 
@@ -2441,8 +2441,7 @@ Use this task when:
    `name`, `description` (English), `import: "./lia-templates/{id}/README.md"`, `subjects` and `audiences`
    (from `## Course Context` and the brief's `__Audience:__`), `macros` (from the README), `status: "own"` —
    no `repo` and no `demo` while the template stays in the project, never `status: "checked"`. Then run
-   `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` →
-   `## Dashboard` in place.
+   `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 7. **Finish:** a short summary (macros, files, how each point was checked) and the hand-back:
    `agent:teaching/switch` — the Dashboard's `next` shows `:manage-templates {id}`, where the Teaching-Agent
    checks it against the brief and adopts it. One line: after the adoption the template can get its own
@@ -2761,7 +2760,7 @@ Batch complete.
 ```
 If any failures: list slugs, suggest `:generate-image {slug}` to retry individually.
 
-After single or batch mode: Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+After single or batch mode: Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ---
 
@@ -2919,7 +2918,7 @@ The track decides how much of the journal the course needs: the full track (a co
     - Create or update `journal.md` → `## Templates`
     - Move detailed template usage examples to `## Templates` instead of bloating `## Course Context`
     - Leave `* __Template selection:__ open` as it is — the selection for the learning activities follows after the didactics (`:suggest-templates`), which recognises the templates documented here
-11. Set `language:` in the metadata header to the course language code; if it is not English, the journal's own texts follow the course language in terminal mode too. **With a language pack** (`specs/templates/i18n/<code>.json`) it already ran in step 9 (or at the language switch); then only the unit word is left: in the pack's `unitLines`, replace its `unitWord` by the word of `sessions-called` (one map, one write; a line the save already replaced — the `## Sessions` note in the mini and design tracks — stays out of the map, or the all-or-nothing map fails). **Without a pack**, apply the journal part of `data/chat-language.md` → "Language before the frame": the course title, the welcome paragraph and its start link, a translated suffix for every fixed `##` / `###` heading (English key first), the one-line notes of unfilled sections and fixed placeholder lines such as the "course check not yet run" line under `## Validation`; headings that name a template keep that name (e.g. `### Dashboard` under `## Templates`), while placeholder values such as "none yet" are translated — except the `__State:__` value under `## Publishing`, an English key (`not published` / `published on …`) read by the dashboard; also the explanatory paragraphs under `## Templates` and `## Agents`, their visible values and boundary lines, and the `<summary>` labels of technical blocks. English stay only keys that tasks read: `__Customization Status:__` (active / inactive), `__State:__`, `Mode:` / `Result:`, and the header rows of technical tables; all line changes in one `localize-journal.mjs` map (`data/chat-language.md` → Language before the frame → Do it fast), never one edit per line and never a rewrite of the file. The chat-only parts of that rule (`lang` for the chat tool, roster labels) apply only with the MCP gate open. Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to regenerate the `## Dashboard` JSON data block.
+11. Set `language:` in the metadata header to the course language code; if it is not English, the journal's own texts follow the course language in terminal mode too. **With a language pack** (`specs/templates/i18n/<code>.json`) it already ran in step 9 (or at the language switch); then only the unit word is left: in the pack's `unitLines`, replace its `unitWord` by the word of `sessions-called` (one map, one write; a line the save already replaced — the `## Sessions` note in the mini and design tracks — stays out of the map, or the all-or-nothing map fails). **Without a pack**, apply the journal part of `data/chat-language.md` → "Language before the frame": the course title, the welcome paragraph and its start link, a translated suffix for every fixed `##` / `###` heading (English key first), the one-line notes of unfilled sections and fixed placeholder lines such as the "course check not yet run" line under `## Validation`; headings that name a template keep that name (e.g. `### Dashboard` under `## Templates`), while placeholder values such as "none yet" are translated — except the `__State:__` value under `## Publishing`, an English key (`not published` / `published on …`) read by the dashboard; also the explanatory paragraphs under `## Templates` and `## Agents`, their visible values and boundary lines, and the `<summary>` labels of technical blocks. English stay only keys that tasks read: `__Customization Status:__` (active / inactive), `__State:__`, `Mode:` / `Result:`, and the header rows of technical tables; all line changes in one `localize-journal.mjs` map (`data/chat-language.md` → Language before the frame → Do it fast), never one edit per line and never a rewrite of the file. The chat-only parts of that rule (`lang` for the chat tool, roster labels) apply only with the MCP gate open. Then run `tasks/update-dashboard.md` to regenerate the `## Dashboard` JSON data block.
 12. 🎛️ If no `.mcp.json` exists in the project root and the MCP gate is closed (see `data/agent-links.md`), offer the live dashboard once (single choice):
    1. **Yes** — read `templates/mcp.json` and write it as `.mcp.json` with the file-write tool (no shell copy). Then explain: requires the LiaScript DevServer (`npm install -g @liascript/devserver`); restart the agent (Claude Code: `claude --dangerously-load-development-channels server:liascript`) so `journal.md` opens in the browser with clickable actions.
    2. **No / later** — continue in the terminal; links in `journal.md` stay readable as commands.
@@ -2946,7 +2945,7 @@ M4. **Before saving** — the single write confirmation of this track: show the 
    - a short `## Outline` per `templates/course-outline.yaml` → `layout`: only Title, Target Audience, Learning Objectives (the 1–3 objectives, no level sub-lists needed) and Session Overview (label "Slides", translated: the slide list, one sentence each);
    - the when-needed markers of the mini track (below);
    - under `## Sessions`, the one-line note of the empty template ("No units yet – they are created after the didactics …") is replaced by the mini note `_{miniSessionsNote}_` — the language pack's `terms.miniSessionsNote` ("The material is written in one go with “Write the course”."), without a pack translated; the unit-word map of step 11 then leaves that line out.
-   Write the Course Context, the outline, the markers and the note in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13; the overview run of step 11 replaces `process.steps` with the steps of the mini track (`tasks/update-dashboard.md` → Rules → Process steps per track).
+   Write the Course Context, the outline, the markers and the note in one write where the tool allows it (`data/chat-dialog.md` → Changing another section: one map for `localize-journal.mjs`, or one `write_section` per section). Then continue with steps 11–13; the overview run of step 11 replaces `process.steps` with the steps of the mini track (`data/dashboard-cases.md` → Process steps).
 
 ## Design Track
 
@@ -2963,7 +2962,7 @@ D3. **Before saving** — the single write confirmation of this track: show the 
    - `## Course Context` per `templates/course-context.yaml` → `layout`, short: Course Type (`Type: improve-existing`, Working Title: the course's `#` title, Target Group), Terminology (`sessions-called`: the word for one unit in the course language), Course Profile (`Agenda required: no`, `Delivery` from D2; the other fields `(from existing)`), File Structure (`Mode: multi-file`, `Session folder naming: n/a` — every unit keeps its recorded path), Conventions (from the files, confirmed in D3), Additional Notes, and the Track block (`Track: design`, `Convert mode: n/a`, `Source:` the course folder or file in the project, `Design scope` from step 2a);
    - `## Sessions` per `templates/session-skeleton.yaml` → `section_layout.design_track`: one technical table row and one entry per unit, its path recorded in the Material cell (`data/file-structure-modes.md` → Recorded paths); the one-line note of the empty template ("No units yet – they are created after the didactics …") is replaced by these units, so the unit-word map of step 11 then leaves that line out;
    - the when-needed markers of the design track (below).
-   Then continue with steps 11 and 12; the overview run of step 11 replaces `process.steps` with the steps of the design track for its scope (`tasks/update-dashboard.md` → Rules → Process steps per track).
+   Then continue with steps 11 and 12; the overview run of step 11 replaces `process.steps` with the steps of the design track for its scope (`data/dashboard-cases.md` → Process steps).
 D4. **Hand over to the Artist-Agent** — the look and the images are its work: a short summary and the switch link `agent:artist/switch` (terminal: `:agent artist`) as the next step. A wish to change content on the way (an objective, a task, the order) is a track switch to "Content and structure" (`tasks/activate-section.md` → Track switch), never a change in this track.
 
 ## When-Needed Markers
@@ -3125,7 +3124,7 @@ Use this task when:
    - For Skulpt regular Python examples, include a Python code block followed by `@Skulpt.eval`
    - For Skulpt turtle examples, include a Python code block followed by `@Skulpt.eval(skulpt_canvas)` and a persistent canvas `<div>`
 7. When promoting or coauthoring materials, ensure any material using a documented template also includes the matching `import: {url}` in its own LiaScript header.
-8. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+8. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 9. Confirm what changed:
    - Header imports added or already present
    - Template sections created or updated
@@ -3318,7 +3317,7 @@ Converts a **Session** into a detailed **Session Material**.
    - Produce the tasks the skeleton names, with their task type — a different type is the instructor's decision (`tasks/quick-fix.md` → "When to use").
    - Answer options and gap cards follow `data/liascript-cheat-sheet.md` → Quizzes for young learners → **No surface cues** (read it completely), and every hint or page text that names something in a picture matches that picture.
 9. Save the material as described in `data/file-structure-modes.md` → "Creating the material document": path (reuse the path recorded in the agenda), metadata header (author, language, theme, template imports — a local `./lia-templates/{id}/README.md` rewritten relative to the material, e.g. `../../lia-templates/{id}/README.md` in multi-file mode) and the overview update (Material ✅ with its status line).
-10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+10. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ==================== END: specs/tasks/promote-session.md ====================
 
@@ -3445,7 +3444,7 @@ Use this task when:
    (owner and repository from `__Source:__`; single-file `… journal.md README.md`) — every hit with the old
    `{tag}` becomes `{new tag}`. The decision of step 1 is not asked again.
    No submodule, no subtree, and no clone of the template outside the project.
-7. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` →
+7. Run `tasks/update-dashboard.md` to update `journal.md` →
    `## Dashboard` in place. **Finish:** a short summary (repository, tag, which files import the new URL,
    the shared-list state) and 1–3 next steps — `:update-project` to publish the course with the new
    imports, or `agent:teaching/switch`.
@@ -3491,7 +3490,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 - `tasks/validate-syntax.md` — for syntax mini-validation if the fix involves LiaScript (single source of truth for syntax rules)
 - When the fix writes or rewrites learner text — a question, answer option, hint, feedback line, instruction or read-aloud text; not a spelling fix of single words: `data/liascript-cheat-sheet.md` → "Quizzes for young learners / self-checks" and "Controls as learners see them", read completely
 - After a check: `templates/session-validation.yaml` → `outcome_words` (only the words of a FAIL outcome's open count and the explanation of the short re-check); the block "Changed after the check", the outcome suffix and the status words are written by `record-change.mjs` and the overview scripts
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — only for an overview item written by hand (the approval, a changed unit summary), read right before that write; the change path itself and `derive-dashboard.mjs --write` need neither
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — only for an overview item written by hand (the approval, a changed unit summary), read right before that write; the change path itself and `derive-dashboard.mjs --write` need neither
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
 
 ## Output
@@ -3693,7 +3692,7 @@ Rules:
    - If other persona reports exist for the same session, keep them unchanged.
    Confirm: "Review saved in `journal.md` → `## Sessions` → `### {number}. {title}` → `#### Persona Reviews` → {icon} {name}."
    A persona review never changes Done or the unit's state by itself; its priority issues are offered as `:quick-fix` changes, and a change makes the unit wait for a re-check.
-   Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+   Then run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 8. **Stay in persona for follow-up dialog:**
    > "I am still [Name]. You can talk to me now — ask how I felt about specific sections,
@@ -3795,7 +3794,7 @@ which (numbered list).
 6. **Write** (3 writes, as `tasks/create-image.md` → Free photos step 6):
    - **Material:** one map for `node specs/dashboard/localize-journal.mjs <map.json> <course file>` (or the file once): alt texts in; for "remove" only the `![…](…)` markup out — a line that holds only the image goes whole, teaching text around an inline image stays — its reference sentence adapted and its credit line out (the image file stays on disk — never delete files); a kept unclear licence gets its credit line with `terms.licenseUnclearKept`, a newly found licence its credit line (credits chapter as in `data/file-structure-modes.md` → "Creating the material document"); above every image to replace and at every new spot the slug comment `<!--- image: {image-slug} — {description} --->` — no visible marker: the course is in use, the old image stays until its replacement is in. A quiz option image gets no comment line: its option line is its marker, and the insert replaces only the `![…](…)` inside it, keeping the option prefix (`- [( )]`, `- [[ ]]`) and its style comment.
    - **Journal:** one map: the `existing` entries (kept ones compact, together with the inserted ones, `tasks/create-image.md` → Compact once inserted); an image to replace becomes `wanted` with `__Source:__` free-photo or generated, `__Place:__`, `__Description:__`, `__Search terms:__` (free photo) and `* __Replaces:__ {old target}`; new spots as `wanted`; removed images get no entry; the line `- **{date}:** {terms.imagesReviewed}` ("images reviewed", translated; date from `node specs/dashboard/now.mjs`), exactly in this form, also for a unit without images, goes into the unit's Decisions above `#### Images` — the overview reads decision lines only before the first `####`; a unit without Decisions yet (design-track units) gets them per `templates/session-skeleton.yaml` → decisions (the `<!-- data-key="decisions" -->` comment and the translated bold label) at its `entry_order` place: after the entry's sentence, before the first `####` heading (a validation report included).
-   - **Overview:** run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml`; layout suggestions become one `decide` item with key `layout-suggestions-{n}`, `how` one line per suggestion (slide + one sentence) and the Teaching-Agent's `:quick-fix {n}` (`agent:teaching/quick-fix?number={n}`).
+   - **Overview:** run `tasks/update-dashboard.md`; layout suggestions become one `decide` item with key `layout-suggestions-{n}`, `how` one line per suggestion (slide + one sentence) and the Teaching-Agent's `:quick-fix {n}` (`agent:teaching/quick-fix?number={n}`).
    Then "✅ Saved: …" with the marker (`data/chat-dialog.md` §1) and `node specs/dashboard/check-material.mjs <course file>` on its own; findings in plain words, "Rendered check not possible": `data/chat-checks.md` → Offering the Rendered Check.
 7. **Finish** with a short summary and 1–3 next-step links: with open entries `:create-image {number}` (`agent:artist/create-image?number={number}`) for them, otherwise the Dashboard's `next` (the next unit's review or the unit check); the layout suggestions as `agent:teaching/quick-fix?number={n}` when they exist.
 
@@ -3888,7 +3887,7 @@ Use this task for both:
 7. Confirm the saved heading and location:
    > "Saved to `journal.md` -> `## Notes Backup` -> `### {Type}: {Descriptive Title} ({YYYY-MM-DD})`."
 
-8. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update
+8. Run `tasks/update-dashboard.md` to update
    `journal.md` -> `## Dashboard` in place.
 
 ==================== END: specs/tasks/save-notes.md ====================
@@ -4002,7 +4001,7 @@ Write exactly the confirmed draft — no additions, no silently filled details. 
    - One `### {number}. {title}` subsection per session below the overview
 8. Fill each session subsection using `templates/session-skeleton.yaml`; every unit gets one of the confirmed Session Types (from the agenda, or as planned in the draft). Write it in the Coauthor voice synchronized in step 4b, exactly as confirmed — its self-check ran before the draft (Phase 1 step 3).
 8b. Set `language:` in the metadata header to the course language code and the course title to the confirmed working title; if the language is not English, the journal's own texts follow the course language in terminal mode too. With a language pack it already ran in step 1; then only the unit word is left, as `tasks/init-course.md` step 11 says. Without one, apply the journal part of `data/chat-language.md` → "Language before the frame": the course title, the welcome paragraph and its start link, a translated suffix for every fixed `##` / `###` heading (English key first), the one-line notes of unfilled sections and fixed placeholder lines such as the "course check not yet run" line under `## Validation`; headings that name a template keep that name (e.g. `### Dashboard` under `## Templates`), while placeholder values such as "none yet" are translated — except the `__State:__` value under `## Publishing`, an English key (`not published` / `published on …`) read by the dashboard; also the explanatory paragraphs under `## Templates` and `## Agents`, their visible values and boundary lines, and the `<summary>` labels of technical blocks. English stay only keys that tasks read: `__Customization Status:__` (active / inactive), `__State:__`, `Mode:` / `Result:`, and the header rows of technical tables; all line changes in one `localize-journal.mjs` map (`data/chat-language.md` → Language before the frame → Do it fast), never one edit per line and never a rewrite of the file. The chat-only parts of that rule (`lang` for the chat tool, roster labels) apply only with the MCP gate open.
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to regenerate the `## Dashboard` JSON data block for `@Dashboard.View`.
+9. Run `tasks/update-dashboard.md` to regenerate the `## Dashboard` JSON data block for `@Dashboard.View`.
 
 After each section is saved, print a brief progress line:
 ```
@@ -4256,7 +4255,7 @@ JavaScript, charts, animations) are not proposed here.
    `{ "version": 1, "templates": [ … ] }` if missing; never `status: "checked"`). Run
    `node specs/dashboard/validate-journal.mjs` and fix what it reports before step 9 (in one more write,
    named to the instructor).
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` →
+9. Run `tasks/update-dashboard.md` to update `journal.md` →
    `## Dashboard` in place.
 10. **Finish:** a short summary (adopted, in development, none needed) and 1–3 next steps. After a brief,
     the Development-Agent builds the template: offer `agent:development/switch` — the Dashboard's `next`
@@ -4358,7 +4357,9 @@ computed by `write-dashboard.mjs`; this task writes the texts and the open point
   `## Templates` (`__Template selection:__` and the briefs `### {id} (in development)`),
   `## Validation` → `### Latest Validation Summary`, `## Publishing`
 - `journal.md` → `## Agents` → `### Learner Personas` — headings only, for actions
-- `templates/project-dashboard.yaml` — semantic data shape; fields marked (computed) are set by the script
+- `templates/project-dashboard.yaml` — semantic data shape; fields marked (computed) are set by the script. Read it
+  completely only for a whole draft (step 7); with a fresh cache the draft itself shows the shape
+- `data/dashboard-cases.md` — only the part a step or rule of this task names, when its case applies (that part only)
 - `data/agent-links.md` — which commands fit which state in the preview chat; only with the MCP gate open (the link format in `journal.md` is `data/journal-links.md`)
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/journal-links.md`; `data/chat-language.md` only when this run changes the course language
 - `dashboard/README.md` → `labels` only when the course language is neither German nor English
@@ -4455,9 +4456,7 @@ Run this task automatically after any task that changes project state:
    Something the instructor agreed to do or to have done next time (e.g. fix older units) is a `prepare`
    item in the instructor's words, with `how` saying what and when — never `internal`.
    Empty list if there is nothing open.
-7. Produce the JSON following `templates/project-dashboard.yaml`. No HTML, CSS,
-   JavaScript, progress percentages or duplicated totals. Always include the global
-   course `process`; an empty project uses `units: []` plus that `process`.
+7. **Whole draft** (no fresh cache, step 8): `data/dashboard-cases.md` → Whole draft, before the draft.
 8. Write the JSON with the file-write tool to `.cache/dashboard.json` and run
    `node specs/dashboard/write-dashboard.mjs .cache/dashboard.json` (on its own). It derives (step 2),
    checks, replaces the whole block and the `## Sessions` lines in one write, lists every field it changed
@@ -4471,46 +4470,26 @@ Run this task automatically after any task that changes project state:
    (`node specs/dashboard/find.mjs -i "<old word>" .cache/dashboard.json`) and rewrite those keys in the
    same draft. Write the whole draft only when the cache is missing, has no `_journalHash`
    or was refused. Before a whole draft send a status with its duration.
-   **`labels`:** if the course language is neither German nor English, fill all fixed texts of the library
-   (`specs/dashboard/README.md` → `labels`); otherwise only `labels.decide` and `labels.prepare` with the
-   library's built-in group titles of that language, so the chat names the groups as the page shows them —
-   plus, only where the course has its own word for the learners, `usable.yes`, `usable.limited`,
-   `usable.no` and `viewMaterial`; never `plan`. Keep the translated suffix of `## Sessions` and `## Agenda`
-   in line with `## Course Context` → Terminology (the script derives the unit words from it). Ensure the
-   template import exists once in the header; document the template in `## Templates` via the
-   `tasks/manage-templates.md` procedure if it is missing there.
+   A whole draft, a change of the course language or of the course's word for the learners also follows
+   `data/dashboard-cases.md` → Whole draft (`labels`, terminology, template import).
 9. **Validate:** read the `validate-journal.mjs` result `write-dashboard.mjs` prints (or run
    `node specs/dashboard/validate-journal.mjs` on its own). Exit code 2: fix (step 6) and run again. No
    other ad-hoc commands (e.g. `python3 -m json.tool`).
-   **Older journal layout:** if it names an older journal layout (`{{…}}`
-   skeletons in unfilled sections, `#### Validation Report` headings of an older
-   template), run `node specs/dashboard/migrate-journal.mjs --check` and show its
-   list in plain words ("Your journal still uses an older layout. I would update
-   it – only the presentation, none of your entries:" plus the list, translated),
-   with "Update" / "Not now" (tier "confirm in chat"). "Update" → run
-   `node specs/dashboard/migrate-journal.mjs`, then validate again; a line it
-   lists under "Left for you" is a section filled by hand — name it and propose
-   filling or removing that line in the same form. "Not now" → write no
-   Dashboard and say that the overview stays at its last state until then.
+   If it names an older journal layout: `data/dashboard-cases.md` → Older journal layout.
 10. Action lines: lines marked computed in `data/journal-links.md` → Action lines are written by the
     script. For the other sections listed there:
-    - Replace the `<!-- class="journal-actions" -->` paragraph directly below the heading, or insert one
-      there, with the commands from that table that fit the current state, with concrete arguments.
-      Further commands of a session go into its `<details><summary>Technical settings and more
-      actions</summary>` block directly after the action line (block order:
-      `templates/session-skeleton.yaml` → `section_layout.entry_order`).
-    - Leave a line that already says the right thing untouched. Several line changes at once (a language
-      switch, a new unit word) go into one `localize-journal.mjs` map instead of one edit per line.
-    - If an action line ended up below a `####` block, move it back directly below the `###` heading.
+    - Only when this run's task changed a section whose line is not computed (Visual Identity, Templates,
+      Agents, Validation, Publishing, Notes Backup) or a session's further commands:
+      `data/dashboard-cases.md` → Action lines by hand.
     - Touch nothing else in source sections. This task writes only:
       1. the action lines, and the further commands inside the sessions'
          "Technical settings and more actions" blocks — never their Type or Method lines;
       2. the translated suffix of the `## Sessions` and `## Agenda` headings, kept in
-         line with the terminology (step 8) — the start of every heading stays unchanged;
-      3. the dashboard template `import:` line in the main header, once (step 8);
+         line with the terminology (`data/dashboard-cases.md` → Whole draft) — the start of every heading stays unchanged;
+      3. the dashboard template `import:` line in the main header, once (`data/dashboard-cases.md` → Whole draft);
       4. the `## Templates` entry of the dashboard template, via `tasks/manage-templates.md`
-         and only if it is missing (step 8);
-      5. the layout changes of `migrate-journal.mjs`, only after the instructor's "Update" (step 9);
+         and only if it is missing (`data/dashboard-cases.md` → Whole draft);
+      5. the layout changes of `migrate-journal.mjs`, only after the instructor's "Update" (`data/dashboard-cases.md` → Older journal layout);
       6. the one-line note under `## Sessions`, status lines and Notes cells — all through `write-dashboard.mjs` (computed, `actions.mjs` → `sessionsNote`, `journal-model.mjs` → `statusText`).
 11. Confirm the dashboard was updated only after step 9 passed, and name the next
     recommended command. If the MCP gate is open (`data/agent-links.md`), `goto` the
@@ -4555,37 +4534,11 @@ Run this task automatically after any task that changes project state:
   is not a template: a fresh cache (step 8) saves rewriting unchanged keys,
   never this check.
 - Use "finished/done" only for units whose check passed without an open ⏳ item (Done ✅) and that are approved. Instructor approval is "approved", never "finished" — in process steps, `why` texts and `note`.
-- **Process steps per track:** the course `process.steps` are the keys of `stepsOf(track, mode)`
-  (`specs/dashboard/tracks.mjs`; `## Course Context` → `__Track:__`, missing = `full`), in order. Full track: the
-  titles of the empty journal; else (translated) frame "Frame and learning objectives", outline "Outline and
-  learning objectives", look "Look", material "Write the material", check "Check", publish "Publish", brief
-  "Request and brief", build "Build and test", try "Try and approve"; design: Frame → Look → Images → Check → Publish
-  (scope look drops Images, images drops Look). The first run on a light track replaces
-  the empty journal's steps with that list, a track switch with a `note`; `validate-journal.mjs` checks the
-  count. process.later is derived, never written by hand.
-- Keep the process steps of the track stable from its first Dashboard on: the agenda step (full track)
-  is listed as `optional` until `Agenda required` is set, then `planned` (yes) or
-  removed with a `note` (no). The last step, publishing, is `planned` with its label when the course frame
-  says learners open the course by link or platform (`Delivery:`, computed), otherwise `optional` until the
-  publishing gate is PASS; `done` once `## Publishing` → `__State:__`
-  starts with `published` (an English key, never translated). Its `why` never contradicts its state; where
-  the link will live (a public page or the school's platform) is a `decide` item before the course check
-  when the frame does not say it. Never let the number of steps change without a `note`.
-- **Template step:** in the full track, the global step "Templates for activities" (translated, German "Bausteine für
-  Aktivitäten" — never "Template" and never "Vorlage" in a German text for the instructor; to teachers
-  „Vorlage“ means a photocopy master) stands between the didactics and the agenda and is counted. Its
-  state, `next` and cards are computed from `## Templates` (`__Template selection:__`, missing = `open`, and
-  the briefs `### {id} (in development)`); the agenda step keeps the state it has without a brief. Yours:
-  - `result` while a brief is not adopted, by its `__State:__`: "{n} in development" (translated, German
-    "{n} in Entwicklung") for `brief` and `in development`, "{n} ready to test" (German "{n} bereit zum
-    Ausprobieren") for `ready to test`, joined with " · " when both occur.
-  - Selection `done – …` without an open brief: `result` = the names of the adopted entries as
-    `## Templates` shows them — every entry except `### Dashboard`; "none needed" (translated) only when
-    there is no such entry.
-  **Existing journals:** a full-track Dashboard whose `process.steps` lack this step gets it at the next run,
-  directly after the didactics step, and `process.note` gets one appended sentence (e.g. "New: the step
-  “Templates for activities” – ready-made building blocks for activities, or your own.", translated); the
-  definition of "finished" in the note stays as it is.
+- **Process steps:** when this run's task changed `## Course Context` → `__Track:__`, `Agenda required` or
+  `Delivery`, `## Agenda`, `## Templates` or `## Publishing`, the Dashboard has no `process` yet or, on the
+  full track, lacks the step "Templates for activities":
+  `data/dashboard-cases.md` → Process steps. Otherwise the steps keep their number; `write-dashboard.mjs`
+  computes their states.
 - `plan` (provisional planning) only while Outline/Didactics assign content to
   lessons and no `## Agenda` exists yet; once the agenda is confirmed every agenda
   row is a unit and `plan` is removed.
@@ -4664,7 +4617,7 @@ Only if installed (see `data/skills.md`); a missing one is offered once per conv
 
 ### after the push (both modes)
 
-8. Set `journal.md` → `## Publishing` → `__State:__ published on {date} (commit {short hash})` and run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+8. Set `journal.md` → `## Publishing` → `__State:__ published on {date} (commit {short hash})` and run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 
 ## Usage
 
@@ -4699,7 +4652,7 @@ Can be run in two modes:
 - `templates/session-validation.yaml` — template for each stored session validation report (heading, outcome words, layout), read completely
 - `templates/session-skeleton.yaml` — read completely: status words of the overview and `section_layout.entry_order` (where the report goes)
 - `data/session-types.md` — read completely: objectives and duration of a session, resolving its type (step 2)
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written (step 6)
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — read right before the overview is written (step 6)
 - File Structure mode from `journal.md` → `## Course Context` → `__File Structure:__` (see `data/file-structure-modes.md`)
 - For session mode: the material document for this session (resolved per File Structure mode), matching overview row in `journal.md` → `## Sessions`, and matching `### {number}. {title}` subsection in `journal.md` → `## Sessions`
 - For course mode: `journal.md` sections (`## Outline`, `## Didactics`, `## Agenda`, `## Sessions`) and all material documents (`materials/` in multi-file mode, or the `##` chapters of root `README.md` in single-file mode)
@@ -4788,7 +4741,7 @@ Rules:
 6. Create or replace the rendered report — heading plus `<section data-key="validation-report">…</section>` (see Validation Storage rules above) — in the matching session subsection under `journal.md` → `## Sessions`, after the skeleton fields and before `#### Images` (`templates/session-skeleton.yaml` → `section_layout.entry_order`).
    Update the overview table in `## Sessions`: set **Done ✅** only with `Result: PASS` (not "PASS with concerns") and no open ⏳ item; otherwise set Done ❌ — also when it was ✅ before. The status line follows the report (computed).
    Right after this write send "✅ Saved: …" with the outcome and the line "usable with learners now" as two paragraphs (a blank line between them — a single line break becomes a space in the chat), plus the anchor link to the report — never hold the result back until the overview is written. Details follow in step 7.
-   Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+   Then run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 7. **Chat summary:** name every ❌, every ⏳ with its step, every `[pedagogical]` finding (also those you consider minor) and every `[advisory]` hint in plain words. Never write "everything else is fine" while the report lists open points; a checklist item is never downgraded to a "hint". A `check-material` warning about another unit (an older unit that breaks a project rule) is named here once, with the offer to fix it (`:quick-fix`) — never only in the terminal.
    If no issues found: confirm "Session {number} ({type}) — ✅ Syntax and content verified." with the anchor link to the report heading, and offer `:try-as-learner {number}` once (only when the MCP gate is open). Design track: "Session {number} — ✅ design checked; content not checked." (translated), and no `:try-as-learner` offer.
    **Only own photos left** (PASS, the only ⏳ items are pictures the instructor supplies): the approval does not wait for them. After the result, ask once in a form "Do you approve {unit} {n} – your photo can follow later?" (translated) with "Approve", "Look at it first" (👁 the learners' view) and "Later". "Approve" records `- **{date}:** material approved` (translated) in the session's decisions list — one write, then `write-dashboard`.
@@ -4871,7 +4824,7 @@ Rules:
    ```
 
    **Course result:** the worst of (a) the course-level checks, rated with `result_rules` of `templates/session-validation.yaml`, and (b) every unit's current report — a unit with an open ⏳ item or Done ❌ makes the course FAIL (publishing waits for it), a unit whose outcome says "short re-check open" gives PASS with concerns (resolved only by running the re-check, never accepted as is), open pedagogical concerns of a unit or of the course give PASS with concerns, otherwise PASS. On the design track the design course result applies instead (Design track: design check only).
-10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
+10. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place (validation state, publishing gate, session progress).
 11. After all session validation reports and the latest summary are created: suggest next step. The completion message links the summary's own heading (the full anchor of `### Latest Validation Summary…`), never the `## Validation` slide above it. A duration it names is measured (`data/agent-links.md` → Durations).
     - If issues exist: per unit as in session mode step 8 — ✏️ `:quick-fix {number}` when every open point of the unit is one quick-fix change, otherwise `:coauthor-materials {number}` — then rerun `:validate-course`.
     - If no issues: "Course is ready for publishing. Next step: `:agent development` → `:create-project`"
@@ -6029,7 +5982,7 @@ template:
     unitsNote: '(computed) the one-line note under `## Sessions`, shown above the units'
     unitLabel: '(computed) {one, many} from Terminology and the `## Sessions` suffix; an inflected `many` you write (German dative after "von": "Modulen") stays while it starts with the suffix'
     unitsPlanned: '(computed) the units the course plans (course frame `Units:`, units the outline describes), only while more than `## Sessions` lists – the progress counts them as well ("1 of 2")'
-    labels: 'For German or English only `decide` and `prepare` (and, where the course has its own word for the learners, `usable.*` and `viewMaterial` — `tasks/update-dashboard.md` step 8); when the course language is neither German nor English: every fixed text of the library translated, keyed as listed in `specs/dashboard/README.md` → `labels`; counted texts as {one, many} with the placeholders listed there. Never `plan` in German or English (the planning link keeps its name)'
+    labels: 'For German or English only `decide` and `prepare` (and, where the course has its own word for the learners, `usable.*` and `viewMaterial` — `data/dashboard-cases.md` → Whole draft); when the course language is neither German nor English: every fixed text of the library translated, keyed as listed in `specs/dashboard/README.md` → `labels`; counted texts as {one, many} with the placeholders listed there. Never `plan` in German or English (the planning link keeps its name)'
     units:
       - id: '(computed) Stable number from Sessions / Agenda'
         title: 'Unit title'
@@ -6050,7 +6003,7 @@ template:
           note: 'Optional: loops back or special cases'
     process.later: '(computed by `derive-dashboard.mjs`) Optional list of {label, href: "agent:teaching/activate-section?section={slug}", command: ":activate-section {slug}"}, one per section marked `<!-- state: later -->` in `journal.md` except Analysis Status (`tracks.mjs` → `laterHidden`: stays marked, never offered); shown collapsed as one line from the library text `laterSummary` ("If needed – not required for your course ({n})"), not counted as steps. The steps per track (full, mini, convert, template, design) are listed in `specs/dashboard/tracks.mjs` → `stepsOf`; `validate-journal.mjs` checks that this list matches the markers. Design (look and/or images of an existing course): Frame → Look → Images → Check → Publish; scope `look` drops Images, `images` drops Look; their states and `next` are computed (`actions.mjs` → `designNext`): the look (`:create-visuals`, then `:apply-theme` while a course file lacks the theme), each unit''s `:review-images {n}`, its open images, each unit''s check – every unit done is the course check – then publishing where the delivery needs a link.'
     selected: '(computed while next is a unit action; "" keeps the whole-course view) Optional: id of the recommended unit; empty string "" opens the whole-course view'
-    process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`tasks/update-dashboard.md` → Rules → Template step; a Dashboard without it gets it with one sentence appended to `note`). After a track switch `derive-dashboard.mjs` replaces steps of another track with the steps of the new one from the language pack and computes their states ("Track changed: …") – then write only `note`, `subtitle` and a why/result of your own'
+    process: 'Global course process with the same shape — always present, also once units exist; its steps as in `templates/journal.md`, including the template step after the didactics (`data/dashboard-cases.md` → Process steps → Template step; a Dashboard without it gets it with one sentence appended to `note`). After a track switch `derive-dashboard.mjs` replaces steps of another track with the steps of the new one from the language pack and computes their states ("Track changed: …") – then write only `note`, `subtitle` and a why/result of your own'
     next:
       icon: 'Action symbol as in Markdown labels (`▶️` run, `✏️` revise, `🔍` check, `👁` preview, `🚀` publish only, agent icon for a switch); default `▶️`'
       title: 'What we do next'
@@ -7452,6 +7405,105 @@ runs in the preview chat, and wherever a task names them also in the terminal. W
     place.
 
 ==================== END: specs/data/chat-wording.md ====================
+
+
+==================== START: specs/data/dashboard-cases.md ====================
+
+# Dashboard Cases
+
+Parts of `tasks/update-dashboard.md` that only some runs need. That task names the part and its case; read
+the named part only (from its heading to the next `##`), and only when the case applies.
+
+## Whole draft
+
+When `.cache/dashboard.json` is missing, has no `_journalHash` or was refused (`tasks/update-dashboard.md`
+step 8). Read `templates/project-dashboard.yaml` completely first; before the draft send a status with its
+duration.
+
+Produce the JSON following `templates/project-dashboard.yaml`. No HTML, CSS,
+JavaScript, progress percentages or duplicated totals. Always include the global
+course `process`; an empty project uses `units: []` plus that `process`.
+
+The same `labels` rules apply when the course language or the course's word for the learners changes:
+
+**`labels`:** if the course language is neither German nor English, fill all fixed texts of the library
+(`specs/dashboard/README.md` → `labels`); otherwise only `labels.decide` and `labels.prepare` with the
+library's built-in group titles of that language, so the chat names the groups as the page shows them —
+plus, only where the course has its own word for the learners, `usable.yes`, `usable.limited`,
+`usable.no` and `viewMaterial`; never `plan`. Keep the translated suffix of `## Sessions` and `## Agenda`
+in line with `## Course Context` → Terminology (the script derives the unit words from it). Ensure the
+template import exists once in the header; document the template in `## Templates` via the
+`tasks/manage-templates.md` procedure if it is missing there.
+
+## Process steps
+
+When the run's task changed `## Course Context` → `__Track:__`, `Agenda required` or `Delivery`, `## Agenda`,
+`## Templates` or `## Publishing`, or the Dashboard has no `process` yet or (full track) lacks the template
+step. `write-dashboard.mjs` computes the states; these rules decide the list, the `note` and your texts.
+
+- **Process steps per track:** the course `process.steps` are the keys of `stepsOf(track, mode)`
+  (`specs/dashboard/tracks.mjs`; `## Course Context` → `__Track:__`, missing = `full`), in order. Full track: the
+  titles of the empty journal; else (translated) frame "Frame and learning objectives", outline "Outline and
+  learning objectives", look "Look", material "Write the material", check "Check", publish "Publish", brief
+  "Request and brief", build "Build and test", try "Try and approve"; design: Frame → Look → Images → Check → Publish
+  (scope look drops Images, images drops Look). The first run on a light track replaces
+  the empty journal's steps with that list, a track switch with a `note`; `validate-journal.mjs` checks the
+  count. process.later is derived, never written by hand.
+- Keep the process steps of the track stable from its first Dashboard on: the agenda step (full track)
+  is listed as `optional` until `Agenda required` is set, then `planned` (yes) or
+  removed with a `note` (no). The last step, publishing, is `planned` with its label when the course frame
+  says learners open the course by link or platform (`Delivery:`, computed), otherwise `optional` until the
+  publishing gate is PASS; `done` once `## Publishing` → `__State:__`
+  starts with `published` (an English key, never translated). Its `why` never contradicts its state; where
+  the link will live (a public page or the school's platform) is a `decide` item before the course check
+  when the frame does not say it. Never let the number of steps change without a `note`.
+- **Template step:** in the full track, the global step "Templates for activities" (translated, German "Bausteine für
+  Aktivitäten" — never "Template" and never "Vorlage" in a German text for the instructor; to teachers
+  „Vorlage“ means a photocopy master) stands between the didactics and the agenda and is counted. Its
+  state, `next` and cards are computed from `## Templates` (`__Template selection:__`, missing = `open`, and
+  the briefs `### {id} (in development)`); the agenda step keeps the state it has without a brief. Yours:
+  - `result` while a brief is not adopted, by its `__State:__`: "{n} in development" (translated, German
+    "{n} in Entwicklung") for `brief` and `in development`, "{n} ready to test" (German "{n} bereit zum
+    Ausprobieren") for `ready to test`, joined with " · " when both occur.
+  - Selection `done – …` without an open brief: `result` = the names of the adopted entries as
+    `## Templates` shows them — every entry except `### Dashboard`; "none needed" (translated) only when
+    there is no such entry.
+  **Existing journals:** a full-track Dashboard whose `process.steps` lack this step gets it at the next run,
+  directly after the didactics step, and `process.note` gets one appended sentence (e.g. "New: the step
+  “Templates for activities” – ready-made building blocks for activities, or your own.", translated); the
+  definition of "finished" in the note stays as it is.
+
+## Older journal layout
+
+When `validate-journal.mjs` names an older journal layout (`tasks/update-dashboard.md` step 9).
+
+**Older journal layout:** if it names an older journal layout (`{{…}}`
+skeletons in unfilled sections, `#### Validation Report` headings of an older
+template), run `node specs/dashboard/migrate-journal.mjs --check` and show its
+list in plain words ("Your journal still uses an older layout. I would update
+it – only the presentation, none of your entries:" plus the list, translated),
+with "Update" / "Not now" (tier "confirm in chat"). "Update" → run
+`node specs/dashboard/migrate-journal.mjs`, then validate again; a line it
+lists under "Left for you" is a section filled by hand — name it and propose
+filling or removing that line in the same form. "Not now" → write no
+Dashboard and say that the overview stays at its last state until then.
+
+## Action lines by hand
+
+When the run's task changed a section whose action line is not marked computed in `data/journal-links.md` →
+Action lines (Visual Identity, Templates, Agents, Validation, Publishing, Notes Backup), or a session's
+further commands. What this task may write stays as `tasks/update-dashboard.md` step 10 lists it.
+
+- Replace the `<!-- class="journal-actions" -->` paragraph directly below the heading, or insert one
+  there, with the commands from that table that fit the current state, with concrete arguments.
+  Further commands of a session go into its `<details><summary>Technical settings and more
+  actions</summary>` block directly after the action line (block order:
+  `templates/session-skeleton.yaml` → `section_layout.entry_order`).
+- Leave a line that already says the right thing untouched. Several line changes at once (a language
+  switch, a new unit word) go into one `localize-journal.mjs` map instead of one edit per line.
+- If an action line ended up below a `####` block, move it back directly below the `###` heading.
+
+==================== END: specs/data/dashboard-cases.md ====================
 
 
 ==================== START: specs/data/didactic-methods.md ====================

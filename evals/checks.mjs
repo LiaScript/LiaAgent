@@ -41,6 +41,9 @@ function slideText(text, title) {
   return lines.slice(start, end < 0 ? undefined : end).join("\n");
 }
 
+// A `## Name` section of the journal (heading may carry a translated suffix), up to the next `## `.
+const sectionOf = (journal, name) => journal.split(new RegExp(`^## ${name}[^\\n]*\\n`, "m"))[1]?.split(/^## /m)[0] ?? "";
+
 const outcomeOf = journal => journal.match(/\*\*(?:Ergebnis|Outcome|Result):\*\*\s*([^\n]+)/)?.[1] ?? "";
 const recheckOpen = outcome => /kurze Nachprüfung offen|short re-check open/i.test(outcome);
 
@@ -130,6 +133,57 @@ export const checks = {
     try { points = (JSON.parse(dashboard).decisions ?? []).filter(item => item.source?.check === 1 && /nachprüf|re-?check/i.test(`${item.key} ${item.title}`)).length; } catch { points = -1; }
     const pass = open === 0 && dated === params.lines && unmarked === 0 && actions === 0 && done === "✅" && points === 0;
     return { pass, detail: `"open" mentions ${open}, dated ${dated} (${unmarked} not marked re-checked), re-check actions ${actions}, Done ${done || "?"}, open re-check points ${points}` };
+  },
+
+  // create-outline (evals/optimize): the saved outline has every field of templates/course-outline.yaml, 3–5
+  // numbered objectives and no placeholder left.
+  "outline-filled": (params, run) => {
+    const outline = sectionOf(read(join(run.project, "journal.md")), "Outline");
+    const has = key => new RegExp(`data-key="${key}"`).test(outline);
+    const keys = ["title", "target-audience", "abstract", "learning-goals", "session-overview", ...(params.time ? ["time-commitment"] : [])];
+    const missing = keys.filter(key => !has(key));
+    const goals = (outline.split(/data-key="learning-goals"/)[1] ?? "").split(/<!-- data-key=/)[0];
+    const count = (goals.match(/^ {2}\d+\.\s/gm) ?? []).length;
+    const placeholder = /\{\{|\[(?:Name|Who|Estimated|Detailed|Clear) /.test(outline);
+    const pass = !missing.length && count >= params.min && count <= params.max && !placeholder;
+    return { pass, detail: `missing fields: ${missing.join(", ") || "none"} · objectives ${count} · placeholder ${placeholder}` };
+  },
+
+  // A revision keeps every existing outline line word for word (create-outline step 7).
+  "outline-kept": (params, run) => {
+    const before = sectionOf(read(join(run.pristine, "journal.md")), "Outline").split("\n").map(line => line.trimEnd())
+      .filter(line => line.trim() && !/^<!--|^\[|^---/.test(line.trim()));
+    const after = sectionOf(read(join(run.project, "journal.md")), "Outline");
+    // A field label (`* __Label:__`) the run renamed is reported, not failed: the task says "every existing line
+    // word for word", but whether a label counts is open in the task itself (measuring run g1: every variant did it).
+    const isLabel = line => /^\s*\* __[^_]+:__\s*$/.test(line);
+    const lost = before.filter(line => !after.includes(line));
+    const content = lost.filter(line => !isLabel(line));
+    const labels = lost.filter(isLabel);
+    return { pass: content.length === 0, detail: `${content.length ? `lost: ${content.slice(0, 3).join(" | ")}` : `${before.length - lost.length} lines kept`}${labels.length ? ` · labels renamed: ${labels.join(", ")}` : ""}` };
+  },
+
+  // An open time gap goes into the overview's decisions (create-outline step 5, "Fits the time").
+  "time-gap-recorded": (params, run) => {
+    const journal = read(join(run.project, "journal.md"));
+    let items = [];
+    try { items = JSON.parse(journal.match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}").decisions ?? []; } catch { items = []; }
+    const hit = items.find(item => /zeit|minute|stunde|time|zu viel|passt nicht/i.test(`${item.title} ${item.how ?? ""} ${item.why ?? ""}`));
+    return { pass: Boolean(hit), detail: hit ? `${hit.kind}: ${hit.title}` : `no time item among ${items.length} open points` };
+  },
+
+  // Levels are named in everyday words, never a school-stage word (create-outline step 5).
+  "no-stage-word": (params, run) => {
+    const outline = sectionOf(read(join(run.project, "journal.md")), "Outline");
+    const hit = outline.match(/\b(Grundstufe|Mittelstufe|Oberstufe|Sekundarstufe|Primarstufe)\b/);
+    return { pass: !hit, detail: hit ? hit[0] : "none" };
+  },
+
+  // Foreign sections stay as they were (create-outline step 9: stale statements go into decisions).
+  "foreign-untouched": (params, run) => {
+    const sections = ["Course Context", "Didactics", "Agenda"];
+    const changed = sections.filter(name => sectionOf(read(join(run.pristine, "journal.md")), name).trim() !== sectionOf(read(join(run.project, "journal.md")), name).trim());
+    return { pass: changed.length === 0, detail: changed.length ? `changed: ${changed.join(", ")}` : "unchanged" };
   },
 
   "approvals": (params, run) => {

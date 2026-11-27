@@ -28,7 +28,7 @@ Minimal overhead for small, targeted changes (typos, broken syntax, swapping one
 - `tasks/validate-syntax.md` — for syntax mini-validation if the fix involves LiaScript (single source of truth for syntax rules)
 - When the fix writes or rewrites learner text — a question, answer option, hint, feedback line, instruction or read-aloud text; not a spelling fix of single words: `data/liascript-cheat-sheet.md` → "Quizzes for young learners / self-checks" and "Controls as learners see them", read completely
 - After a check: `templates/session-validation.yaml` → `outcome_words` (only the words of a FAIL outcome's open count and the explanation of the short re-check); the block "Changed after the check", the outcome suffix and the status words are written by `record-change.mjs` and the overview scripts
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — only for an overview item written by hand (the approval, a changed unit summary), read right before that write; the change path itself and `derive-dashboard.mjs --write` need neither
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — only for an overview item written by hand (the approval, a changed unit summary), read right before that write; the change path itself and `derive-dashboard.mjs --write` need neither
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
 
 ## Output
