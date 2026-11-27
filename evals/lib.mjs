@@ -38,7 +38,8 @@ Claude Code session in the project folder \`${projectDir}\` (the project root). 
 Run shell commands as single commands with \`env -C ${projectDir} …\` (no \`cd … &&\`).
 
 Setup:
-- Normally \`CLAUDE.md\` (or \`AGENTS.md\`) in the project root is loaded as your instructions. Read it first and
+- Normally \`CLAUDE.md\` (or \`AGENTS.md\`) in the project root is already loaded as your instructions when the session
+  starts. So your very first action is reading it with the file-reading tool – no shell command and no listing before that. Read it first and
   follow it exactly, including its "On Activation" steps and every reading rule for the command below. Follow
   the specs as written; take no shortcut they forbid and read no file they do not ask for.
 - ${scenario.mode === "terminal" ? "Terminal mode: there is NO `liascript` MCP server and no browser (the MCP gate is closed)." : "Preview mode as the specs describe."}
