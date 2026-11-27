@@ -1,0 +1,38 @@
+{
+  "id": "outline-s1-complete",
+  "set": "train",
+  "title": "create-outline: complete course frame with clear objectives",
+  "fixture": {
+    "journal.md": "evals/optimize/fixtures/s1-complete.journal.md"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-27",
+  "command": ":create-outline",
+  "replies": [
+    "A question about the abstract or contents → \"Wie im Kursrahmen notiert: Versionsverwaltung als Sicherung für Arbeitsblätter, Grundbefehle, Zusammenarbeit im Kollegium über GitHub.\"",
+    "A proposal of objectives or a self-check change → \"Ja, so passt es.\"",
+    "A creativity / ideation offer → \"1\" (structured interview)",
+    "A logo question → \"Nein, kein Logo\"",
+    "The save preview (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "Any other question → the option you would present as the recommended default; a free-text question → a short, sensible answer a teacher in this situation would give, consistent with the course frame; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    {
+      "id": "validator-ok"
+    },
+    {
+      "id": "no-stage-word"
+    },
+    {
+      "id": "foreign-untouched"
+    },
+    {
+      "id": "outline-filled",
+      "min": 3,
+      "max": 5,
+      "time": true
+    }
+  ],
+  "judge": "evals/judges/create-outline.md"
+}

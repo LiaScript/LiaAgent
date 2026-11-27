@@ -34,9 +34,21 @@ function readsFromTrace(file, project) {
         reads.push({ path: relative(project, resolve(project, part.input.file_path)), from: offset, to: offset && limit ? offset + limit - 1 : (limit ?? null) });
       }
     }
+    // Claude Code (claude -p --output-format stream-json): the result event with usage and cost.
     if (event.type === "result") usage = {
       tokens: ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens"].reduce((sum, key) => sum + (event.usage?.[key] ?? 0), 0),
-      output_tokens: event.usage?.output_tokens ?? null, cost_usd: event.total_cost_usd ?? null, duration_ms: event.duration_ms ?? null
+      input_tokens: event.usage?.input_tokens ?? null,
+      cache_read_tokens: event.usage?.cache_read_input_tokens ?? null,
+      cache_write_tokens: event.usage?.cache_creation_input_tokens ?? null,
+      output_tokens: event.usage?.output_tokens ?? null, cost_usd: event.total_cost_usd ?? null, duration_ms: event.duration_ms ?? null,
+      adapter: "claude-code"
+    };
+    // Codex (codex exec --json): the last token count it reports (input incl. cached, cached, output).
+    const codex = event.msg?.info?.total_token_usage ?? event.usage ?? null;
+    if (event.type !== "result" && codex && codex.input_tokens !== undefined && (event.msg?.type === "token_count" || event.type === "turn.completed")) usage = {
+      tokens: (codex.input_tokens ?? 0) + (codex.output_tokens ?? 0),
+      input_tokens: codex.input_tokens ?? null, cache_read_tokens: codex.cached_input_tokens ?? null, cache_write_tokens: null,
+      output_tokens: codex.output_tokens ?? null, cost_usd: null, duration_ms: null, adapter: "codex"
     };
   }
   return { reads, usage, source: "trace" };
