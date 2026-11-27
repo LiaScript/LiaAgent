@@ -1,0 +1,328 @@
+{
+ "baseline": "base",
+ "front": [],
+ "variants": [
+  {
+   "variant": "base",
+   "candidate": null,
+   "size": {
+    "files": [
+     "specs/tasks/create-outline.md"
+    ],
+    "words": 1084,
+    "tokens_est": 1730
+   },
+   "coverage": {
+    "missing": [],
+    "checked": true
+   },
+   "train": null,
+   "holdout": {
+    "runs": 4,
+    "success_rate": 0.5,
+    "critical": 2,
+    "tokens_median": 134172.5,
+    "spec_words_read": 14127,
+    "cost_median": null,
+    "duration_median_s": 209.897,
+    "questions_median": 2.5,
+    "tokens_per_success": 268628
+   },
+   "runs": [
+    {
+     "scenario": "outline-h1-observable-alone",
+     "set": "holdout",
+     "rep": 1,
+     "spec_words": 14127,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "ask_only_missing",
+      "your_words",
+      "one_action",
+      "save_confirm",
+      "preview_complete"
+     ],
+     "critical": [
+      "save_confirm"
+     ],
+     "tokens": 135913,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 225380,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h1-observable-alone",
+     "set": "holdout",
+     "rep": 2,
+     "spec_words": 14127,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "ask_only_missing",
+      "your_words",
+      "save_confirm",
+      "preview_complete"
+     ],
+     "critical": [
+      "save_confirm"
+     ],
+     "tokens": 133713,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 214662,
+     "questions": 2,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h2-heterogeneous",
+     "set": "holdout",
+     "rep": 1,
+     "spec_words": 14127,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "preview_complete"
+     ],
+     "critical": [],
+     "tokens": 134632,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 205132,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h2-heterogeneous",
+     "set": "holdout",
+     "rep": 2,
+     "spec_words": 14127,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "preview_complete",
+      "no_harm"
+     ],
+     "critical": [],
+     "tokens": 132997,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 198651,
+     "questions": 2,
+     "judged": true
+    }
+   ],
+   "status": "excluded"
+  },
+  {
+   "variant": "c3",
+   "candidate": "evals/optimize/candidates/c3-ail",
+   "size": {
+    "files": [
+     "specs/tasks/create-outline.md"
+    ],
+    "words": 1269,
+    "tokens_est": 2031
+   },
+   "coverage": {
+    "missing": [],
+    "checked": true
+   },
+   "train": null,
+   "holdout": {
+    "runs": 4,
+    "success_rate": 0.75,
+    "critical": 1,
+    "tokens_median": 131523,
+    "spec_words_read": 12839,
+    "cost_median": null,
+    "duration_median_s": 193.0935,
+    "questions_median": 3.5,
+    "tokens_per_success": 176567
+   },
+   "runs": [
+    {
+     "scenario": "outline-h1-observable-alone",
+     "set": "holdout",
+     "rep": 1,
+     "spec_words": 13521,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "ask_only_missing",
+      "your_words"
+     ],
+     "critical": [],
+     "tokens": 133754,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 220379,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h1-observable-alone",
+     "set": "holdout",
+     "rep": 2,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "your_words"
+     ],
+     "critical": [],
+     "tokens": 137796,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 194813,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h2-heterogeneous",
+     "set": "holdout",
+     "rep": 1,
+     "spec_words": 12839,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action"
+     ],
+     "critical": [],
+     "tokens": 128858,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 178206,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h2-heterogeneous",
+     "set": "holdout",
+     "rep": 2,
+     "spec_words": 12839,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "one_action",
+      "content_before_save",
+      "preview_complete"
+     ],
+     "critical": [
+      "content_before_save"
+     ],
+     "tokens": 129292,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 191374,
+     "questions": 5,
+     "judged": true
+    }
+   ],
+   "status": "excluded"
+  },
+  {
+   "variant": "d3",
+   "candidate": "evals/optimize/candidates/d3-both",
+   "size": {
+    "files": [
+     "specs/tasks/create-outline.md"
+    ],
+    "words": 1450,
+    "tokens_est": 2304
+   },
+   "coverage": {
+    "missing": [],
+    "checked": true
+   },
+   "train": null,
+   "holdout": {
+    "runs": 4,
+    "success_rate": 0.75,
+    "critical": 1,
+    "tokens_median": 133350.5,
+    "spec_words_read": 13020,
+    "cost_median": null,
+    "duration_median_s": 215.7665,
+    "questions_median": 3.5,
+    "tokens_per_success": 180246
+   },
+   "runs": [
+    {
+     "scenario": "outline-h1-observable-alone",
+     "set": "holdout",
+     "rep": 1,
+     "spec_words": 13020,
+     "success": false,
+     "failedChecks": [],
+     "failedJudge": [
+      "save_confirm"
+     ],
+     "critical": [
+      "save_confirm"
+     ],
+     "tokens": 142383,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 271357,
+     "questions": 4,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h1-observable-alone",
+     "set": "holdout",
+     "rep": 2,
+     "spec_words": 13020,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [
+      "ask_only_missing"
+     ],
+     "critical": [],
+     "tokens": 134706,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 236201,
+     "questions": 3,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h2-heterogeneous",
+     "set": "holdout",
+     "rep": 1,
+     "spec_words": 13020,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [],
+     "critical": [],
+     "tokens": 131655,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 195332,
+     "questions": 2,
+     "judged": true
+    },
+    {
+     "scenario": "outline-h2-heterogeneous",
+     "set": "holdout",
+     "rep": 2,
+     "spec_words": 13702,
+     "success": true,
+     "failedChecks": [],
+     "failedJudge": [],
+     "critical": [],
+     "tokens": 131995,
+     "cache_read": null,
+     "cost": null,
+     "duration_ms": 186495,
+     "questions": 4,
+     "judged": true
+    }
+   ],
+   "status": "excluded"
+  }
+ ]
+}
