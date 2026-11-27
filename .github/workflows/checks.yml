@@ -22,6 +22,8 @@ jobs:
         run: node specs/check-specs.mjs
       - name: Dashboard library and scripts
         run: node specs/dashboard/check.mjs
+      - name: Workflow statecharts match the dashboard
+        run: node --test specs/statechart/check.mjs
       - name: Empty journal is valid
         run: node specs/dashboard/validate-journal.mjs specs/templates/journal.md
       - name: Generated agent files are up to date

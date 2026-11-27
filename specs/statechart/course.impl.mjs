@@ -4,11 +4,29 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createMachine } from "./interpreter.mjs";
-import { awaitsOwnMedia, outlineShort, unitIsCourseCheck } from "../dashboard/actions.mjs";
 import { unitByMachine } from "./unit.impl.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const courseConfig = JSON.parse(readFileSync(resolve(here, "course.machine.json"), "utf8"));
+
+// Fact readers the dashboard scripts share (actions.mjs re-exports them).
+// Approved by the instructor, passed, nothing changed since – and only own photos still to come (SK55): the
+// unit no longer holds the course back; its photo stays a card ("insert images") until it arrives.
+export function awaitsOwnMedia(unit) {
+  const waiting = unit.images?.waiting ?? 0;
+  return Boolean(unit.approved && unit.material && unit.report?.result === "PASS" && !unit.report.changedSince && !unit.report.stale
+    && waiting > 0 && unit.images.open === waiting);
+}
+// The course frame plans more units than the outline describes; false where either count is not readable (T5-67).
+export const outlineShort = journal => journal.unitsPlanned != null && journal.unitsInOutline != null && journal.unitsPlanned > journal.unitsInOutline;
+// The units the outline does not describe yet: "2", or "2–4" (T5-89).
+export const missingUnits = journal => journal.unitsInOutline + 1 === journal.unitsPlanned ? String(journal.unitsPlanned) : `${journal.unitsInOutline + 1}–${journal.unitsPlanned}`;
+// A light track with exactly one unit: its check, once passed, approved and unchanged since, is the course check.
+// The design track has no course check of its own: every unit done (at least one) is the check.
+export function unitIsCourseCheck(journal, states) {
+  if (journal.track === "design") return journal.units.length > 0 && journal.units.every(unit => states.get(unit.n) === "done");
+  return ["mini", "convert"].includes(journal.track) && journal.units.length === 1 && journal.units[0].n === "1" && states.get("1") === "done";
+}
 
 // Does a brief's `__Used in:__` name unit n (as actions.mjs → names).
 const names = (usedIn, n) => /\b(all|alle|allen)\b/i.test(usedIn)
@@ -62,13 +80,16 @@ const facts = {
 const guards = Object.fromEntries(Object.entries(facts).map(([name, fn]) => [name, ({ context }) => fn(context)]));
 export const courseMachine = createMachine(courseConfig, { guards });
 
-// Which unit a hand-over state means.
-const unitOf = {
+// Which unit a state means: the hand-over states, and the units course actions name.
+export const unitOf = {
   working,
   unplanned: c => c.journal.units.find(unit => !unit.heading),
   one: c => c.journal.units.find(unit => unit.n === "1"),
-  designOpen
+  designOpen,
+  unreviewed: c => c.journal.units.find(unit => !unit.imagesReviewed),
+  waitingMedia: c => c.journal.units.find(awaitsOwnMedia)
 };
+export const briefOf = brief;
 
 // The machine's next action for the course: { path, action, unit? }. A unit state asks that unit's machine;
 // the design track turns its "revise" into a targeted fix (tasks/validate-course.md → Design track).
@@ -76,9 +97,9 @@ export function courseByMachine(journal, states, selected) {
   const context = { journal, states, selected };
   const { path } = courseMachine.resolve(context);
   const meta = courseMachine.meta(path);
-  if (!meta.unit) return { path: path.join("."), action: meta.action ?? null };
+  if (!meta.unit) return { path: path.join("."), action: meta.action ?? null, meta, context };
   const unit = unitOf[meta.unit](context);
-  let action = unitByMachine(unit, { selected }).action;
-  if (meta.variant === "design" && action === "revise-unit") action = "revise-unit:quick-fix";
-  return { path: path.join("."), action, unit: unit.n };
+  const own = unitByMachine(unit, { selected }).action;
+  const action = meta.variant === "design" && own === "revise-unit" ? "revise-unit:quick-fix" : own;
+  return { path: path.join("."), action, unit, meta, context };
 }

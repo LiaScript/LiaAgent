@@ -5,7 +5,8 @@
 //    must contain the state the changed facts resolve to (the documented process and the journal agree).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { unitAction } from "../dashboard/actions.mjs";
+import { unitAction, courseNext, designUnitAction } from "../dashboard/actions.mjs";
+import * as legacy from "./legacy.mjs";
 import { unitState } from "../dashboard/derive-dashboard.mjs";
 import { unitMachine, unitByMachine } from "./unit.impl.mjs";
 
@@ -30,9 +31,11 @@ test("unit machine: same button and overview state as unitAction/unitState for e
   const wrong = [];
   for (const unit of unitFacts()) for (const selected of ["2", "3"]) {
     cases++;
-    const code = { action: unitAction(unit)?.key ?? null, display: unitState(unit, { selected }).state };
+    const code = { action: legacy.unitAction(unit)?.key ?? null, display: unitState(unit, { selected }).state };
     const machine = unitByMachine(unit, { selected });
     if (code.action !== machine.action || code.display !== machine.display) wrong.push({ unit, selected, code, machine });
+    // E21: actions.mjs builds the whole action (command, parameters, alternatives) from the machine.
+    if (JSON.stringify(unitAction(unit)) !== JSON.stringify(legacy.unitAction(unit))) wrong.push({ unit, whole: true, now: unitAction(unit), before: legacy.unitAction(unit) });
   }
   console.log(`# ${cases} cases, ${wrong.length} differences`);
   for (const item of wrong.slice(0, 5)) console.log("#", JSON.stringify(item));
@@ -79,7 +82,6 @@ test("unit machine: every transition lands where the changed facts resolve to (m
 });
 
 // 3. Course machine: random journals (seeded) on every track → same next action as actions.mjs → courseNext.
-import { courseNext } from "../dashboard/actions.mjs";
 import { courseByMachine, courseMachine } from "./course.impl.mjs";
 
 export function randomJournals(count, seed = 20) {
@@ -121,11 +123,16 @@ test("course machine: same next action as courseNext on 200,000 random journals 
   for (const journal of randomJournals(200000)) {
     const selected = journal.selectedPick;
     const states = new Map(journal.units.map(unit => [unit.n, unitState(unit, { selected }).state]));
-    const code = courseNext(journal, states, selected);
+    const code = legacy.courseNext(journal, states, selected);
     const codeKey = code ? (code.key === "revise-unit" && code.cmd === "quick-fix" ? "revise-unit:quick-fix" : code.key) : null;
     const machine = courseByMachine(journal, states, selected);
     paths.add(machine.path);
-    if (codeKey !== machine.action) wrong.push({ track: journal.track, code: codeKey, machine });
+    if (codeKey !== machine.action) wrong.push({ track: journal.track, code: codeKey, machine: machine.path });
+    // E21: the whole action of courseNext and of every design unit is the same as before.
+    const now = courseNext(journal, states, selected);
+    if (JSON.stringify(now) !== JSON.stringify(code)) wrong.push({ track: journal.track, whole: true, path: machine.path, now, before: code });
+    if (journal.track === "design") for (const unit of journal.units)
+      if (JSON.stringify(designUnitAction(unit, journal)) !== JSON.stringify(legacy.designUnitAction(unit, journal))) wrong.push({ design: unit.n, now: designUnitAction(unit, journal) });
   }
   const leaves = courseMachine.leaves().map(path => path.join("."));
   console.log(`# 200000 journals, ${wrong.length} differences, course states reached ${leaves.filter(l => paths.has(l)).length}/${leaves.length}`);
