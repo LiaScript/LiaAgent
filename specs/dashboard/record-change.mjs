@@ -8,12 +8,14 @@
 // Run from the course project root:
 //   node specs/dashboard/record-change.mjs <unit> --page "<page title>" --change "<what changed>" --checked "<how it was checked>" [--rechecked] [--date <date>]
 // Prints every line it changed; then run node specs/dashboard/write-dashboard.mjs (tasks/update-dashboard.md).
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readJournal, loadPacks, englishTerms } from "./journal-model.mjs";
 import { localTime } from "./now.mjs";
 import { countWrite } from "./write-count.mjs";
+import { deriveForJournal, patchJournal } from "./derive-dashboard.mjs";
 
 const fill = (term, values) => String(term).replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match);
 // "{n} Punkt(e)" → "1 Punkt" / "2 Punkte"; "point(s)" → "point" / "points".
@@ -121,6 +123,32 @@ export function recordChange(source, { unit, page, change, checked, rechecked = 
   }
 }
 
+// The Dashboard block of the new text, with the re-check's open point and the derived fields (write-dashboard.mjs
+// does the same from a draft). Returns the text unchanged with a reason when that is not possible.
+export function withOverview(text, { unit, rechecked, terms = {}, unitWord = "unit", dir }) {
+  const block = /```json @Dashboard\.View\n([\s\S]*?)\n```/;
+  const raw = text.match(block)?.[1];
+  if (!raw) return { text, done: false, why: "no Dashboard block" };
+  let data;
+  try { data = JSON.parse(raw); } catch { return { text, done: false, why: "Dashboard block is not valid JSON" }; }
+  data.decisions = Array.isArray(data.decisions) ? data.decisions : [];
+  let added = null;
+  if (!rechecked && !data.decisions.some(item => item?.source?.check === unit)) {
+    added = `recheck-${unit}`;
+    const word = unitWord.charAt(0).toUpperCase() + unitWord.slice(1);
+    data.decisions.push({ key: added, kind: "internal", title: `${terms.recheckAction ?? englishTerms.recheckAction} – ${word} ${unit}`, source: { check: unit } });
+  }
+  const candidate = resolve(dir, ".cache", "record-change-candidate.tmp");
+  mkdirSync(dirname(candidate), { recursive: true });
+  writeFileSync(candidate, text);
+  try {
+    const derived = deriveForJournal(candidate, data);
+    if (derived.missing.length) return { text, done: false, why: "words still to write" };
+    const replaced = text.replace(block, () => "```json @Dashboard.View\n" + JSON.stringify(derived.data, null, 2) + "\n```");
+    return { text: patchJournal(replaced, derived.journal, derived).source, done: true, added, fields: derived.changes.length };
+  } finally { rmSync(candidate, { force: true }); }
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const option = name => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
@@ -146,12 +174,21 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const [y, m, d] = isoDate.split("-");
   const date = option("date") ?? (journal.language === "de" ? `${d}.${m}.${y}` : isoDate);
   try {
-    const { text, changes } = recordChange(source, { unit, page, change, checked, rechecked: args.includes("--rechecked"), date, isoDate, terms: journal.terms, unitWord: journal.terminology ?? "unit", track: journal.track });
-    writeFileSync(file, text);
+    const rechecked = args.includes("--rechecked");
+    const { text, changes } = recordChange(source, { unit, page, change, checked, rechecked, date, isoDate, terms: journal.terms, unitWord: journal.terminology ?? "unit", track: journal.track });
+    // E10: the overview in the same write – the open point of the short re-check (internal, source {check: n})
+    // and every field derived from the journal, as write-dashboard.mjs would set them.
+    const overview = withOverview(text, { unit, rechecked, terms: journal.terms, unitWord: journal.terminology ?? "unit", dir: dirname(file) });
+    writeFileSync(file, overview.text);
     countWrite(dirname(file), "record-change.mjs", "journal.md");
-    console.log(`Recorded the change after the check of unit ${unit} in one write (${changes.length} line${changes.length === 1 ? "" : "s"}):`);
+    console.log(`Recorded the change after the check of unit ${unit} in one write (${changes.length} line${changes.length === 1 ? "" : "s"}${overview.done ? " and the overview" : ""}):`);
     changes.forEach(item => console.log(`- line ${item.line}: ${item.why}${item.from ? `\n    was: ${item.from}` : ""}\n    now: ${item.to}`));
-    console.log("Next: node specs/dashboard/write-dashboard.mjs (the overview follows the report).");
+    if (overview.done) {
+      console.log(`- overview: ${overview.added ? `open point ${overview.added} added, ` : ""}${overview.fields} derived field${overview.fields === 1 ? "" : "s"} set`);
+      const check = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), "validate-journal.mjs"), file], { encoding: "utf8" });
+      console.log((check.stdout + check.stderr).trim().split("\n").filter(line => /^(- |Warnings|Hints|ERRORS|Exit code)/.test(line)).join("\n"));
+      console.log("The overview is current – write it again only for an item written by hand (tasks/quick-fix.md → Inputs).");
+    } else console.log(`Overview not written (${overview.why}): run node specs/dashboard/derive-dashboard.mjs --write.`);
   } catch (error) {
     console.error(`record-change: ${error.message}`);
     process.exit(2);
