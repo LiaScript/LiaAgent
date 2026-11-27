@@ -178,7 +178,9 @@ export function readJournal(source, { projectDir = ".", packs = loadPacks() } = 
 
 // The units the outline describes: the entries of its session overview (`data-key="session-overview"`, templates/
 // course-outline.yaml) – top-level list items or table rows. The slide list of a mini outline (label "Slides",
-// any pack's `terms.outlineSlides`) is the outline of one unit. null when there is no readable overview.
+// any pack's `terms.outlineSlides`) is the outline of one unit – unless its top-level items carry nested slide lists:
+// then each such item is a unit (a mini outline grown by a second unit, create-outline step 7). null when there is
+// no readable overview.
 function outlineUnits(outline, slideWords) {
   const after = outline.split(/<!--\s*data-key="session-overview"\s*-->/)[1];
   if (after == null) return null;
@@ -187,13 +189,16 @@ function outlineUnits(outline, slideWords) {
   const label = lines[labelAt]?.match(/^\s*[*-]\s+__(.+?):?__/)?.[1].split(/\s+–\s+/)[0].replace(/:$/, "").trim().toLowerCase();
   if (!label) return null;
   const slides = slideWords.filter(Boolean).map(word => word.toLowerCase());
-  if (slides.some(word => label.startsWith(word))) return 1;
   const body = [];
   for (const line of lines.slice(labelAt + 1)) {
     if (/^\s*<!--/.test(line) || /^\s*[*-]\s+__/.test(line) || /^(-{3,}|#{1,6}\s)/.test(line)) break;
     body.push(line);
   }
   const items = body.filter(line => /^ {0,3}(?:\d+[.)]|[-*+])\s+\S/.test(line)).length;
+  if (slides.some(word => label.startsWith(word))) {
+    const nested = body.some(line => /^ {4,}(?:\d+[.)]|[-*+])\s+\S/.test(line));
+    return nested && items > 1 ? items : 1;
+  }
   const separator = line => /^\s*\|[\s:|-]+\|\s*$/.test(line) && line.includes("-");
   const rows = body.filter((line, index) => /^\s*\|/.test(line) && !separator(line) && !separator(body[index + 1] ?? "")).length;
   const count = items || rows;
