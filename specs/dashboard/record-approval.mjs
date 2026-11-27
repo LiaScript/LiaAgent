@@ -1,4 +1,5 @@
-// E19: records the instructor's approval of a unit in one write – the counterpart of record-change.mjs.
+// E19: records the approval the instructor gave ("Approve" in the approval form) in one write – the counterpart of
+// record-change.mjs. It never decides anything itself: it writes down the instructor's answer, quoted in --instructor-said.
 // tasks/quick-fix.md → Approval after a review; tasks/coauthor-materials.md step 7.
 //   - the dated line "- **{date}:** Material freigegeben" / "material approved" goes into the unit's decisions
 //     (the list is created after the unit summary when the unit has none)
@@ -7,7 +8,7 @@
 //     if they still say the approval is open
 // Refuses a unit that is already approved.
 //
-//   node specs/dashboard/approve.mjs <unit> [--date <date>]
+//   node specs/dashboard/record-approval.mjs <unit> --instructor-said "<the instructor's answer>" [--date <date>]
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,7 +70,7 @@ export function overviewAfter(text, dir) {
   if (!raw) return { text, done: false, why: "no Dashboard block" };
   let data;
   try { data = JSON.parse(raw); } catch { return { text, done: false, why: "Dashboard block is not valid JSON" }; }
-  const candidate = resolve(dir, ".cache", "approve-candidate.tmp");
+  const candidate = resolve(dir, ".cache", "record-approval-candidate.tmp");
   mkdirSync(dirname(candidate), { recursive: true });
   writeFileSync(candidate, text);
   try {
@@ -84,7 +85,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const args = process.argv.slice(2);
   const option = name => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
   const unit = Number(args[0]);
-  if (!unit) { console.error("usage: node specs/dashboard/approve.mjs <unit> [--date <date>]"); process.exit(2); }
+  const said = option("instructor-said");
+  if (!unit || !said) { console.error('usage: node specs/dashboard/record-approval.mjs <unit> --instructor-said "<the instructor\'s answer>" [--date <date>] – only after the instructor chose "Approve" in the approval form'); process.exit(2); }
   const file = resolve("journal.md");
   if (!existsSync(file)) { console.error("no journal.md – run from the course project root"); process.exit(2); }
   const source = readFileSync(file, "utf8");
@@ -100,9 +102,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const result = approve(source, { unit, date, language: journal.language });
     const overview = overviewAfter(result.text, dirname(file));
     writeFileSync(file, overview.text);
-    countWrite(dirname(file), "approve.mjs", "journal.md");
+    countWrite(dirname(file), "record-approval.mjs", "journal.md");
     const entryLine = overview.text.split("\n").findIndex(line => line === `- **${date}:** ${words(journal.language).approved}`) + 1 || result.line;
-    console.log(`Recorded the approval of unit ${unit} in one write: line ${entryLine} "- **${date}:** ${words(journal.language).approved}"${result.created ? " (new decisions list)" : ""}${overview.done ? `; overview: ${overview.fields} derived field${overview.fields === 1 ? "" : "s"} set` : ""}.`);
+    console.log(`Recorded the instructor's approval of unit ${unit} (answer: "${said}") in one write: line ${entryLine} "- **${date}:** ${words(journal.language).approved}"${result.created ? " (new decisions list)" : ""}${overview.done ? `; overview: ${overview.fields} derived field${overview.fields === 1 ? "" : "s"} set` : ""}.`);
     if (!overview.done) console.log(`Overview not written (${overview.why}): run node specs/dashboard/derive-dashboard.mjs --write.`);
     if (["mini", "convert"].includes(journal.track)) {
       const named = summaryLines(overview.text, { unit, unitWord: journal.terminology ?? "unit" });
@@ -114,7 +116,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const check = spawnSync(process.execPath, [resolve(dirname(fileURLToPath(import.meta.url)), "validate-journal.mjs"), file], { encoding: "utf8" });
     console.log((check.stdout + check.stderr).trim().split("\n").filter(line => /^(- |Warnings|Hints|ERRORS|Exit code)/.test(line)).join("\n"));
   } catch (error) {
-    console.error(`approve: ${error.message}`);
+    console.error(`record-approval: ${error.message}`);
     process.exit(2);
   }
 }
