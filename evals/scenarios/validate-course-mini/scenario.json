@@ -1,0 +1,24 @@
+{
+  "id": "validate-course-mini",
+  "title": "course check of an approved mini course (course mode)",
+  "fixture": {
+    "journal.md": "specs/dashboard/fixtures/journal-mini-approved.md",
+    "README.md": "evals/scenarios/quickfix-typo/material.md"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-27",
+  "command": ":validate-course",
+  "replies": [
+    "An approval question for the unit → \"Freigeben\"",
+    "Any other question or offer → the option you would present as the recommended default; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    {
+      "id": "validator-ok"
+    },
+    {
+      "id": "material-unchanged"
+    }
+  ]
+}
