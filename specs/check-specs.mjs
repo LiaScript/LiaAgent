@@ -12,6 +12,8 @@ import { laterOf } from "./dashboard/tracks.mjs";
 
 const specs = dirname(fileURLToPath(import.meta.url));
 const read = path => readFileSync(join(specs, path), "utf8");
+// The dashboard task and its rare cases (data/dashboard-cases.md, read by part when a case applies) are one rule set.
+const dashboardTask = () => read("tasks/update-dashboard.md") + "\n" + read("data/dashboard-cases.md");
 // The teaching agent is split (T5-111): the core read at start, and teaching-agent.nav.yaml with commands,
 // coordination, skills and links, which build.py renders into CLAUDE.md. Tests of those sections read both.
 const teachingAgent = () => read("agents/teaching-agent.yaml") + "\n" + (existsSync(join(specs, "agents/teaching-agent.nav.yaml")) ? read("agents/teaching-agent.nav.yaml") : "");
@@ -92,7 +94,7 @@ const flat = text => text.replace(/\s+/g, " ");
 for (const [file, phrases] of Object.entries(required)) {
   test(`${file} keeps its key rules`, () => {
     assert.ok(existsSync(join(specs, file)), `${file} is missing`);
-    const text = flat(file === "agents/teaching-agent.yaml" ? teachingAgent() : read(file));
+    const text = flat(file === "agents/teaching-agent.yaml" ? teachingAgent() : file === "tasks/update-dashboard.md" ? dashboardTask() : read(file));
     for (const phrase of phrases) assert.ok(text.includes(flat(phrase)), `${file} lost: "${phrase}"`);
   });
 }
@@ -124,6 +126,7 @@ test("a reference `data/<sheet>.md` → Name finds a heading or bold rule name i
 // Word budgets: the cleanup after tandem test 4 moved computed rules into scripts. A budget keeps the text from
 // growing back; raise one only with a reason (a new rule no script can carry, e.g. the `start` setup, the read lists of build-session and validate-course after R12/R12b, measured durations and agreements after R12c).
 const budgets = {
+  "data/dashboard-cases.md": 1030, /* E14: rare cases of update-dashboard, read by part */
   "tasks/update-dashboard.md": 3340, /* +30 over 3310 (instructor decision): findings outside a change are a decide point; */ /* +15 over 3295: data/agent-links.md only with the MCP gate open; */ /* +20 over 3275 (skills pilot, blind evaluation): the unit summary describes the unit, never its changes;  +110 over 3005: process steps per track, the two new triggers; +145 over 3115 (tandem test 5): decide only for now, no approval item for an approved unit, report actions → prepare, old Course Context words in the cache; +15 over 3260 (stage 2a T8): the design track's step list with its titles "Frame" and "Images" and the scope rule */ "data/agent-links.md": 4120, /* +23: chat-memory sheet row and pointer; +15 over 3898: the pick-up replaces the due greeting; +177 over 3913 (tandem test 5): idle watch, nudge, status after a form answer, "your answer has arrived", read_chat without arguments; +20 over 4090 (stage 2a T8): git_clone of the design frame in the terminal tier and before the save; +10 over 4110 (stage 2a final review): the clone is no journal write, the two setup exceptions are journal writes */ "data/chat-wording.md": 1165, "data/chat-dialog.md": 1480, /* +35 over 1191: the save marker rule; +3 over 1226: marker in the preview chat only; +251 over 1229 (tandem test 5): no ruled-out options, saved state from the journal, to-do answer = overview, side questions without a new form, no number columns, removeBlock */
   "data/chat-checks.md": 670, /* +33 over 637 (simulated runs): any other reason for no rendered check gets no offer and one plain line; */ "tasks/build-session.md": 3395, /* +28 over 3367 (simulated runs): how the measured duration is taken, the sketch time only when the sketch was made in this run; */ "tasks/validate-course.md": 5205, /* +95 over 5110 (E12): a passed short re-check is closed by close-recheck.mjs; +45 over 5065 (scenario recheck-short): a finding outside the re-checked pages follows quick-fix → Findings outside the change; +30 over 5035 (scenario recheck-short): after a short re-check each dated line ends " · re-checked: …"; +15 over 5020: the short re-check removes its recommended action and sets Done; */ /* +20 over 5000 (skills pilot): an open short re-check gives PASS with concerns and blocks publishing;  +89 over 4198: one unit, one run on a light track; +31 over 4287: light-track unit 1 in session mode, short re-check refreshes the summary; +102 over 4318 (tandem test 5): the unit check is the course check, the summary follows every later report change; +340 over 4420 (stage 2a T11): the design track checks design only – its file, the four design checks, content as overview hints, no course check of its own and the summary publishing reads; +180 over 4760 (T11 review): explicit overrides at session steps 2, 3b, 4, 5, 8 and the design course result; +60 over 4940 (stage 2a final review): the design confirmation without try-as-learner, a contrast finding goes through Visual Identity and :apply-theme, no Type/Method items in the design re-check */ "tasks/quick-fix.md": 2195, /* +15 over 2180 (E10b): a finding outside the change is one add-point.mjs call; +95 over 2085 (E10): the change path writes the overview by script; +45 over 2040 (measuring run 25.11.2026): the save preview names journal entries in plain words, never with {…} placeholders; +15 over 2025: the usable line while the short re-check is open; */ /* +80 over 1945 (instructor decisions): findings outside the change, the tone check while Didactics waits; */ /* +45 over 1900: Done ❌ and the re-check as recommended action in the change path, learner text defined; */ /* +65 over 1835 (skills pilot, blind evaluation): journal lines after the mini-check, light-track summary in the change path, the try-as-learner offer as a step with its gate rule;  +8 over 1613: light track, the whole README is unit 1; +129 over 1621 (tandem test 5): "look at it later", re-check sets Done, approval refreshes the summary, removeBlock; +60 over 1750 (stage 2a T11): design-track suggestions run as quick-fix, larger ones are the track switch; the design approval refreshes the summary; +25 over 1810 (T11 review): no learner offer, recorded path, no persona check on the design track */
   "tasks/review-images.md": 1600, /* new in stage 2a T10: the image inventory with its entry format, form rules and three writes; +260 over 1340 (T10 review): Decisions above the image block, quiz option lines, restrictive licences, later changes, inline images, time announcement */
@@ -216,7 +219,7 @@ test("the Development-Agent builds and publishes own templates: commands, tiers,
   const tiers = read("data/agent-links.md").split("\n");
   assert.ok(tiers.find(line => line.startsWith("| **confirm in chat**"))?.includes("`develop-template`"), "develop-template is not confirm in chat");
   assert.ok(tiers.find(line => line.startsWith("| **confirm in terminal**"))?.includes("`publish-template`"), "publish-template is not confirm in terminal");
-  const triggers = read("tasks/update-dashboard.md").split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
+  const triggers = dashboardTask().split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
   for (const task of ["develop-template", "publish-template"]) {
     assert.ok(read(`tasks/${task}.md`).includes("tasks/update-dashboard.md"), `${task} does not run update-dashboard`);
     assert.ok(triggers.includes(`:${task}`), `${task} is missing in the update-dashboard trigger list`);
@@ -245,12 +248,12 @@ test("the mini course: unit 1 in ## Sessions, one save, the unit check covers th
   assert.match(inputs, /Rule sheets, read completely with this task \(`data\/agent-links\.md` → Chat Conduct → Rule sheets\): `data\/chat-dialog\.md`, `data\/chat-checks\.md`, `data\/journal-links\.md`/);
   assert.match(inputs, /`tasks\/coauthor-materials\.md`[^\n]*read completely/);
   assert.ok(task.includes("tasks/update-dashboard.md"), "create-mini-course does not run update-dashboard");
-  const triggers = read("tasks/update-dashboard.md").split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
+  const triggers = dashboardTask().split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
   assert.ok(triggers.includes(":create-mini-course"), "create-mini-course is missing in the update-dashboard trigger list");
   assert.match(read("agents/teaching-agent.yaml"), /^ {4}- create-mini-course\.md$/m, "teaching-agent.yaml dependencies lack create-mini-course.md");
   // The first Dashboard write after the mini save replaces the empty journal's steps with the track's list.
   assert.match(read("tasks/init-course.md"), /replaces `process\.steps` with the steps of the mini track/);
-  assert.match(read("tasks/activate-section.md"), /the overview's step list follows the new track \(`tasks\/update-dashboard\.md` → Rules → Process steps per track\)/);
+  assert.match(read("tasks/activate-section.md"), /the overview's step list follows the new track \(`data\/dashboard-cases\.md` → Process steps\)/);
   // The light-track exceptions of the check stand in the checklist, which validate-course applies completely.
   assert.match(read("checklists/course-quality-checklist.md"), /\*\*Light tracks\*\*[^\n]*marked when needed[^\n]*no finding/);
   assert.match(read("data/file-structure-modes.md"), /the whole file is unit 1/);
@@ -282,7 +285,7 @@ test("design track: the follow-up question, the frame and its markers (stage 2a)
   assert.match(read("data/agent-links.md"), /\| \*\*confirm in terminal\*\* \|[^\n]*`git_clone`/, "git_clone is missing from the terminal tier");
   assert.match(read("templates/course-context.yaml"), /Design scope: \[look \| images \| both \| n\/a\]/);
   assert.match(read("data/file-structure-modes.md"), /Recorded paths[\s\S]*design track/);
-  assert.match(read("tasks/update-dashboard.md"), /design: Frame → Look → Images → Check → Publish/);
+  assert.match(dashboardTask(), /design: Frame → Look → Images → Check → Publish/);
 });
 
 test("apply-theme: one confirmation, foreign styling asked, macro imports kept, contrast checked", () => {
@@ -326,7 +329,7 @@ test("review-images: existing images, unclear licence preselected replace, quiz 
   const image = read("tasks/create-image.md");
   assert.match(image, /`existing`[^\n]*placed[^\n]*compact/i, "create-image does not count existing as placed with compact fields");
   assert.match(image, /design track[^\n]*recorded path/i, "create-image does not take the path from the recorded course file on the design track");
-  assert.match(read("tasks/update-dashboard.md"), /Artist-Agent:[^\n]*`:review-images`/, "review-images is missing in the update-dashboard trigger list");
+  assert.match(dashboardTask(), /Artist-Agent:[^\n]*`:review-images`/, "review-images is missing in the update-dashboard trigger list");
   assert.match(read("data/agent-links.md"), /\| \*\*start interview\*\* \|[^\n]*`review-images`/, "review-images is not in the start-interview tier");
   // Fix round 1: the decision line stands above the image block, quiz option images keep their option line, licences.
   for (const phrase of ["goes into the unit's Decisions above `#### Images`", "the overview reads decision lines only before the first `####`", "`templates/session-skeleton.yaml` → decisions", "a clear but restrictive one (NC, ND, \"all rights reserved\")", "A clear free licence", "only the `![…](…)` markup out — a line that holds only the image goes whole", "`{\"removeBlock\": \"#### {image-slug}\"}`", "announce the time honestly", "{page title} – {role"]) assert.ok(t.includes(phrase), `review-images lacks: ${phrase}`);
@@ -372,7 +375,7 @@ test("open-chat is a navigation command of every agent and opens a collapsed cha
 });
 
 test("Artist tasks that write journal.md refresh the dashboard and are listed as its triggers", () => {
-  const triggers = read("tasks/update-dashboard.md").split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
+  const triggers = dashboardTask().split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
   for (const task of ["create-visuals", "create-logo", "create-image", "generate-image", "apply-theme", "review-images"]) {
     assert.ok(read(`tasks/${task}.md`).includes("tasks/update-dashboard.md"), `${task} does not run update-dashboard`);
     assert.ok(triggers.includes(`:${task}`), `${task} is missing in the update-dashboard trigger list`);
@@ -699,7 +702,7 @@ test("language packs carry one wording per state: passed with something missing,
     assert.ok(!("recheckPending" in terms), `${name}: the old term recheckPending is back`);
     assert.match(terms.passedMissing, /\{what\}/, `${name}: passedMissing names what is missing, never a step`);
   }
-  assert.ok(!/later step\}? (still )?follows/.test(read("templates/session-validation.yaml") + read("templates/session-skeleton.yaml") + read("tasks/update-dashboard.md")), "a step name is the subject of an outcome again");
+  assert.ok(!/later step\}? (still )?follows/.test(read("templates/session-validation.yaml") + read("templates/session-skeleton.yaml") + dashboardTask()), "a step name is the subject of an outcome again");
 });
 
 test("every language pack matches the empty journal template line by line", () => {
@@ -795,7 +798,7 @@ test("the shell list of CLAUDE.md names read-source.mjs with its arguments (stag
 });
 
 test("older journals: the validator's migration hint leads to a confirmed migration in update-dashboard (R11-D2)", () => {
-  const task = read("tasks/update-dashboard.md");
+  const task = dashboardTask();
   assert.match(task, /\*\*Older journal layout:\*\*/);
   assert.match(task, /`node specs\/dashboard\/migrate-journal\.mjs --check`/);
   assert.match(task, /"Update" \/ "Not now" \(tier "confirm in chat"\)/);

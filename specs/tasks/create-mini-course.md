@@ -20,7 +20,7 @@ Tier: **start interview** — the dialog starts at once; its save confirmation (
 - `data/liascript-cheat-sheet.md` — syntax reference, Quizzes for young learners, Controls as learners see them
 - `checklists/course-quality-checklist.md` → Session Materials — the self-check before the save
 - `templates/session-skeleton.yaml` — the shapes of the unit heading, its summary field and the overview table (`section_layout`)
-- `tasks/update-dashboard.md` and `templates/project-dashboard.yaml` — read right before the overview is written
+- `tasks/update-dashboard.md` (it names when `templates/project-dashboard.yaml` is needed) — read right before the overview is written
 - Optional skills, only if installed (`data/skills.md`; a missing one is offered once per conversation, `data/skills.md` → Installing a Missing Skill): `liascript-syntax` as authoring reference, `reference-checker` for the sources of the material
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-dialog.md`, `data/chat-checks.md`, `data/journal-links.md`
 
@@ -50,7 +50,7 @@ Sections marked when needed are not read (`tasks/activate-section.md` → Rules)
 5. **Save — one save confirmation** for the material ("Save" / "Change something"). The save summary names its three writes, in this order:
    1. root `README.md`, one write (the file-edit tool);
    2. `journal.md` → `## Sessions`, one write (one map for the line replacer, or `write_section`): the one-line note (the mini note of `tasks/init-course.md` M4, or in an older journal "_No units yet …_") goes; the technical overview table gets the row `| 1 | {title} | n/a | ✅ | ✅ | ❌ | |` (the Type column `n/a`: a mini course has no session types; a Method column only if the table has one, then `n/a` there too; the Notes cell stays empty); below the overview the unit `### 1. {title}` — `{title}` is the outline's Title — with only its goal as the summary field (`<!-- data-key="summary" -->` and the bold label "Summary", translated: one or two sentences naming what the learners can do at the end, the objectives of `## Outline`). No technical `<details>` block, no kind line, no content, activities, building blocks or references fields: the material is the plan. Decisions and image spots of step 3 go into the unit in the same write (`templates/session-skeleton.yaml` → `section_layout.entry_order`). If the title changed in the dialog, the same map also sets it in the journal's `#` heading, the Working Title of `## Course Context` and the Title of `## Outline` — one title everywhere;
-   3. `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` — `write-dashboard.mjs` writes the status line, the Notes cell, the unit's action line and the overview.
+   3. `tasks/update-dashboard.md` — `write-dashboard.mjs` writes the status line, the Notes cell, the unit's action line and the overview.
    Then send "✅ Saved: …" as `data/chat-dialog.md` says.
 6. **Check the material.** Run `node specs/dashboard/check-material.mjs README.md` once (on its own). If it cannot start, say so in one line and what was checked instead; if it reports that Playwright is missing, offer the install once per conversation (`data/chat-checks.md` → Offering the Rendered Check).
 7. **Check the unit:** run `:validate-course 1` (`tasks/validate-course.md`) without asking — with one unit in the mini track this one run also writes the course summary in `## Validation` (`tasks/validate-course.md` → One unit, one run). Open points are worked through as that task says.

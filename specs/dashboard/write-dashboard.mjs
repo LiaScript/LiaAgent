@@ -71,7 +71,7 @@ if (!block.test(source)) {
 }
 const current = source.match(block)[0].slice("```json @Dashboard.View\n".length, -"\n```".length);
 if (cacheHash && cacheHash !== blockHash(current)) {
-  console.error(`Cache stale, journal unchanged: the Dashboard block in ${journal} changed since ${draftFile} was last written – rebuild the whole draft from the current journal (tasks/update-dashboard.md step 8).`);
+  console.error(`Cache stale, journal unchanged: the Dashboard block in ${journal} changed since ${draftFile} was last written – rebuild the whole draft from the current journal (data/dashboard-cases.md → Whole draft).`);
   console.log("Exit code: 1");
   process.exit(1);
 }

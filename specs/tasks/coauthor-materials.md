@@ -71,7 +71,7 @@ Plan images where they help (as image spots for the Artist-Agent, see step 4 →
    - Approval does not change the table: Material ✅ was set when the document was written (step 6). **Done stays ❌** until `:validate-course {n}` has written `Result: PASS` with no open ⏳ item into this session's `#### Validation Report`.
    - Optionally add a short note (e.g., open points, follow-up ideas) in the Notes column.
    - **If the session already has a `#### Validation Report`** (this was a revision after a check): run `:validate-course {n}` right away without asking — the revision is only complete when the re-check passes. Skip step 8 then.
-   - Then run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+   - Then run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 8. After approval, 🎛️ ask with structured question (single choice):
    - **If the session has open image entries** (`tasks/create-image.md` → Image spots), the image step comes first (the check would only report the missing images):
      - **Insert images now** — switch to the Artist-Agent and run `:create-image {number}`

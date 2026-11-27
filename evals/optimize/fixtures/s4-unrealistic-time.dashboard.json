@@ -1,0 +1,111 @@
+{
+  "title": "Maschinelles Lernen kompakt",
+  "context": "25 Schülerinnen und Schüler, 11. Klasse, Python-Grundlagen · eine Schulstunde (45 Minuten) im Computerraum, Lehrkraft anwesend",
+  "subtitle": "Der Kursrahmen steht (eine einzelne Unterrichtsstunde). Als Nächstes entsteht die Gliederung mit den Lernzielen.",
+  "next": {
+    "icon": "▶️",
+    "title": "Gliederung und Lernziele",
+    "why": "Klare Lernziele sagen, was die Lernenden am Ende können.",
+    "label": "Gliederung erstellen",
+    "href": "agent:teaching/create-outline",
+    "command": ":create-outline"
+  },
+  "unitLabel": {
+    "one": "Stunde",
+    "many": "Einheiten"
+  },
+  "unitsTitle": "Einheiten",
+  "units": [],
+  "process": {
+    "title": "So entsteht Ihr Kurs",
+    "description": "Die Schritte vom Thema bis zum geprüften Material. Diese Übersicht zeigt immer, wo wir gerade stehen.",
+    "steps": [
+      {
+        "title": "Den Rahmen festlegen",
+        "state": "done",
+        "why": "Thema, Zielgruppe, Format und Sprache prägen alles, was folgt.",
+        "result": "Kursrahmen bestätigt am 20.11.2026"
+      },
+      {
+        "title": "Gliederung und Lernziele",
+        "state": "current",
+        "why": "Klare Lernziele sagen, was die Lernenden am Ende können."
+      },
+      {
+        "title": "Didaktik",
+        "state": "planned",
+        "why": "Methoden, Aufgabenformen und Unterstützung, die zu den Lernzielen passen."
+      },
+      {
+        "title": "Bausteine für Aktivitäten",
+        "state": "planned",
+        "why": "Fertige Bausteine wie eine Zeichenfläche oder eine Karte – oder ein eigener, wenn nichts passt."
+      },
+      {
+        "title": "Ablaufplan",
+        "state": "optional",
+        "why": "Wird mit dem Rahmen entschieden: Reihenfolge und Dauer der Einheiten."
+      },
+      {
+        "title": "Material erstellen",
+        "state": "planned",
+        "why": "Erklärungen, Aufgaben und Selbstkontrollen entstehen aus der Planung."
+      },
+      {
+        "title": "Prüfen und überarbeiten",
+        "state": "planned",
+        "why": "Verständlichkeit und Passung zu den Lernzielen werden geprüft, bevor das Material eingesetzt wird."
+      },
+      {
+        "title": "Veröffentlichen",
+        "state": "planned",
+        "why": "Optional: den geprüften Kurs als Link teilen.",
+        "statusLabel": "nötig – wenn alle Einheiten geprüft sind"
+      }
+    ],
+    "note": "Sie können jederzeit einen Schritt zurückgehen. Fertig ist eine Einheit erst, wenn ihre Prüfung bestanden ist und Sie sie freigegeben haben."
+  },
+  "explore": [
+    {
+      "icon": "⚡",
+      "title": "Schnellstart",
+      "description": "Ein einziges Gespräch füllt Rahmen, Lernziele und Didaktik auf einmal.",
+      "label": "Schnellstart",
+      "href": "agent:teaching/scaffold",
+      "command": ":scaffold"
+    },
+    {
+      "icon": "🔍",
+      "title": "Bestehenden Kurs verbessern",
+      "description": "Nur wenn es schon LiaScript-Material gibt, das überarbeitet werden soll.",
+      "label": "Kurs analysieren",
+      "href": "agent:teaching/analyze-existing",
+      "command": ":analyze-existing"
+    },
+    {
+      "icon": "💬",
+      "title": "Einfach fragen",
+      "description": "Fragen Sie in eigenen Worten, wann immer etwas unklar ist.",
+      "label": "Was kann der Assistent?",
+      "href": "agent:teaching/help",
+      "command": ":help"
+    }
+  ],
+  "links": [
+    {
+      "label": "Kursrahmen",
+      "href": "#course-context-–-kursrahmen"
+    },
+    {
+      "label": "Gliederung",
+      "href": "#outline-–-gliederung"
+    },
+    {
+      "label": "Notizen",
+      "href": "#notes-backup-–-notizen"
+    }
+  ],
+  "footer": "Stand: 27.11.2026",
+  "unitsPlanned": 1,
+  "_journalHash": "7449e61c77b6bc9a"
+}

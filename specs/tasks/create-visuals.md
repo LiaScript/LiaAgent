@@ -49,7 +49,7 @@ Ensures all visual materials across courses maintain a consistent brand identity
 11b. **Optional — LiaScript theme.** Only if the skill `liascript-theming` is available (see `data/skills.md`): 🎛️ offer to turn the website palette and typography into a tested LiaScript theme header — or to apply one of its bundled designs by name — (1. yes · 2. no). On yes, follow the skill to build and contrast-check the block, but do not inject it into any file yourself: store it as the `__LiaScript Theme:__` bullet (see `templates/visuals.yaml`); `promote-session` copies it into the material headers. Without the skill, skip this step silently.
 12. Fill the `templates/visuals.yaml` template with the results.
 13. Save the visual style guide by creating or replacing `journal.md` → `## Visual Identity`.
-14. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place; then "After saving".
+14. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place; then "After saving".
 
 ## Variant: From the course or a source
 

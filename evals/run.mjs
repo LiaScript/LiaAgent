@@ -8,7 +8,7 @@
 // A variant is a git ref of this repository; its specs are exported into a fresh project folder per run, the
 // scenario's fixture comes from the harness checkout (the same for every variant).
 import { mkdirSync, writeFileSync, readFileSync, existsSync, cpSync, rmSync, createWriteStream } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
 import { spawnSync, spawn } from "node:child_process";
 import { harnessRoot, loadScenario, scenarioIds, runDirs, promptFor, readJson } from "./lib.mjs";
 
@@ -46,7 +46,7 @@ function prepare() {
     rmSync(dir, { recursive: true, force: true });
     const commit = exportRef(variant.ref, project);
     if (variant.candidate) cpSync(join(harnessRoot, variant.candidate, "overlay"), project, { recursive: true });
-    for (const [target, source] of Object.entries(scenario.fixture)) writeFileSync(join(project, target), readFileSync(join(harnessRoot, source)));
+    for (const [target, source] of Object.entries(scenario.fixture)) { mkdirSync(dirname(join(project, target)), { recursive: true }); writeFileSync(join(project, target), readFileSync(join(harnessRoot, source))); }
     for (const patch of scenario.patches ?? []) {
       const file = join(project, patch.file);
       const text = readFileSync(file, "utf8");

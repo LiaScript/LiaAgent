@@ -453,11 +453,11 @@ for (const link of agentCommands ? agentLinks : []) {
   }
   const trackValue = section("Course Context").match(/^\s*\d+\.\s*Track:\s*([^\n]*?)\s*$/m)?.[1].replace(/[`*_]/g, "");
   if (trackValue && !trackIds.includes(trackValue)) problems.push(`Track: "${trackValue}" is not one of ${trackIds.join(", ")}`);
-  // A light track has exactly the steps of its track (tasks/update-dashboard.md → Rules → Process steps per track);
+  // A light track has exactly the steps of its track (data/dashboard-cases.md → Process steps);
   // the full track may drop its agenda step with a note, so only the light tracks are counted.
   const ownSteps = stepsOf(journal.track, journal.trackMode);
   const shownSteps = JSON.parse(match[1]).process?.steps ?? [];
-  if (journal.track !== "full" && shownSteps.length !== ownSteps.length) problems.push(`process.steps has ${shownSteps.length} steps, the ${journal.track} track has ${ownSteps.length} (${ownSteps.join(", ")}) – replace them with the steps of the track (tasks/update-dashboard.md → Process steps per track)`);
+  if (journal.track !== "full" && shownSteps.length !== ownSteps.length) problems.push(`process.steps has ${shownSteps.length} steps, the ${journal.track} track has ${ownSteps.length} (${ownSteps.join(", ")}) – replace them with the steps of the track (data/dashboard-cases.md → Process steps)`);
   const shownLater = (JSON.parse(match[1]).process?.later ?? []).map(item => String(item?.href ?? "").match(/[?&]section=([\w-]+)/)?.[1] ?? "").sort().join(",");
   const markedLater = journal.later.filter(key => !laterHidden.includes(key)).map(sectionSlug).sort().join(",");
   if (shownLater !== markedLater) problems.push(`process.later does not match the sections marked when needed (overview: ${shownLater || "none"}; journal: ${markedLater || "none"}) – run \`node specs/dashboard/derive-dashboard.mjs --write\``);
@@ -564,7 +564,7 @@ model.units.filter(unit => unit.href && unit.state === "planned" && !String(unit
 const startNote = notes.find(line => /beginnend mit|starting with/i.test(line));
 const startUnit = startNote?.match(/(?:beginnend mit|starting with)[^.\d]*(\d+)/i)?.[1] ?? String(model.units[0]?.id ?? "1");
 if (startNote && sessionHeadings.includes(startUnit)) warnings.push(`## Sessions note "${startNote.trim().slice(0, 80)}" says the units are created starting with unit ${startUnit}, but "### ${startUnit}." already exists – update the note to the current state`);
-// Template step (tasks/update-dashboard.md → Rules → Template step): once every open brief is ready to test,
+// Template step (data/dashboard-cases.md → Process steps → Template step): once every open brief is ready to test,
 // its result says so, not "in development"; and :suggest-templates never takes next from an agenda that is
 // saved or a unit being worked on (existing journals without the selection line count as open).
 const openBriefs = templateFindings.briefs;

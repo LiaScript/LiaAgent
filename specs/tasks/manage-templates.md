@@ -68,7 +68,7 @@ Use this task when:
    - For Skulpt regular Python examples, include a Python code block followed by `@Skulpt.eval`
    - For Skulpt turtle examples, include a Python code block followed by `@Skulpt.eval(skulpt_canvas)` and a persistent canvas `<div>`
 7. When promoting or coauthoring materials, ensure any material using a documented template also includes the matching `import: {url}` in its own LiaScript header.
-8. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+8. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.
 9. Confirm what changed:
    - Header imports added or already present
    - Template sections created or updated

@@ -130,7 +130,7 @@ JavaScript, charts, animations) are not proposed here.
    `{ "version": 1, "templates": [ … ] }` if missing; never `status: "checked"`). Run
    `node specs/dashboard/validate-journal.mjs` and fix what it reports before step 9 (in one more write,
    named to the instructor).
-9. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` →
+9. Run `tasks/update-dashboard.md` to update `journal.md` →
    `## Dashboard` in place.
 10. **Finish:** a short summary (adopted, in development, none needed) and 1–3 next steps. After a brief,
     the Development-Agent builds the template: offer `agent:development/switch` — the Dashboard's `next`

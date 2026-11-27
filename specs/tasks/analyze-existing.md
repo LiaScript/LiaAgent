@@ -93,4 +93,4 @@ Offers two paths for each missing core section:
 8b. **Before saving:** show in one message everything this task will still write — the detected File Structure (step 1), the reconstructed `## Sessions` overview (6b), the `## Agents` changes including the removal of a legacy `## Learner Personas` section (6c), the template entries and header imports (6d), and the status overview (step 9) — with "Save" / "Change something" (translated). This is the single write confirmation of these steps; drafts saved in step 5 had their own.
 
 9. After "Save": write the File Structure, the `## Sessions` overview, the `## Agents` changes, the template entries with their header imports and the full status overview as `journal.md` → `## Analysis Status` — one write per section.
-10. Run `tasks/update-dashboard.md` with `templates/project-dashboard.yaml` to update `journal.md` → `## Dashboard` in place.
+10. Run `tasks/update-dashboard.md` to update `journal.md` → `## Dashboard` in place.

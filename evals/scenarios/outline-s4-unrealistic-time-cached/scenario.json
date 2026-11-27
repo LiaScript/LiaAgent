@@ -1,0 +1,42 @@
+{
+  "id": "outline-s4-unrealistic-time-cached",
+  "set": "cache",
+  "title": "create-outline: five objectives in one 45-minute lesson (fresh overview cache)",
+  "fixture": {
+    "journal.md": "evals/optimize/fixtures/s4-unrealistic-time.journal.md",
+    ".cache/dashboard.json": "evals/optimize/fixtures/s4-unrealistic-time.dashboard.json"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-27",
+  "command": ":create-outline",
+  "replies": [
+    "A question what to drop or whether to change the time → \"Ich möchte alle fünf Ziele behalten, die Stunde bleibt 45 Minuten.\"",
+    "A question about the abstract → \"Überwachtes Lernen am Beispiel einer Klassifikation mit Python.\"",
+    "A creativity / ideation offer → \"1\" (structured interview)",
+    "A logo question → \"Nein, kein Logo\"",
+    "The save preview (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "Any other question → the option you would present as the recommended default; a free-text question → a short, sensible answer a teacher in this situation would give, consistent with the course frame; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    {
+      "id": "validator-ok"
+    },
+    {
+      "id": "no-stage-word"
+    },
+    {
+      "id": "foreign-untouched"
+    },
+    {
+      "id": "outline-filled",
+      "min": 3,
+      "max": 5,
+      "time": false
+    },
+    {
+      "id": "time-gap-recorded"
+    }
+  ],
+  "judge": "evals/judges/create-outline.md"
+}
