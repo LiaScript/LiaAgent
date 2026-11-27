@@ -4639,3 +4639,21 @@ test("add-point (E10b): one decide point for a finding outside a change, overvie
   assert.equal(spawnSync(process.execPath, [join(here, "derive-dashboard.mjs"), "--check", "journal.md"], { cwd: dir, encoding: "utf8" }).status, 0);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("detect-skills names the skills of CLAUDE.md and finds a SKILL.md in a project or user folder (E16)", async () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const { skills, detect } = await import("./detect-skills.mjs");
+  const named = readFileSync(join(here, "../../CLAUDE.md"), "utf8").split("## LiaScript Skills")[1].split("\n\n")[1];
+  for (const name of skills) assert.ok(named.includes(`\`${name}\``), `${name} is not listed in CLAUDE.md → LiaScript Skills`);
+  assert.equal([...named.matchAll(/`([a-z-]+)`/g)].length, skills.length, "CLAUDE.md lists a skill the script does not check");
+  const project = mkdtempSync(join(tmpdir(), "skills-p-")), home = mkdtempSync(join(tmpdir(), "skills-h-"));
+  mkdirSync(join(project, ".github/skills/liascript-syntax"), { recursive: true });
+  writeFileSync(join(project, ".github/skills/liascript-syntax/SKILL.md"), "# x\n");
+  mkdirSync(join(home, ".copilot/skills/creativity"), { recursive: true });
+  writeFileSync(join(home, ".copilot/skills/creativity/SKILL.md"), "# x\n");
+  const found = detect(project, home);
+  assert.match(found["liascript-syntax"], /\.github\/skills\/liascript-syntax\/SKILL\.md$/);
+  assert.match(found.creativity, /\.copilot\/skills\/creativity\/SKILL\.md$/);
+  assert.equal(found["oersi-metadata"], null);
+  rmSync(project, { recursive: true, force: true }); rmSync(home, { recursive: true, force: true });
+});
