@@ -903,7 +903,7 @@ test("CLAUDE.md carries what moved to teaching-agent.nav.yaml", () => {
     assert.match(read("agents/teaching-agent.nav.yaml"), new RegExp(`^${section}:`, "m"), `${section} is missing from the nav file`);
   }
   assert.ok(claude.includes("Read `specs/agents/teaching-agent.yaml` completely once per session (the core; CLAUDE.md carries its commands, links and coordination)"), "On Activation names the core");
-  assert.match(claude, /\(2\) read the header `language:`, `## Course Context`, the Dashboard block and the `###` headings of `## Sessions` of `journal\.md`/, "start order reads only the head of the journal");
+  assert.match(claude, /\(2\) run `node specs\/dashboard\/status\.mjs` and read `## Course Context` of `journal\.md` by the line range it names/, "start order reads only the status and the Course Context (E22)");
 });
 
 test("every rule of teaching-agent.nav.yaml reaches CLAUDE.md: nothing moved out of the start reading gets lost (T5-111)", () => {
@@ -921,11 +921,11 @@ test("every rule of teaching-agent.nav.yaml reaches CLAUDE.md: nothing moved out
   assert.deepEqual(rows.filter(row => row.replaceAll("\\|", "").split("|").length !== 5).map(row => row.slice(0, 40)), [], "a command note splits its table row (escape | as \\|)");
 });
 
-test("the core and CLAUDE.md read journal.md the same way at start: head, Course Context, Dashboard; the rest on demand", () => {
+test("the core and CLAUDE.md read journal.md the same way at start: status script, Course Context; the rest on demand by line range", () => {
   const claude = readFileSync(join(specs, "..", "CLAUDE.md"), "utf8");
   const activation = claude.split("## On Activation")[1].split("\n## ")[0];
   assert.doesNotMatch(activation, /Read `journal\.md` if it exists, especially/, "On Activation still reads the whole journal");
-  assert.match(activation, /the Dashboard block[^\n]*the rest of `journal\.md` when a task needs it \(`find\.mjs`, `read_section`\)/);
+  assert.match(activation, /`node specs\/dashboard\/status\.mjs`[^\n]*the Dashboard block is not read[^\n]*by its line range when a task needs it \(`find\.mjs`, `read_section`\)/);
   assert.doesNotMatch(read("agents/teaching-agent.yaml"), /see `agent_links`"|under `agent_links` names/, "the core points to agent_links without saying where it lives now");
   assert.match(read("agents/teaching-agent.yaml"), /CLAUDE\.md → Agent Links/);
 });

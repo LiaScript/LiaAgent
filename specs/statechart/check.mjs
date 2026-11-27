@@ -141,3 +141,17 @@ test("course machine: same next action as courseNext on 200,000 random journals 
   for (const item of wrong.slice(0, 8)) console.log("#", JSON.stringify(item));
   assert.equal(wrong.length, 0);
 });
+
+// 4. E22: the status script runs on every fixture journal and names the next action and the line ranges.
+import { readdirSync } from "node:fs";
+import { status } from "../dashboard/status.mjs";
+test("status.mjs: next action, units and section ranges for every fixture journal", () => {
+  const dir = new URL("../dashboard/fixtures/", import.meta.url);
+  for (const name of readdirSync(dir).filter(file => file.startsWith("journal"))) {
+    const text = status(new URL(name, dir).pathname);
+    assert.match(text, /^language \w+ · track \w+/m, name);
+    assert.match(text, /^next: /m, name);
+    assert.match(text, /^  ## Course Context \d+–\d+/m, name);
+    assert.ok(text.split(/\s+/).length < 400, `${name}: the status stays short`);
+  }
+});
