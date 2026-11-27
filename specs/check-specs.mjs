@@ -17,7 +17,7 @@ const dashboardTask = () => read("tasks/update-dashboard.md") + "\n" + read("dat
 // quick-fix and its cases read by part (data/quick-fix-cases.md, E23) are one rule set.
 const quickFixTask = () => read("tasks/quick-fix.md") + "\n" + read("data/quick-fix-cases.md");
 // validate-course and its course mode (tasks/validate-course-full.md, read only in course mode) are one rule set.
-const validateTask = () => read("tasks/validate-course.md") + "\n" + read("tasks/validate-course-full.md");
+const validateTask = () => read("tasks/validate-course.md") + "\n" + read("tasks/validate-course-full.md") + "\n" + read("data/validate-course-cases.md");
 // The teaching agent is split (T5-111): the core read at start, and teaching-agent.nav.yaml with commands,
 // coordination, skills and links, which build.py renders into CLAUDE.md. Tests of those sections read both.
 const teachingAgent = () => read("agents/teaching-agent.yaml") + "\n" + (existsSync(join(specs, "agents/teaching-agent.nav.yaml")) ? read("agents/teaching-agent.nav.yaml") : "");
@@ -355,7 +355,7 @@ test("validate-course: the design track checks design only", () => {
   assert.match(step("4"), /design track: only syntax, header, images and contrast count/, "session mode step 4 lacks its design-track override");
   assert.match(step("8"), /never `:coauthor-materials`/, "step 8 offers coauthor-materials on the design track");
   const fix = quickFixTask();
-  for (const phrase of ["`layout-suggestions-{n}`", "`content-hints-{n}`", "never `:coauthor-materials`", "on the design track as `tasks/validate-course.md` → Design track says", "once if the chat has not offered it yet, except on the design track", "on the design track the unit's recorded path (`data/file-structure-modes.md` → Recorded paths)", "(skip on the design track: Didactics waits)"]) assert.ok(fix.includes(phrase), `quick-fix lacks: ${phrase}`);
+  for (const phrase of ["`layout-suggestions-{n}`", "`content-hints-{n}`", "never `:coauthor-materials`", "on the design track as `data/validate-course-cases.md` → Design track says", "once if the chat has not offered it yet, except on the design track", "on the design track the unit's recorded path (`data/file-structure-modes.md` → Recorded paths)", "(skip on the design track: Didactics waits)"]) assert.ok(fix.includes(phrase), `quick-fix lacks: ${phrase}`);
 });
 
 test("preview is a navigation command of every agent", () => {
