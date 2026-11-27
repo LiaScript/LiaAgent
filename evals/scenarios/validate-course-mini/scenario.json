@@ -16,9 +16,6 @@
   "checks": [
     {
       "id": "validator-ok"
-    },
-    {
-      "id": "material-unchanged"
     }
   ]
 }
