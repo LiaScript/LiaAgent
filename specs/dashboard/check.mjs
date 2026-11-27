@@ -4657,3 +4657,16 @@ test("detect-skills names the skills of CLAUDE.md and finds a SKILL.md in a proj
   assert.equal(found["oersi-metadata"], null);
   rmSync(project, { recursive: true, force: true }); rmSync(home, { recursive: true, force: true });
 });
+
+test("a slide list that grew a second unit counts its units; a flat slide list stays one unit (E18)", () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const base = readFileSync(join(here, "fixtures/journal-mini-to-full.md"), "utf8");
+  const overview = base.match(/<!-- data-key="session-overview" -->\n\* __Folien:__\n(?: {2}.*\n)+/)?.[0];
+  assert.ok(overview, "the fixture has a flat slide list under „Folien“");
+  assert.equal(readJournal(base).unitsInOutline, 1);
+  const grown = base.replace(overview, [
+    "<!-- data-key=\"session-overview\" -->", "* __Folien:__", "  Startfolie „Der Wasserkreislauf“", "",
+    "  1. Lernseite 1: Der Wasserkreislauf", "", "     1. Wo ist das Wasser?", "     2. Quiz: Was passiert zuerst?", "",
+    "  2. Lernseite 2: Wasser im Alltag", "", "     1. Wofür brauchen wir Wasser?", "     2. Geschafft!", ""].join("\n"));
+  assert.equal(readJournal(grown).unitsInOutline, 2);
+});
