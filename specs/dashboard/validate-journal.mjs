@@ -932,7 +932,7 @@ for (const [where, text] of countTexts) {
   const sessionLines = sessionsText.split("\n");
   for (const unit of journal.units.filter(item => item.report?.changedSince)) {
     if (usableState(unit.report.usableText) === "yes") warnings.push(`unit ${unit.n}: "usable with learners now" says yes while the short re-check is open – write "yes, with limits: short re-check open" (translated, templates/session-validation.yaml → outcome_words) until the re-check`);
-    if (journal.validation.mode === "course" && journal.validation.result === "PASS") warnings.push(`the course summary says Result: PASS while the short re-check of unit ${unit.n} is open – it gives PASS with concerns and publishing waits for the re-check (tasks/validate-course.md → Course result)`);
+    if (journal.validation.mode === "course" && journal.validation.result === "PASS") warnings.push(`the course summary says Result: PASS while the short re-check of unit ${unit.n} is open – it gives PASS with concerns and publishing waits for the re-check (tasks/validate-course-full.md → Course result)`);
     if (unit.done) warnings.push(`unit ${unit.n}: Done ✅ while its report says the short re-check is open – set Done ❌ in the technical table until the re-check (tasks/quick-fix.md → Change path after a check)`);
     const report = reportHeadings(sessionsText).find(item => item.unit === String(unit.n));
     if (!report) continue;

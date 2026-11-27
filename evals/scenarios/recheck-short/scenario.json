@@ -1,6 +1,6 @@
 {
   "id": "recheck-short",
-  "title": "short re-check of a unit with two changes after its check",
+  "title": "short re-check of a unit with two changes after its check; one changed page hides an older read-aloud gap",
   "fixture": {
     "journal.md": "evals/scenarios/recheck-short/journal.md",
     "README.md": "evals/scenarios/recheck-short/material.md"
@@ -14,10 +14,33 @@
     "Any other question or offer → the option you would present as the recommended default; offers of extra commands or extra work → \"Nicht jetzt\""
   ],
   "checks": [
-    { "id": "validator-ok" },
-    { "id": "no-warning", "patterns": ["Done ✅ while", "recommended actions name none", "says yes while the short re-check", "course summary says Result: PASS while", "the overview says units", "report-action"] },
-    { "id": "material-unchanged" },
-    { "id": "recheck-closed", "lines": 2 }
+    {
+      "id": "validator-ok"
+    },
+    {
+      "id": "no-warning",
+      "patterns": [
+        "Done ✅ while",
+        "recommended actions name none",
+        "says yes while the short re-check",
+        "course summary says Result: PASS while",
+        "the overview says units",
+        "report-action"
+      ]
+    },
+    {
+      "id": "material-unchanged"
+    },
+    {
+      "id": "recheck-closed",
+      "lines": 2
+    },
+    {
+      "id": "finding-point",
+      "prefix": "finding-1-",
+      "pattern": "vorles|vorgelesen|read.?aloud|▶"
+    }
   ],
-  "judge": "evals/judges/recheck.md"
+  "judge": "evals/judges/recheck.md",
+  "note": "Deliberate trap: on „Wo ist das Wasser?“ the narration stops before „das nennt man Grundwasser“ and the writing task. The change (a typo fix) did not cause it, so it is a finding outside the change: one open point, material unchanged."
 }

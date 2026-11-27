@@ -7,7 +7,7 @@
 // stream-json`, else from the run's TRANSCRIPT.md), tokens and duration. A blinded pack per run goes to
 // <out>/judge-pack/ for the LLM judge; its answers, saved as <out>/judge-results/<id>.json, are read back.
 // The report is <out>/report.md (and report.json).
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
+import { statSync, readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -74,7 +74,7 @@ function readingLoad(reads, pristine) {
   for (const item of reads) {
     const key = `${item.path}:${item.from}:${item.to}`;
     const path = join(pristine, item.path);
-    if (seen.has(key) || !existsSync(path) || item.path.startsWith("..")) continue;
+    if (seen.has(key) || !existsSync(path) || statSync(path).isDirectory() || item.path.startsWith("..")) continue;
     seen.add(key);
     const lines = readFileSync(path, "utf8").split("\n");
     const count = words((item.from ? lines.slice(item.from - 1, item.to ?? undefined) : lines).join("\n"));
