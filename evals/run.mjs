@@ -55,6 +55,8 @@ function prepare() {
     }
     // --with <folder>=<path in project>: e.g. an installed skill, the same for every variant.
     for (const extra of withs) cpSync(extra.from, join(project, extra.to), { recursive: true });
+    // The scenario's day for the scripts (specs/dashboard/now.mjs → currentDate): dated journal lines match "today".
+    if (scenario.today) { mkdirSync(join(project, ".cache"), { recursive: true }); writeFileSync(join(project, ".cache", "now.txt"), `${scenario.today}T10:00:00Z\n`); }
     cpSync(project, join(dir, "pristine"), { recursive: true });
     writeFileSync(join(dir, "PROMPT.md"), promptFor(scenario, project));
     writeFileSync(join(dir, "meta.json"), JSON.stringify({ scenario: scenario.id, variant: variant.name, ref: variant.ref, ...(variant.candidate ? { candidate: variant.candidate } : {}), commit, rep, ...(withs.length ? { with: withs.map(extra => extra.to) } : {}) }, null, 1));

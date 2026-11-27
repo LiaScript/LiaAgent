@@ -101,7 +101,7 @@ Mark the session ✅ Done in the `journal.md` → `## Sessions` overview table (
 - **Duration hint** by its content, never by a name such as "the formula" (`data/duration-heuristic.md` → Naming the estimate).
 - **Usable first:** the line "usable with learners now" of the report comes before the outcome details, as on the overview card (`tasks/update-dashboard.md` → One ranking of the three measures).
 - **One offer** to try the unit as a learner (`try-as-learner?number={number}` when the MCP gate is open, otherwise `:create-learner-persona` when no personas exist), plus the overview's `next`.
-- **Approval stays with the instructor:** the check step waits for the instructor (computed) — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `tasks/quick-fix.md` → Approval after a review asks the one approval form; only "Approve" completes the check step (computed).
+- **Approval stays with the instructor:** the check step waits for the instructor (computed) — offer the learners' view (👁 `preview?file={number}`) for that look. After the instructor's review and any fixes, `data/quick-fix-cases.md` → Approval after a review asks the one approval form; only "Approve" completes the check step (computed).
 
 ## Writes per run
 

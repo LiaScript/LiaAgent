@@ -22,6 +22,7 @@ import { spawnSync } from "node:child_process";
 import { stepsOf, sectionSlug, laterHidden, englishLightStepTitles } from "./tracks.mjs";
 import { readJournal, englishUnitSteps, englishTerms, englishOutdatedTerms, usableState, loadPacks, anchorOf, statusText, patchSessions, courseStepKeys, englishCourseSteps, trackSteps, modeOf } from "./journal-model.mjs";
 import { courseNext, outlineShort, unitIsCourseCheck, accepts, wordsOf, englishActions, nextTitle, courseStepOf, unitStepOf, patchUnitActions, patchSectionActions, patchSessionsNote, exploreCards, sessionsNote, designUnitAction } from "./actions.mjs";
+import { currentDate } from "./now.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const workingStates = ["current", "draft", "review", "revision"];
@@ -66,7 +67,7 @@ function missingOf(text) {
 }
 
 function today(language, sample) {
-  const now = new Date();
+  const now = currentDate();
   const pad = number => String(number).padStart(2, "0");
   const [y, m, d] = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())];
   if (/^\d{1,2}\.\s?\d{1,2}\.\s?\d{4}$/.test(sample ?? "") || (!sample && language === "de")) return `${d}.${m}.${y}`;

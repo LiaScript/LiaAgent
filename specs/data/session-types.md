@@ -46,6 +46,7 @@ Session commands identify a session by its number alone (`:promote-session 3`, `
 2. Otherwise the session's row in the technical table of `journal.md` → `## Agenda`.
 3. Otherwise (only `:create-session` without an agenda): if the course has exactly one Session Type, use it; else ask the instructor once, offering the display names from `## Didactics` → `__Session Types:__`.
 4. Otherwise, on a light track (`__Track:__` `mini`, `convert` or `design`; Didactics and Agenda wait): the type is `n/a` — the unit has no Type or Method items; never ask for one.
+5. Otherwise (full track, a unit with material but no `**Type:**` and no agenda row — e.g. an agenda that waits): if `## Didactics` defines exactly one Session Type, use it; else run without Type and Method items, never ask in the middle of a fix or check, and name the missing type once in the closing message (it is settled with `:promote-session {n}` or the agenda).
 
 - If subsection and agenda disagree, say so and ask which is right before continuing — never pick one silently.
 - An extra type argument (older typed commands, a `type` parameter in older `agent:` links) is accepted only if it matches the resolved type; otherwise stop and ask.

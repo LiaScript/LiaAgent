@@ -64,7 +64,7 @@ Run this task automatically after any task that changes project state:
    line, so a wrong state word is fixed in the report, never in its copies. The rules are tested code
    (`derive-dashboard.mjs`, `actions.mjs`, `journal-model.mjs`). Its inputs are records of yours: the
    instructor's approval of a unit's material is a dated decision line written with the approval form
-   (`tasks/quick-fix.md` → Approval after a review, `tasks/coauthor-materials.md` step 7) — a review with
+   (`data/quick-fix-cases.md` → Approval after a review, `tasks/coauthor-materials.md` step 7) — a review with
    fixes alone is no approval; Done ✅ and the report are written by `:validate-course`.
 3. **Words stay yours, button words come from the pack.** Where the script finds your command right it
    keeps your `title` and `why`. Two choices stay with you: a ✏️ `quick-fix` with its description instead of
