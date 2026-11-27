@@ -1,0 +1,177 @@
+{
+  "s1-complete": {
+    "title": "Git für Lehrkräfte",
+    "confirmed": "20.11.2026",
+    "type": "workshop",
+    "targetGroup": "12 Lehrkräfte einer Gesamtschule, ohne Vorkenntnisse in Git, eigene Laptops",
+    "sessionsCalled": "Block",
+    "persona": "facilitator",
+    "agenda": "yes",
+    "pacing": "scheduled",
+    "assessment": "self-check quizzes, group work",
+    "units": "3 × 90 min",
+    "delivery": "link",
+    "fileMode": "multi-file",
+    "tone": "informal",
+    "person": "Sie",
+    "author": "A. Beispiel",
+    "table": {
+      "Vorhaben": "ein eintägiger Workshop in drei Blöcken",
+      "Thema und Titel": "Git für Lehrkräfte",
+      "Lernende": "12 Lehrkräfte, ohne Vorkenntnisse in Git",
+      "Einsatz": "Präsenz-Workshop an einem Tag, 3 × 90 Minuten, Trainerin anwesend",
+      "Anrede der Lernenden": "Sie",
+      "Zugang": "über einen Link",
+      "Sprache der Seite": "Deutsch, sachlich und freundlich"
+    },
+    "notes": [
+      "Für die Gliederung: Am Ende können die Teilnehmenden (1) ein Repository für ihr Unterrichtsmaterial anlegen, (2) Änderungen mit einer aussagekräftigen Nachricht committen, (3) einen Branch erstellen und wieder zusammenführen und (4) ein Repository auf GitHub veröffentlichen.",
+      "Für die Gliederung: Inhalt – Versionsverwaltung als Sicherung für Arbeitsblätter, Grundbefehle, Zusammenarbeit im Kollegium über GitHub."
+    ]
+  },
+  "s2-missing-goals": {
+    "title": "Statistik für die Psychologie",
+    "confirmed": "20.11.2026",
+    "type": "lecture-series",
+    "targetGroup": "etwa 80 Studierende im 2. Semester Psychologie (B.Sc.)",
+    "sessionsCalled": "Sitzung",
+    "persona": "professor",
+    "agenda": "yes",
+    "pacing": "scheduled",
+    "assessment": "quizzes, assignments",
+    "units": "14 × 90 min",
+    "delivery": "LMS",
+    "fileMode": "multi-file",
+    "tone": "formal",
+    "person": "Sie",
+    "author": "B. Beispiel",
+    "table": {
+      "Vorhaben": "eine Vorlesungsreihe mit 14 Sitzungen",
+      "Thema und Titel": "Statistik für die Psychologie",
+      "Lernende": "etwa 80 Studierende im 2. Semester",
+      "Einsatz": "wöchentlich 90 Minuten im Hörsaal, Material zur Vor- und Nachbereitung",
+      "Anrede der Lernenden": "Sie",
+      "Zugang": "über das Lernmanagementsystem",
+      "Sprache der Seite": "Deutsch"
+    },
+    "notes": [
+      "Die Vorlesung ersetzt eine bisherige Präsenzübung."
+    ]
+  },
+  "s3-vague-goals": {
+    "title": "Python für Einsteiger",
+    "confirmed": "20.11.2026",
+    "type": "self-paced",
+    "targetGroup": "Erwachsene ohne Programmiererfahrung, lernen allein zu Hause",
+    "sessionsCalled": "Lektion",
+    "persona": "coach",
+    "agenda": "no",
+    "pacing": "learner-driven",
+    "assessment": "self-check quizzes",
+    "units": "6 × 30 min",
+    "delivery": "link",
+    "fileMode": "multi-file",
+    "tone": "informal",
+    "person": "du",
+    "author": "C. Beispiel",
+    "table": {
+      "Vorhaben": "ein Selbstlernkurs mit sechs Lektionen",
+      "Thema und Titel": "Python für Einsteiger",
+      "Lernende": "Erwachsene ohne Programmiererfahrung",
+      "Einsatz": "allein zu Hause, im eigenen Tempo, je Lektion etwa 30 Minuten",
+      "Anrede der Lernenden": "du",
+      "Zugang": "über einen Link",
+      "Sprache der Seite": "Deutsch, einfach"
+    },
+    "notes": [
+      "Für die Gliederung: Lernziele der Lehrkraft – die Lernenden sollen Python verstehen, Programmieren lieben lernen und am Ende selbstständig eine Web-App mit Datenbank bauen."
+    ]
+  },
+  "s4-unrealistic-time": {
+    "title": "Maschinelles Lernen kompakt",
+    "confirmed": "20.11.2026",
+    "type": "single-lesson",
+    "targetGroup": "25 Schülerinnen und Schüler der 11. Klasse, Informatik-Grundkurs, Python-Grundlagen vorhanden",
+    "sessionsCalled": "Stunde",
+    "persona": "tutor",
+    "agenda": "no",
+    "pacing": "scheduled",
+    "assessment": "self-check quizzes",
+    "units": "1 × 45 min",
+    "delivery": "link",
+    "fileMode": "single-file",
+    "tone": "informal",
+    "person": "du",
+    "author": "D. Beispiel",
+    "table": {
+      "Vorhaben": "eine einzelne Unterrichtsstunde",
+      "Thema und Titel": "Maschinelles Lernen kompakt",
+      "Lernende": "25 Schülerinnen und Schüler, 11. Klasse, Python-Grundlagen",
+      "Einsatz": "eine Schulstunde (45 Minuten) im Computerraum, Lehrkraft anwesend",
+      "Anrede der Lernenden": "du",
+      "Zugang": "über einen Link",
+      "Sprache der Seite": "Deutsch"
+    },
+    "notes": [
+      "Für die Gliederung: In der Stunde sollen die Lernenden (1) erklären, was überwachtes Lernen ist, (2) einen Datensatz selbst bereinigen, (3) ein neuronales Netz in Python trainieren, (4) die Genauigkeit des Modells bewerten und (5) eine eigene Anwendungsidee präsentieren."
+    ]
+  },
+  "h1-observable-alone": {
+    "title": "Erste Hilfe am Kind",
+    "confirmed": "20.11.2026",
+    "type": "self-paced",
+    "targetGroup": "Eltern und Großeltern von Kleinkindern, ohne Vorkenntnisse",
+    "sessionsCalled": "Modul",
+    "persona": "coach",
+    "agenda": "no",
+    "pacing": "learner-driven",
+    "assessment": "self-check quizzes",
+    "units": "4 × 20 min",
+    "delivery": "link",
+    "fileMode": "multi-file",
+    "tone": "informal",
+    "person": "Sie",
+    "author": "E. Beispiel",
+    "table": {
+      "Vorhaben": "ein Selbstlernkurs mit vier Modulen",
+      "Thema und Titel": "Erste Hilfe am Kind",
+      "Lernende": "Eltern und Großeltern, ohne Vorkenntnisse",
+      "Einsatz": "allein am Smartphone mit Kopfhörern, im eigenen Tempo, je Modul etwa 20 Minuten",
+      "Anrede der Lernenden": "Sie",
+      "Zugang": "über einen Link",
+      "Sprache der Seite": "Deutsch, einfach"
+    },
+    "notes": [
+      "Für die Gliederung: Am Ende können die Lernenden bei einem Kleinkind eine Herzdruckmassage richtig durchführen, die stabile Seitenlage anwenden und den Notruf mit den fünf W-Fragen absetzen."
+    ]
+  },
+  "h2-heterogeneous": {
+    "title": "Bewerben in Deutschland",
+    "confirmed": "20.11.2026",
+    "type": "lecture-series",
+    "targetGroup": "16 Erwachsene in einem Integrationskurs, Deutsch zwischen A2 und B1",
+    "sessionsCalled": "Einheit",
+    "persona": "tutor",
+    "agenda": "yes",
+    "pacing": "scheduled",
+    "assessment": "reflection, group work",
+    "units": "4 × 90 min",
+    "delivery": "link",
+    "fileMode": "multi-file",
+    "tone": "informal",
+    "person": "Sie",
+    "author": "F. Beispiel",
+    "table": {
+      "Vorhaben": "eine Reihe mit vier Einheiten im Kurs",
+      "Thema und Titel": "Bewerben in Deutschland",
+      "Lernende": "16 Erwachsene, Deutsch zwischen A2 und B1",
+      "Einsatz": "im Kursraum, Lehrkraft anwesend, wöchentlich 90 Minuten",
+      "Anrede der Lernenden": "Sie",
+      "Zugang": "über einen Link",
+      "Sprache der Seite": "Deutsch, einfache Sprache"
+    },
+    "notes": [
+      "Für die Gliederung: Die Teilnehmenden sollen einen Lebenslauf schreiben und sich in einem Vorstellungsgespräch vorstellen können."
+    ]
+  }
+}
