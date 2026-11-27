@@ -26,7 +26,7 @@ Gewicht: **K** = kritisch (eine Verletzung schließt eine Variante aus, egal wie
 | R14 | Passt zu den Lernenden: Sprachstand, Vorwissen, Förderbedarf; Sprachkomponente wo nötig; heterogene Gruppen: Basis- und Erweiterungsstufe in Alltagswörtern, nie ein Schulstufen-Wort (nie „Grundstufe“) | Schritt 5 | W | C `no-stage-word`, J `levels` |
 | R15 | Passt zur Zeit: kurze Liste Sitzung → Ziel → Selbstprüfung (Tabelle höchstens 3 Spalten), alle genannten Zeitschätzungen eingerechnet; passt es nicht, vorschlagen, was wegfällt; nach jeder Überarbeitung wiederholen; offene Lücke → `decisions` der Übersicht | Schritt 5 | K | J `time_check`, C `time-gap-recorded` (Szenario s4) |
 | R16 | Inhaltsfragen **vor** der Speicherbestätigung, nie im selben Formular; alles Gespeicherte vorher als Text; eigene Ergänzungen sind Inhaltsfragen, nie erst in der Speichervorschau | Schritt 5, chat-dialog §1 | K | J `content_before_save` |
-| R17 | Logo-Wunsch → Gestaltungsassistent nach dem Speichern | Schritt 6 | N | – |
+| R17 | Wünscht die Lehrkraft ein Logo, **sagt** der Agent ihr, dass der Gestaltungsassistent es nach dem Speichern erstellt (`:agent artist` → `:create-logo`, in `## Visual Identity`) | Schritt 6 | N | – |
 | R18 | `templates/course-outline.yaml` füllen; beim Ergänzen einer bestehenden Gliederung jede Zeile wörtlich behalten | Schritt 7 | K | C `outline-kept` (Szenario s5) |
 | R19 | Einzeldatei mit mehreren Einheiten: Titelfolie einmal vorn, jede Einheit beginnt mit ihrer Kapitelfolie | Schritt 7 | N | – |
 | R20 | Vor dem Speichern: Übersichtsentwurf, dann die Gliederung so zeigen, wie die Lehrkraft sie liest, mit „Speichern“ / „Etwas ändern“ (einzige Schreibbestätigung) | Schritt 8 | K | J `save_confirm` |

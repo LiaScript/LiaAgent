@@ -70,6 +70,6 @@ nicht parallel); der erste ist kalt, der zweite liest die gemeinsamen Präfixe (
 
 ## Auswahlregel
 
-Pareto über (Erfolgsquote ↑, Tokens je erfolgreichem Lauf ↓, Instruktionsgröße ↓) auf den Trainingsszenarien.
+Pareto über (Erfolgsquote ↑, Tokens je erfolgreichem Lauf ↓, tatsächlich gelesene Instruktionen ↓ – die Dateigröße der Variante wird getrennt ausgewiesen) auf den Trainingsszenarien.
 Vorher ausgeschlossen: jede Variante, der laut `coverage.json` eine K-Anforderung fehlt, und jede mit mehr
 kritischen Verstößen als das Original. Eine billige Variante gewinnt nie allein durch Kürze.

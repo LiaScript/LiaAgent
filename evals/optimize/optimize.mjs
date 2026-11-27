@@ -53,32 +53,33 @@ const result = variants.map(variant => {
     const set = loadScenario(row.scenario).set ?? "train";
     const transcript = existsSync(join(out, row.dir, "project", "TRANSCRIPT.md")) ? readFileSync(join(out, row.dir, "project", "TRANSCRIPT.md"), "utf8") : "";
     const questions = (transcript.split(/^## Messages/m)[1] ?? "").split(/^## /m)[0].split(/\n(?=\s*(?:\d+\.|[-*]|#{3,}))/).filter(part => /\?/.test(part)).length;
-    return { scenario: row.scenario, set, rep: row.rep, success: failedChecks.length === 0 && critical.length === 0, failedChecks, failedJudge, critical, tokens: row.usage?.tokens ?? null, cache_read: row.usage?.cache_read_tokens ?? null, cost: row.usage?.cost_usd ?? null, duration_ms: row.duration_ms ?? row.usage?.duration_ms ?? null, questions, judged: Boolean(row.judge) };
+    return { scenario: row.scenario, set, rep: row.rep, spec_words: row.load?.words_specs ?? null, success: failedChecks.length === 0 && critical.length === 0, failedChecks, failedJudge, critical, tokens: row.usage?.tokens ?? null, cache_read: row.usage?.cache_read_tokens ?? null, cost: row.usage?.cost_usd ?? null, duration_ms: row.duration_ms ?? row.usage?.duration_ms ?? null, questions, judged: Boolean(row.judge) };
   });
   const of = set => perRun.filter(run => run.set === set);
   const summary = runs => runs.length ? {
     runs: runs.length, success_rate: runs.filter(run => run.success).length / runs.length,
     critical: runs.reduce((sum, run) => sum + run.critical.length, 0),
-    tokens_median: median(runs.map(run => run.tokens)), cost_median: median(runs.map(run => run.cost)),
+    tokens_median: median(runs.map(run => run.tokens)), spec_words_read: median(runs.map(run => run.spec_words)), cost_median: median(runs.map(run => run.cost)),
     duration_median_s: median(runs.map(run => run.duration_ms))/1000 || null, questions_median: median(runs.map(run => run.questions)),
     tokens_per_success: runs.some(run => run.success) ? Math.round(runs.reduce((sum, run) => sum + (run.tokens ?? 0), 0) / runs.filter(run => run.success).length) : null
   } : null;
   return { variant, candidate, size: instructionSize(candidate, overlayPaths), coverage: coverage(candidate), train: summary(of("train")), holdout: summary(of("holdout")), runs: perRun };
 });
 
-// Pareto front over (success rate ↑, tokens per success ↓, instruction tokens ↓) on the training set.
+// Pareto front over (success rate ↑, tokens per success ↓, instruction words actually read ↓) on the training set.
+// (The file size of the variant is reported, but what counts is what the agent has to read for the task.)
 // Excluded first: a variant missing a critical requirement, or with more critical violations than the baseline.
 const base = result.find(entry => entry.variant === baseline);
 const eligible = result.filter(entry => entry.train && !entry.coverage.missing.some(id => id.includes("(K)") || id.startsWith("(")) && (!base?.train || entry.train.critical <= base.train.critical));
-const dominates = (a, b) => a.train.success_rate >= b.train.success_rate && (a.train.tokens_per_success ?? Infinity) <= (b.train.tokens_per_success ?? Infinity) && a.size.tokens_est <= b.size.tokens_est
-  && (a.train.success_rate > b.train.success_rate || (a.train.tokens_per_success ?? Infinity) < (b.train.tokens_per_success ?? Infinity) || a.size.tokens_est < b.size.tokens_est);
+const dominates = (a, b) => a.train.success_rate >= b.train.success_rate && (a.train.tokens_per_success ?? Infinity) <= (b.train.tokens_per_success ?? Infinity) && (a.train.spec_words_read ?? Infinity) <= (b.train.spec_words_read ?? Infinity)
+  && (a.train.success_rate > b.train.success_rate || (a.train.tokens_per_success ?? Infinity) < (b.train.tokens_per_success ?? Infinity) || (a.train.spec_words_read ?? Infinity) < (b.train.spec_words_read ?? Infinity));
 const front = eligible.filter(a => !eligible.some(b => b !== a && dominates(b, a))).map(entry => entry.variant);
 for (const entry of result) entry.status = front.includes(entry.variant) ? "pareto" : eligible.includes(entry) ? "dominated" : "excluded";
 
 writeFileSync(join(out, "optimize.json"), JSON.stringify({ baseline, front, variants: result }, null, 1));
 const fmt = (value, digits = 0) => value === null || value === undefined ? "–" : typeof value === "number" ? value.toLocaleString("de-DE", { maximumFractionDigits: digits }) : value;
-let md = `# Optimierung – Auswertung\n\nLauf: \`${out}\` · Basis: \`${baseline}\`\n\n| Variante | Status | Instruktion (Wörter / ~Tokens) | fehlende Anforderungen | Erfolg Training | krit. Verstöße | Tokens (Median) | Tokens je Erfolg | Kosten | Dauer s | Rückfragen | Erfolg Holdout |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n`;
-for (const entry of result) md += `| ${entry.variant} | ${entry.status} | ${fmt(entry.size.words)} / ${fmt(entry.size.tokens_est)} | ${entry.coverage.missing.join(", ") || "–"} | ${entry.train ? `${Math.round(entry.train.success_rate * 100)} % (${entry.train.runs})` : "–"} | ${fmt(entry.train?.critical)} | ${fmt(entry.train?.tokens_median)} | ${fmt(entry.train?.tokens_per_success)} | ${fmt(entry.train?.cost_median, 3)} | ${fmt(entry.train?.duration_median_s)} | ${fmt(entry.train?.questions_median)} | ${entry.holdout ? `${Math.round(entry.holdout.success_rate * 100)} % (${entry.holdout.runs})` : "–"} |\n`;
+let md = `# Optimierung – Auswertung\n\nLauf: \`${out}\` · Basis: \`${baseline}\`\n\n| Variante | Status | Datei (Wörter / ~Tokens) | gelesene Instruktionen (Wörter) | fehlende Anforderungen | Erfolg Training | krit. Verstöße | Tokens (Median) | Tokens je Erfolg | Kosten | Dauer s | Rückfragen | Erfolg Holdout |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|\n`;
+for (const entry of result) md += `| ${entry.variant} | ${entry.status} | ${fmt(entry.size.words)} / ${fmt(entry.size.tokens_est)} | ${fmt(entry.train?.spec_words_read)} | ${entry.coverage.missing.join(", ") || "–"} | ${entry.train ? `${Math.round(entry.train.success_rate * 100)} % (${entry.train.runs})` : "–"} | ${fmt(entry.train?.critical)} | ${fmt(entry.train?.tokens_median)} | ${fmt(entry.train?.tokens_per_success)} | ${fmt(entry.train?.cost_median, 3)} | ${fmt(entry.train?.duration_median_s)} | ${fmt(entry.train?.questions_median)} | ${entry.holdout ? `${Math.round(entry.holdout.success_rate * 100)} % (${entry.holdout.runs})` : "–"} |\n`;
 md += `\nPareto-Front (Training): ${front.map(name => `\`${name}\``).join(", ") || "–"}\n\nKosten und Cache-Treffer nur bei Läufen über einen Adapter mit Trace (Claude Code: \`--output-format stream-json\`); Läufe über Subagenten melden nur die Gesamt-Tokens.\n`;
 writeFileSync(join(out, "optimize.md"), md);
 
