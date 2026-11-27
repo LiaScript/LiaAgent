@@ -47,3 +47,11 @@ im Szenario `validate-course-mini` entfernt.
 
 **Übernehmen.** Die kurze Nachprüfung – sie folgt auf jede Korrektur – wird um 14 % günstiger und liest ein Drittel
 weniger, bei gleicher Qualität. Die Nachschärfung der Befund-Regel ist auch ohne Leseplan eine Klarstellung.
+
+## Nachtrag: die Falle im Szenario
+
+Die Vorlese-Lücke auf „Wo ist das Wasser?“ bleibt bewusst in `recheck-short` (Entscheidung 27.11.2026); die neue
+Prüfung `finding-point` verlangt einen offenen Punkt `finding-1-…` zum Vorlesen, `material-unchanged` bleibt.
+Nachträglich auf alle Läufe angewandt: develop 3/5, E15 vor der Nachschärfung 3/5 (einer behob die Lücke selbst),
+E15 nachgeschärft 3/4 (der vierte meldete einen anderen Punkt). Die Erkennung ist in beiden Varianten gleich
+wechselhaft – ein Thema für die Prüfregeln, nicht für E15.

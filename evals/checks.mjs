@@ -48,6 +48,14 @@ const outcomeOf = journal => journal.match(/\*\*(?:Ergebnis|Outcome|Result):\*\*
 const recheckOpen = outcome => /kurze Nachprüfung offen|short re-check open/i.test(outcome);
 
 export const checks = {
+  // An open point the run added for a finding: a decision whose key starts with `prefix` and whose text matches `pattern`.
+  "finding-point": (params, run) => {
+    const block = read(join(run.project, "journal.md")).match(/```json @Dashboard\.View\n([\s\S]*?)\n```/)?.[1] ?? "{}";
+    let decisions = [];
+    try { decisions = JSON.parse(block).decisions ?? []; } catch { return { pass: false, detail: "Dashboard block is no JSON" }; }
+    const hit = decisions.find(item => String(item.key ?? "").startsWith(params.prefix) && new RegExp(params.pattern, "iu").test(JSON.stringify(item)));
+    return { pass: Boolean(hit), detail: hit ? `${hit.key}` : `no ${params.prefix}… point matching /${params.pattern}/ (${decisions.map(item => item.key).join(", ") || "none"})` };
+  },
   "validator-ok": (params, run) => ({ pass: run.validation.status === 0, detail: `exit ${run.validation.status}` }),
 
   "no-warning": (params, run) => {
