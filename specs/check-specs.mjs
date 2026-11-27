@@ -252,7 +252,7 @@ test("the mini course: unit 1 in ## Sessions, one save, the unit check covers th
   assert.ok(task.includes("tasks/update-dashboard.md"), "create-mini-course does not run update-dashboard");
   const triggers = dashboardTask().split("## Automatic Trigger")[1]?.split("\n## ")[0] ?? "";
   assert.ok(triggers.includes(":create-mini-course"), "create-mini-course is missing in the update-dashboard trigger list");
-  assert.match(read("agents/teaching-agent.yaml"), /^ {4}- create-mini-course\.md$/m, "teaching-agent.yaml dependencies lack create-mini-course.md");
+  assert.match(teachingAgent(), /^ {4}- create-mini-course\.md$/m, "teaching-agent.yaml dependencies lack create-mini-course.md");
   // The first Dashboard write after the mini save replaces the empty journal's steps with the track's list.
   assert.match(read("tasks/init-course.md"), /replaces `process\.steps` with the steps of the mini track/);
   assert.match(read("tasks/activate-section.md"), /the overview's step list follows the new track \(`data\/dashboard-cases\.md` → Process steps\)/);
@@ -477,7 +477,7 @@ test("leftovers of the first test round stay fixed", () => {
   for (const file of ["tasks/init-course.md", "tasks/scaffold-course.md"]) {
     assert.match(read(file), /read_chat`? when the preview is connected/, `${file} requires read_chat in the terminal`);
   }
-  const agent = read("agents/teaching-agent.yaml");
+  const agent = teachingAgent();
   for (const data of ["session-types.md", "didactic-methods.md", "duration-heuristic.md", "file-structure-modes.md"]) {
     assert.ok(agent.includes(`    - ${data}`), `teaching-agent.yaml dependencies miss ${data}`);
   }

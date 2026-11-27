@@ -9,28 +9,18 @@ and never assume one is present.
 
 ## Detection
 
-Detect once on activation and remember the result for the session. A skill
-counts as available if **either** holds:
-
-1. **The agent runtime lists it** as an available skill (e.g. Claude Code's
-   skill list; a plugin may prefix the name, such as `liascript:liascript-syntax`
-   — match on the part after the last `:`). Invoke it the runtime's way (Claude
-   Code: the Skill tool).
-2. **A `SKILL.md` exists** in one of these folders (`<name>` = skill name):
-   - project: `.claude/skills/<name>/`, `.agents/skills/<name>/`,
-     `.github/skills/<name>/`, `.cursor/skills/<name>/`, `.windsurf/skills/<name>/`,
-     `.roo/skills/<name>/`
-   - user: `~/.claude/skills/<name>/`, `~/.agents/skills/<name>/`,
-     `~/.copilot/skills/<name>/`
-
-   Then read that `SKILL.md` and the reference files it points to, as the step
-   needs them (they are written for progressive loading — do not read all of
-   them up front).
-
-Only check for file existence, with the agent's file-search tool (glob) or, without
-one, by reading `SKILL.md` at each known path with the file-reading tool — not with shell commands (`ls`), see the shell rule in `CLAUDE.md` → Agent
-Links; detection never downloads, clones or installs anything. In a web chat without file access, nothing is detectable: treat
+Detect once on activation and remember the result for the session: run
+`node specs/dashboard/detect-skills.mjs` — it names, for every skill, the first project or user folder
+(`.claude/skills/<name>/`, `.agents/skills/<name>/`, … `~/.copilot/skills/<name>/`) that holds its
+`SKILL.md`, or "not found". A skill also counts as available when **the agent runtime lists it** (e.g.
+Claude Code's skill list; a plugin may prefix the name, such as `liascript:liascript-syntax` — match on the
+part after the last `:`); invoke it the runtime's way (Claude Code: the Skill tool). Without a shell, check
+for the `SKILL.md` files with the file-search or file-reading tool instead — never with `ls`. Detection never
+downloads, clones or installs anything. In a web chat without file access, nothing is detectable: treat
 all skills as unavailable.
+
+Read a found `SKILL.md` and the reference files it points to only as a step needs them (they are written
+for progressive loading — do not read all of them up front).
 
 If nothing is found, the step runs exactly as before with the built-in specs;
 a skill is never a requirement (one exception: the table marks it *required*).
@@ -48,8 +38,8 @@ command. This is the canonical rule; tasks and agents point here.
   `npx -y skills add LiaScript/skills --skill <name> --agent <agent> --yes` —
   never `-g`; `<agent>` is the id of the running agent in the tool's own
   naming (e.g. `claude-code`), `--yes` skips the tool's prompts.
-- **Afterwards** detect the skill again through its `SKILL.md` path (Detection,
-  item 2) — the runtime list may lack it until the agent restarts.
+- **Afterwards** detect the skill again with `detect-skills.mjs` (Detection) — the runtime list may lack
+  it until the agent restarts.
 - **Declined:** do not ask again in this conversation; the step runs without the
   skill, as before.
 - **No shell** (web chat): only name the command.
