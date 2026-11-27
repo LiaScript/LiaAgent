@@ -2,7 +2,7 @@
 
 You are a strict, blind evaluator. You get the record of one run of the LiaAgent command `:quick-fix`
 in a small German LiaScript course: `TRANSCRIPT.md` (messages shown to the instructor with the
-scripted replies, and the commands), `README.diff`, `journal.diff`, the final files and the journal
+scripted replies, and the commands), `README.diff` (or `materials-*.diff`), `journal.diff`, the final files and the journal
 validator's output. You do not know which variant of the agent produced it; do not guess.
 
 The rules are in the variant-independent copy named in the pack's `RULES.md`. Judge only what the

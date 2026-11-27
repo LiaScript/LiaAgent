@@ -1,0 +1,34 @@
+{
+  "id": "quickfix-typo-multi",
+  "title": "quick-fix after a check in a course with four units (three approved, one planned): a typo in unit 2",
+  "fixture": {
+    "journal.md": "evals/scenarios/quickfix-typo-multi/journal.md",
+    "materials/01-wasser.md": "evals/scenarios/quickfix-typo-multi/materials/01-wasser.md",
+    "materials/02-verdunsten.md": "evals/scenarios/quickfix-typo-multi/materials/02-verdunsten.md",
+    "materials/03-regen.md": "evals/scenarios/quickfix-typo-multi/materials/03-regen.md"
+  },
+  "patches": [],
+  "mode": "terminal",
+  "today": "2026-11-24",
+  "command": ":quick-fix 2 Tippfehler auf der Seite „Die Sonne wärmt das Wasser“: „Wasserdamf“",
+  "replies": [
+    "Scope confirmation → \"Ja\"",
+    "Showing the change before saving (\"Speichern\" / \"Etwas ändern\") → \"Speichern\"",
+    "An approval question for the unit → \"Freigeben\"",
+    "Any other question or offer → the option you would present as the recommended default; offers of extra commands or extra work → \"Nicht jetzt\""
+  ],
+  "checks": [
+    { "id": "validator-ok" },
+    { "id": "no-warning", "patterns": ["Done ✅ while", "recommended actions name none", "says yes while the short re-check", "course summary says Result: PASS while", "the overview says units"] },
+    { "id": "material-scope", "file": "materials/02-verdunsten.md", "slides": ["Die Sonne wärmt das Wasser"] },
+    { "id": "material-has", "file": "materials/02-verdunsten.md", "pattern": "Wasserdampf und steigt" },
+    { "id": "material-lacks", "file": "materials/02-verdunsten.md", "pattern": "Wasserdamf\\b" },
+    { "id": "material-unchanged", "file": "materials/01-wasser.md" },
+    { "id": "material-unchanged", "file": "materials/03-regen.md" },
+    { "id": "journal-has", "pattern": "Nach der Prüfung geändert" },
+    { "id": "recheck-state", "unit": 2 },
+    { "id": "approvals", "count": 3 },
+    { "id": "summary-blocked", "unit": 2 }
+  ],
+  "judge": "evals/judges/quick-fix.md"
+}
