@@ -13,7 +13,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { readJournal, loadPacks, englishTerms } from "./journal-model.mjs";
-import { localTime } from "./now.mjs";
+import { localTime, currentDate } from "./now.mjs";
 import { countWrite } from "./write-count.mjs";
 import { deriveForJournal, patchJournal } from "./derive-dashboard.mjs";
 
@@ -138,7 +138,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const isoDate = de ? `${de[3]}-${de[2].padStart(2, "0")}-${de[1].padStart(2, "0")}`
     : us ? `${us[3]}-${us[1].padStart(2, "0")}-${us[2].padStart(2, "0")}`
     : /^\d{4}-\d{2}-\d{2}$/.test(given ?? "") ? given
-    : localTime(new Date(), "Europe/Berlin").text.split(" ")[1];
+    : localTime(currentDate(), "Europe/Berlin").text.split(" ")[1];
   const [y, m, d] = isoDate.split("-");
   const date = journal.language === "de" ? `${d}.${m}.${y}` : isoDate;
   try {

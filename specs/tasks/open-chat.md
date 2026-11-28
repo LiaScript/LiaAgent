@@ -14,8 +14,8 @@ works in the terminal and wants to move to the browser.
 
 ## Inputs
 
-- `journal.md` → header `language:`, `## Course Context`, the Dashboard `next`
-  (read with the file-reading tool).
+- `journal.md`: `node specs/dashboard/status.mjs` (language, next action, units, line ranges), then
+  `## Course Context` by its line range with the file-reading tool.
 - `data/agent-links.md` (core: MCP gate, Agent Roster, Chat Offers) and
   `data/chat-wording.md`, read once per session as the re-read rule says.
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-memory.md`

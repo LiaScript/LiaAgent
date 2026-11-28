@@ -3,13 +3,24 @@
 // timestamp, e.g. of the last read_chat entry – the time since it, for the "about an hour" greeting rule.
 // Event and read_chat timestamps are UTC; never state a clock time from them, use the local line.
 // Run from the course project root: node specs/dashboard/now.mjs [<timestamp>]
-import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const usage = `Usage: node specs/dashboard/now.mjs [<timestamp>]
   timestamp  optional, ISO 8601 (2026-10-23T09:40:00Z) or milliseconds since 1970, e.g. the time of
              the last read_chat entry: prints the time since it.
 Prints UTC, the local time of this computer with its offset, and the time since the timestamp.`;
+
+// The current time. A test harness may fix it with a file `.cache/now.txt` in the project (one ISO 8601 timestamp,
+// e.g. 2026-11-24T10:00:00Z) or the variable LIAAGENT_NOW; a real course has neither and gets the clock.
+export function currentDate(projectDir = process.cwd()) {
+  const fixed = process.env.LIAAGENT_NOW ?? (() => {
+    try { return readFileSync(join(projectDir, ".cache", "now.txt"), "utf8").trim(); } catch { return null; }
+  })();
+  if (fixed) { try { return parseTimestamp(fixed); } catch { /* an unreadable fixed time falls back to the clock */ } }
+  return new Date();
+}
 
 // A timestamp as Date: ISO 8601 (without a zone it is UTC, as in events and read_chat) or epoch ms/s.
 export function parseTimestamp(text) {
@@ -63,7 +74,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args[0] === "--help" || args[0] === "-h") { console.log(usage); process.exit(0); }
   try {
     if (args.length > 1 || args.some(arg => arg.startsWith("-") && !/^-?\d/.test(arg))) throw new Error(`one optional timestamp only, not ${args.join(" ")}`);
-    const lines = describeNow(new Date(), args[0] ? parseTimestamp(args[0]) : null);
+    const lines = describeNow(currentDate(), args[0] ? parseTimestamp(args[0]) : null);
     lines.forEach(line => console.log(line));
     console.log("Exit code: 0");
   } catch (error) {

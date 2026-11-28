@@ -14,8 +14,8 @@ the instructor's first message in the session.
 
 ## Inputs
 
-- `journal.md`, if it exists: header `language:`, `## Course Context`, the Dashboard `next` (read with the
-  file-reading tool).
+- `journal.md`, if it exists: `node specs/dashboard/status.mjs` (language, next action, units, line ranges), then
+  `## Course Context` by its line range with the file-reading tool.
 - `tasks/open-chat.md` — steps 2–5 run as part of this task.
 - `data/agent-links.md` (core: MCP Gate, Agent Roster) and `data/chat-wording.md`, read once per session.
 - Rule sheets, read completely with this task (`data/agent-links.md` → Chat Conduct → Rule sheets): `data/chat-language.md`, `data/chat-memory.md`

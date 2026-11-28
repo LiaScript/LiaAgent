@@ -1,0 +1,125 @@
+{
+  "id": "course",
+  "description": "The course process per track (actions.mjs → courseNext). Entered from the journal's facts; a state with meta.unit hands over to the unit machine of that unit (actor: one unit machine per ### n).",
+  "always": [
+    { "target": "light", "guard": "lightTrack" },
+    { "target": "template", "guard": "templateTrack" },
+    { "target": "design", "guard": "designTrack" },
+    { "target": "full" }
+  ],
+  "states": {
+    "full": {
+      "always": [
+        { "target": ".frame", "guard": "noFrame" },
+        { "target": ".outline", "guard": "noOutline" },
+        { "target": ".completeOutline", "guard": "outlineShort" },
+        { "target": ".didactics", "guard": "noDidactics" },
+        { "target": ".block", "guard": "briefForWorkingUnit" },
+        { "target": ".unit", "guard": "workingUnit" },
+        { "target": ".suggestBlocks", "guard": "blocksOpen" },
+        { "target": ".agenda", "guard": "agendaMissing" },
+        { "target": ".nextUnit", "guard": "unplannedUnit" },
+        { "target": ".ownMedia", "guard": "courseFailedOnlyOnOwnMedia" },
+        { "target": ".courseCheck", "guard": "courseCheckOpen" },
+        { "target": ".publish", "guard": "publishOpen" },
+        { "target": ".finished" }
+      ],
+      "states": {
+        "frame": { "meta": { "action": "init-course" } },
+        "outline": { "meta": { "action": "create-outline" } },
+        "completeOutline": { "meta": { "action": "complete-outline" } },
+        "didactics": { "meta": { "action": "create-didactics" } },
+        "block": {
+          "description": "A building-block brief not adopted yet, for the unit being worked on (or no unit yet).",
+          "always": [{ "target": ".adopt", "guard": "briefReady" }, { "target": ".develop" }],
+          "states": {
+            "adopt": { "meta": { "action": "adopt-template" } },
+            "develop": { "meta": { "action": "develop-template" } }
+          }
+        },
+        "unit": { "meta": { "unit": "working" } },
+        "suggestBlocks": { "meta": { "action": "suggest-templates" } },
+        "agenda": { "meta": { "action": "create-agenda" } },
+        "nextUnit": { "meta": { "unit": "unplanned" } },
+        "ownMedia": { "meta": { "action": "insert-images" } },
+        "courseCheck": { "meta": { "action": "check-course" } },
+        "publish": {
+          "always": [{ "target": ".decideAccess", "guard": "accessOpen" }, { "target": ".publish" }],
+          "states": { "decideAccess": { "meta": { "action": "decide-access" } }, "publish": { "meta": { "action": "publish" } } }
+        },
+        "finished": { "meta": { "action": null } }
+      }
+    },
+    "light": {
+      "description": "mini and convert: frame, (outline), the one unit, publish only where the delivery needs a link.",
+      "always": [
+        { "target": ".frame", "guard": "noFrame" },
+        { "target": ".outline", "guard": "lightOutlineMissing" },
+        { "target": ".write", "guard": "unitOneWithoutMaterial" },
+        { "target": ".unit", "guard": "unitOneOpen" },
+        { "target": ".courseCheck", "guard": "lightCourseCheckOpen" },
+        { "target": ".publish", "guard": "lightPublishOpen" },
+        { "target": ".finished" }
+      ],
+      "states": {
+        "frame": { "meta": { "action": "init-course" } },
+        "outline": { "meta": { "action": "create-outline" } },
+        "write": {
+          "always": [{ "target": ".mini", "guard": "miniTrack" }, { "target": ".convert" }],
+          "states": { "mini": { "meta": { "action": "write-mini-course" } }, "convert": { "meta": { "action": "convert-course" } } }
+        },
+        "unit": { "meta": { "unit": "one" } },
+        "courseCheck": { "meta": { "action": "check-course" } },
+        "publish": {
+          "always": [{ "target": ".decideAccess", "guard": "accessOpen" }, { "target": ".publish" }],
+          "states": { "decideAccess": { "meta": { "action": "decide-access" } }, "publish": { "meta": { "action": "publish" } } }
+        },
+        "finished": { "meta": { "action": null } }
+      }
+    },
+    "design": {
+      "description": "Frame, look (set, then applied), images reviewed, each unit's check, publishing where the delivery needs a link.",
+      "always": [
+        { "target": ".frame", "guard": "noFrame" },
+        { "target": ".look", "guard": "lookNotSet" },
+        { "target": ".applyTheme", "guard": "themeToApply" },
+        { "target": ".reviewImages", "guard": "imagesToReview" },
+        { "target": ".unit", "guard": "designUnitOpen" },
+        { "target": ".publish", "guard": "designPublishOpen" },
+        { "target": ".finished" }
+      ],
+      "states": {
+        "frame": { "meta": { "action": "init-course" } },
+        "look": {
+          "always": [{ "target": ".imageStyle", "guard": "scopeImages" }, { "target": ".look" }],
+          "states": { "imageStyle": { "meta": { "action": "design-image-style" } }, "look": { "meta": { "action": "design-look" } } }
+        },
+        "applyTheme": { "meta": { "action": "apply-theme" } },
+        "reviewImages": { "meta": { "action": "review-images" } },
+        "unit": { "meta": { "unit": "designOpen", "variant": "design" } },
+        "publish": {
+          "always": [{ "target": ".decideAccess", "guard": "accessOpen" }, { "target": ".publish" }],
+          "states": { "decideAccess": { "meta": { "action": "decide-access" } }, "publish": { "meta": { "action": "publish" } } }
+        },
+        "finished": { "meta": { "action": null } }
+      }
+    },
+    "template": {
+      "description": "The building-block track: request and brief, build with the instructor, publish.",
+      "always": [
+        { "target": ".frame", "guard": "noFrame" },
+        { "target": ".brief", "guard": "noBrief" },
+        { "target": ".finished", "guard": "published" },
+        { "target": ".publish", "guard": "briefApproved" },
+        { "target": ".develop" }
+      ],
+      "states": {
+        "frame": { "meta": { "action": "init-course" } },
+        "brief": { "meta": { "action": "start-template" } },
+        "develop": { "meta": { "action": "develop-template" } },
+        "publish": { "meta": { "action": "publish-template" } },
+        "finished": { "meta": { "action": null } }
+      }
+    }
+  }
+}

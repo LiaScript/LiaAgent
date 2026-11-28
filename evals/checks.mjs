@@ -44,7 +44,11 @@ function slideText(text, title) {
 // A `## Name` section of the journal (heading may carry a translated suffix), up to the next `## `.
 const sectionOf = (journal, name) => journal.split(new RegExp(`^## ${name}[^\\n]*\\n`, "m"))[1]?.split(/^## /m)[0] ?? "";
 
-const outcomeOf = journal => journal.match(/\*\*(?:Ergebnis|Outcome|Result):\*\*\s*([^\n]+)/)?.[1] ?? "";
+// The outcome line of the first report, or of unit `unit`'s report (a course with several units).
+const unitPart = (journal, unit) => unit == null ? journal : (journal.split(new RegExp(`^### ${unit}\\.\\s`, "m"))[1] ?? "").split(/^### /m)[0];
+const outcomeOf = (journal, unit) => unitPart(journal, unit).match(/\*\*(?:Ergebnis|Outcome|Result):\*\*\s*([^\n]+)/)?.[1] ?? "";
+// The material file of a check: README.md unless the scenario names one (`file`).
+const material = params => params.file ?? "README.md";
 const recheckOpen = outcome => /kurze Nachprüfung offen|short re-check open/i.test(outcome);
 
 export const checks = {
@@ -64,15 +68,15 @@ export const checks = {
   },
 
   "material-scope": (params, run) => {
-    const lines = changedLines(join(run.pristine, "README.md"), join(run.project, "README.md"));
-    const slides = slidesByLine(read(join(run.project, "README.md")));
+    const lines = changedLines(join(run.pristine, material(params)), join(run.project, material(params)));
+    const slides = slidesByLine(read(join(run.project, material(params))));
     const touched = [...new Set(lines.map(n => slides[n - 1] ?? "(end)"))];
     const outside = touched.filter(title => !params.slides.includes(title));
     return { pass: lines.length > 0 && outside.length === 0, detail: lines.length ? `changed: ${touched.join(" · ")}` : "material unchanged" };
   },
 
   "quiz-balanced": (params, run) => {
-    const slide = slideText(read(join(run.project, "README.md")), params.slide);
+    const slide = slideText(read(join(run.project, material(params))), params.slide);
     if (!slide) return { pass: false, detail: "slide not found" };
     const options = [...slide.matchAll(/^\s*-\s*\[\((X|x| )\)\]\s*(.+)$/gm)].map(match => ({
       correct: match[1] !== " ",
@@ -88,15 +92,15 @@ export const checks = {
     return { pass: high <= params.maxRatio && low >= minRatio, detail: `correct ${correct.text.length} chars, others ${others.join("/")} (vs longest ${high.toFixed(2)}, vs shortest ${low.toFixed(2)})` };
   },
 
-  "material-has": (params, run) => ({ pass: new RegExp(params.pattern, "u").test(read(join(run.project, "README.md"))), detail: params.pattern }),
-  "material-lacks": (params, run) => ({ pass: !new RegExp(params.pattern, "u").test(read(join(run.project, "README.md"))), detail: params.pattern }),
+  "material-has": (params, run) => ({ pass: new RegExp(params.pattern, "u").test(read(join(run.project, material(params)))), detail: params.pattern }),
+  "material-lacks": (params, run) => ({ pass: !new RegExp(params.pattern, "u").test(read(join(run.project, material(params)))), detail: params.pattern }),
   "journal-has": (params, run) => ({ pass: new RegExp(params.pattern, "u").test(read(join(run.project, "journal.md"))), detail: params.pattern }),
 
   // After a change the report shows the open short re-check, or the mini-check was the re-check ("re-checked").
   "recheck-state": (params, run) => {
     const journal = read(join(run.project, "journal.md"));
-    const outcome = outcomeOf(journal);
-    const done = /nachgeprüft|re-checked/i.test(journal);
+    const outcome = outcomeOf(journal, params.unit);
+    const done = /nachgeprüft|re-checked/i.test(unitPart(journal, params.unit));
     return { pass: recheckOpen(outcome) || done, detail: outcome.slice(0, 120) };
   },
 
@@ -118,7 +122,7 @@ export const checks = {
   },
 
   "material-unchanged": (params, run) => {
-    const lines = changedLines(join(run.pristine, "README.md"), join(run.project, "README.md"));
+    const lines = changedLines(join(run.pristine, material(params)), join(run.project, material(params)));
     return { pass: lines.length === 0, detail: lines.length ? `${lines.length} line(s) changed` : "unchanged" };
   },
 
@@ -202,7 +206,7 @@ export const checks = {
   // An open short re-check must not leave the course summary at PASS (publishing gate).
   "summary-blocked": (params, run) => {
     const journal = read(join(run.project, "journal.md"));
-    if (!recheckOpen(outcomeOf(journal))) return { pass: true, detail: "no open re-check" };
+    if (!recheckOpen(outcomeOf(journal, params.unit))) return { pass: true, detail: "no open re-check" };
     const summary = journal.split(/^### Latest Validation Summary[^\n]*\n/m)[1] ?? "";
     const result = summary.match(/\bResult:\s*(PASS with concerns|PASS|FAIL)/)?.[1] ?? "missing";
     return { pass: result !== "PASS", detail: `summary Result: ${result}` };

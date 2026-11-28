@@ -4687,3 +4687,16 @@ test("add-point --from writes several open points in one write (E19)", () => {
   assert.ok(keys.includes("finding-1-vorlesen") && keys.includes("finding-1-tippfehler"), keys.join(", "));
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("now.mjs → currentDate: a fixed time from .cache/now.txt or LIAAGENT_NOW, else the clock (E23)", async () => {
+  const { currentDate } = await import("./now.mjs");
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "now-"));
+  assert.ok(Math.abs(currentDate(dir) - Date.now()) < 5000, "no file: the clock");
+  mkdirSync(join(dir, ".cache"));
+  writeFileSync(join(dir, ".cache", "now.txt"), "2026-11-24T10:00:00Z\n");
+  assert.equal(currentDate(dir).toISOString(), "2026-11-24T10:00:00.000Z");
+  writeFileSync(join(dir, ".cache", "now.txt"), "not a time");
+  assert.ok(Math.abs(currentDate(dir) - Date.now()) < 5000, "unreadable: the clock");
+});

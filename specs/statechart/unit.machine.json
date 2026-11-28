@@ -1,0 +1,135 @@
+{
+  "id": "unit",
+  "description": "The life of one unit (## Sessions → ### n). The journal is the truth: the machine is entered from the unit's facts (always transitions), events are the writes of the tasks. meta.action = the button (actions.mjs → unitAction), meta.display = the overview state (derive-dashboard.mjs → unitState).",
+  "always": [
+    { "target": "planned", "guard": "noSketch" },
+    { "target": "building", "guard": "buildRunning" },
+    { "target": "sketched", "guard": "noMaterial" },
+    { "target": "written" }
+  ],
+  "on": {
+    "CHECK_PASSED": { "target": "#unit.written.passed", "guard": "hasMaterialAndSketch", "actions": "checkPassed" },
+    "CHECK_CONCERNS": { "target": "#unit.written.concerns", "guard": "hasMaterialAndSketch", "actions": "checkConcerns" },
+    "CHECK_FAILED": { "target": "#unit.written.failed", "guard": "hasMaterialAndSketch", "actions": "checkFailed" }
+  },
+  "states": {
+    "planned": {
+      "description": "No planning sketch yet – also when material already exists (an existing course taken over).",
+      "meta": { "action": "plan-unit", "display": [["noMaterial", "planned"], ["noResultApproved", "review"], ["noResult", "draft"], ["changedOrStale", "review"], ["failed", "revision"], ["concerns", "current"], ["notFinished", "current"], [null, "done"]] },
+      "on": {
+        "SKETCH_SAVED": [
+          { "target": "#unit.sketched", "guard": "noMaterial", "actions": "sketch" },
+          { "target": "#unit.written", "actions": "sketch" }
+        ]
+      }
+    },
+    "sketched": {
+      "description": "Planning sketch saved, no material yet.",
+      "meta": { "action": "work-out", "display": [["selected", "current"], [null, "planned"]] },
+      "on": {
+        "BUILD_REQUESTED": { "target": "#unit.building", "actions": "requestBuild" },
+        "MATERIAL_WRITTEN": { "target": "#unit.written.unchecked", "actions": "writeMaterial" }
+      }
+    },
+    "building": {
+      "description": "\"Let it be prepared\" is running: confirmed with the sketch, no check report yet (SK58).",
+      "meta": { "action": "build-running", "display": [["noMaterialSelected", "current"], ["noMaterial", "planned"], ["approved", "review"], [null, "draft"]] },
+      "on": {
+        "MATERIAL_WRITTEN": { "target": "#unit.building", "actions": "writeMaterial" },
+        "IMAGE_WANTED": { "target": "#unit.building", "guard": "hasMaterial", "actions": "wantImage" },
+        "IMAGE_INSERTED": { "target": "#unit.building", "guard": "imagesOpen", "actions": "insertImage" }
+      }
+    },
+    "written": {
+      "description": "Material exists.",
+      "always": [
+        { "target": ".stale", "guard": "stale" },
+        { "target": ".unchecked", "guard": "noResult" },
+        { "target": ".changed", "guard": "changed" },
+        { "target": ".failed", "guard": "failed" },
+        { "target": ".concerns", "guard": "concerns" },
+        { "target": ".passed" }
+      ],
+      "on": {
+        "IMAGE_WANTED": { "target": "#unit.written.stale", "guard": "hasResult", "actions": ["wantImage", "markStale"] },
+        "PHOTO_ASKED": { "target": "#unit.written.stale", "guard": "hasResult", "actions": ["askPhoto", "markStale"] },
+        "IMAGE_INSERTED": { "target": "#unit.written", "guard": "imagesOpen", "actions": "insertImage" },
+        "PHOTO_ARRIVED": { "target": "#unit.written", "guard": "ownPhotos", "actions": "photoArrived" },
+        "APPROVED": { "target": "#unit.written", "guard": "notApproved", "actions": "approve" }
+      },
+      "states": {
+        "unchecked": {
+          "description": "Written, never checked: open images first, then the check.",
+          "meta": { "display": [["approved", "review"], [null, "draft"]] },
+          "always": [{ "target": ".images", "guard": "imagesOpen" }, { "target": ".ready" }],
+          "on": {
+            "IMAGE_WANTED": { "target": "#unit.written.unchecked", "actions": "wantImage" },
+            "PHOTO_ASKED": { "target": "#unit.written.unchecked", "actions": "askPhoto" }
+          },
+          "states": {
+            "images": { "meta": { "action": "insert-images" } },
+            "ready": { "meta": { "action": "check-unit" } }
+          }
+        },
+        "stale": {
+          "description": "The report belongs to an older version: a spot was added after the check (T5-41).",
+          "meta": { "action": "recheck-unit", "display": "review" },
+          "on": { "RECHECK_PASSED": { "target": "#unit.written", "actions": "recheckPassed" } }
+        },
+        "changed": {
+          "description": "Points changed after the check (quick-fix): the short re-check is open.",
+          "meta": { "display": "review" },
+          "always": [{ "target": ".images", "guard": "imagesOpen" }, { "target": ".ready" }],
+          "on": { "RECHECK_PASSED": { "target": "#unit.written", "actions": "recheckPassed" } },
+          "states": {
+            "images": { "meta": { "action": "insert-images" } },
+            "ready": { "meta": { "action": "recheck-unit" } }
+          }
+        },
+        "failed": {
+          "description": "FAIL: revise (or a quick-fix, the agent's call).",
+          "meta": { "action": "revise-unit", "display": "revision" },
+          "on": { "CHANGED": { "target": "#unit.written.changed", "actions": "change" } }
+        },
+        "concerns": {
+          "description": "PASS with concerns: a decision is needed.",
+          "meta": { "display": "current" },
+          "always": [{ "target": ".waiting", "guard": "concernsWaiting" }, { "target": ".open" }],
+          "on": {
+            "CONCERNS_WAIT": { "target": "#unit.written.concerns.waiting", "guard": "concernsNotWaiting", "actions": "waitConcerns" },
+            "CONCERNS_RESOLVED": { "target": "#unit.written.passed", "actions": "resolveConcerns" }
+          },
+          "states": {
+            "open": { "meta": { "action": "resolve-concerns" } },
+            "waiting": { "meta": { "action": "concerns-waiting" } }
+          }
+        },
+        "passed": {
+          "description": "PASS: images, own photos, ⏳ items, approval.",
+          "meta": { "display": [["notFinished", "current"], [null, "done"]] },
+          "always": [
+            { "target": ".images", "guard": "imagesOpen" },
+            { "target": ".photoAfterApproval", "guard": "ownPhotosApproved" },
+            { "target": ".approveWaiting", "guard": "ownPhotos" },
+            { "target": ".deferred", "guard": "deferred" },
+            { "target": ".awaitingApproval", "guard": "notFinished" },
+            { "target": ".done" }
+          ],
+          "on": {
+            "CHANGED": { "target": "#unit.written.changed", "actions": "change" },
+            "DEFERRED_ADDED": { "target": "#unit.written.passed", "guard": "notDeferred", "actions": "addDeferred" },
+            "DEFERRED_CLEARED": { "target": "#unit.written.passed", "guard": "deferred", "actions": "clearDeferred" }
+          },
+          "states": {
+            "images": { "meta": { "action": "insert-images" } },
+            "photoAfterApproval": { "meta": { "action": "insert-images" } },
+            "approveWaiting": { "meta": { "action": "approve-waiting" } },
+            "deferred": { "meta": { "action": null } },
+            "awaitingApproval": { "meta": { "action": "approve-unit" } },
+            "done": { "meta": { "action": "view-unit" } }
+          }
+        }
+      }
+    }
+  }
+}

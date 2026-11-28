@@ -1,0 +1,59 @@
+stateDiagram-v2
+  state "full" as full {
+    state "frame<br/><i>init-course</i>" as full_frame
+    state "outline<br/><i>create-outline</i>" as full_outline
+    state "completeOutline<br/><i>complete-outline</i>" as full_completeOutline
+    state "didactics<br/><i>create-didactics</i>" as full_didactics
+    state "block" as full_block {
+      state "adopt<br/><i>adopt-template</i>" as full_block_adopt
+      state "develop<br/><i>develop-template</i>" as full_block_develop
+    }
+    state "unit" as full_unit
+    state "suggestBlocks<br/><i>suggest-templates</i>" as full_suggestBlocks
+    state "agenda<br/><i>create-agenda</i>" as full_agenda
+    state "nextUnit" as full_nextUnit
+    state "ownMedia<br/><i>insert-images</i>" as full_ownMedia
+    state "courseCheck<br/><i>check-course</i>" as full_courseCheck
+    state "publish" as full_publish {
+      state "decideAccess<br/><i>decide-access</i>" as full_publish_decideAccess
+      state "publish<br/><i>publish</i>" as full_publish_publish
+    }
+    state "finished" as full_finished
+  }
+  state "light" as light {
+    state "frame<br/><i>init-course</i>" as light_frame
+    state "outline<br/><i>create-outline</i>" as light_outline
+    state "write" as light_write {
+      state "mini<br/><i>write-mini-course</i>" as light_write_mini
+      state "convert<br/><i>convert-course</i>" as light_write_convert
+    }
+    state "unit" as light_unit
+    state "courseCheck<br/><i>check-course</i>" as light_courseCheck
+    state "publish" as light_publish {
+      state "decideAccess<br/><i>decide-access</i>" as light_publish_decideAccess
+      state "publish<br/><i>publish</i>" as light_publish_publish
+    }
+    state "finished" as light_finished
+  }
+  state "design" as design {
+    state "frame<br/><i>init-course</i>" as design_frame
+    state "look" as design_look {
+      state "imageStyle<br/><i>design-image-style</i>" as design_look_imageStyle
+      state "look<br/><i>design-look</i>" as design_look_look
+    }
+    state "applyTheme<br/><i>apply-theme</i>" as design_applyTheme
+    state "reviewImages<br/><i>review-images</i>" as design_reviewImages
+    state "unit" as design_unit
+    state "publish" as design_publish {
+      state "decideAccess<br/><i>decide-access</i>" as design_publish_decideAccess
+      state "publish<br/><i>publish</i>" as design_publish_publish
+    }
+    state "finished" as design_finished
+  }
+  state "template" as template {
+    state "frame<br/><i>init-course</i>" as template_frame
+    state "brief<br/><i>start-template</i>" as template_brief
+    state "develop<br/><i>develop-template</i>" as template_develop
+    state "publish<br/><i>publish-template</i>" as template_publish
+    state "finished" as template_finished
+  }

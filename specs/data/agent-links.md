@@ -118,7 +118,7 @@ Applies whenever the dialog runs in the preview chat. Write in the course
 language (`## Course Context` → Language).
 
 **Rule sheets.** The chat rules are split by topic. This file holds the rules for
-every turn; a task reads the sheets its Inputs name completely, together with the task.
+every turn; a task reads the sheets its Inputs name together with the task – completely, or only the part named after `by part:`.
 
 | Sheet | Topic | Read |
 |---|---|---|

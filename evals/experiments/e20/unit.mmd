@@ -1,0 +1,51 @@
+stateDiagram-v2
+  state "planned<br/><i>plan-unit</i>" as planned
+  state "sketched<br/><i>work-out</i>" as sketched
+  state "building<br/><i>build-running</i>" as building
+  state "written" as written {
+    state "unchecked" as written_unchecked {
+      state "images<br/><i>insert-images</i>" as written_unchecked_images
+      state "ready<br/><i>check-unit</i>" as written_unchecked_ready
+    }
+    state "stale<br/><i>recheck-unit</i>" as written_stale
+    state "changed" as written_changed {
+      state "images<br/><i>insert-images</i>" as written_changed_images
+      state "ready<br/><i>recheck-unit</i>" as written_changed_ready
+    }
+    state "failed<br/><i>revise-unit</i>" as written_failed
+    state "concerns" as written_concerns {
+      state "open<br/><i>resolve-concerns</i>" as written_concerns_open
+      state "waiting<br/><i>concerns-waiting</i>" as written_concerns_waiting
+    }
+    state "passed" as written_passed {
+      state "images<br/><i>insert-images</i>" as written_passed_images
+      state "photoAfterApproval<br/><i>insert-images</i>" as written_passed_photoAfterApproval
+      state "approveWaiting<br/><i>approve-waiting</i>" as written_passed_approveWaiting
+      state "deferred" as written_passed_deferred
+      state "awaitingApproval<br/><i>approve-unit</i>" as written_passed_awaitingApproval
+      state "done<br/><i>view-unit</i>" as written_passed_done
+    }
+  }
+  planned --> sketched: SKETCH_SAVED
+  planned --> written: SKETCH_SAVED
+  sketched --> building: BUILD_REQUESTED
+  sketched --> written_unchecked: MATERIAL_WRITTEN
+  building --> building: MATERIAL_WRITTEN
+  building --> building: IMAGE_WANTED
+  building --> building: IMAGE_INSERTED
+  written_unchecked --> written_unchecked: IMAGE_WANTED
+  written_unchecked --> written_unchecked: PHOTO_ASKED
+  written_stale --> written: RECHECK_PASSED
+  written_changed --> written: RECHECK_PASSED
+  written_failed --> written_changed: CHANGED
+  written_concerns --> written_concerns_waiting: CONCERNS_WAIT
+  written_concerns --> written_passed: CONCERNS_RESOLVED
+  written_passed --> written_changed: CHANGED
+  written_passed --> written_passed: DEFERRED_ADDED
+  written_passed --> written_passed: DEFERRED_CLEARED
+  written --> written_stale: IMAGE_WANTED
+  written --> written_stale: PHOTO_ASKED
+  written --> written: IMAGE_INSERTED
+  written --> written: PHOTO_ARRIVED
+  written --> written: APPROVED
+  note "in every state: CHECK_PASSED → written.passed, CHECK_CONCERNS → written.concerns, CHECK_FAILED → written.failed" as everywhere

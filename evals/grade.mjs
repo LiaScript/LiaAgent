@@ -7,7 +7,7 @@
 // stream-json`, else from the run's TRANSCRIPT.md), tokens and duration. A blinded pack per run goes to
 // <out>/judge-pack/ for the LLM judge; its answers, saved as <out>/judge-results/<id>.json, are read back.
 // The report is <out>/report.md (and report.json).
-import { statSync, readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
+import { statSync, readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -88,10 +88,14 @@ function judgePack(dir, run, id) {
   const pack = join(out, "judge-pack", id);
   rmSync(pack, { recursive: true, force: true });
   mkdirSync(pack, { recursive: true });
-  for (const file of ["README.md", "journal.md"]) {
+  // README.md, journal.md and the material files of a course with several units (materials/*.md).
+  const materials = [run.pristine, run.project].flatMap(root => existsSync(join(root, "materials")) ? readdirSync(join(root, "materials")).filter(name => name.endsWith(".md")).map(name => `materials/${name}`) : []);
+  for (const file of [...new Set(["README.md", "journal.md", ...materials])]) {
+    if (!existsSync(join(run.pristine, file)) && !existsSync(join(run.project, file))) continue;
+    const name = file.replace("/", "-");
     const diff = spawnSync("git", ["diff", "--no-index", join(run.pristine, file), join(run.project, file)], { encoding: "utf8" }).stdout ?? "";
-    writeFileSync(join(pack, file.replace(".md", ".diff")), diff.replaceAll(run.pristine, "before").replaceAll(run.project, "after"));
-    if (existsSync(join(run.project, file))) cpSync(join(run.project, file), join(pack, file.replace(".md", ".final.md")));
+    writeFileSync(join(pack, name.replace(".md", ".diff")), diff.replaceAll(run.pristine, "before").replaceAll(run.project, "after"));
+    if (existsSync(join(run.project, file))) cpSync(join(run.project, file), join(pack, name.replace(".md", ".final.md")));
   }
   const transcript = existsSync(join(run.project, "TRANSCRIPT.md")) ? readFileSync(join(run.project, "TRANSCRIPT.md"), "utf8") : "(no transcript)";
   writeFileSync(join(pack, "TRANSCRIPT.md"), transcript

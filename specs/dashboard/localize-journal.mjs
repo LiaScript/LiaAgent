@@ -32,6 +32,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { currentDate } from "./now.mjs";
 import { countWrite } from "./write-count.mjs";
 
 const HELP = `Line replacer: many changes of one Markdown file in ONE write, all or nothing.
@@ -168,7 +169,7 @@ if (map.append !== undefined) {
 }
 let dashboardLines = null;
 if (map.dashboard) {
-  const date = new Date().toLocaleDateString(map.language ?? "en");
+  const date = currentDate().toLocaleDateString(map.language ?? "en");
   const json = JSON.stringify(map.dashboard, null, 2).replace(/\{date\}/g, date);
   dashboardLines = json.split("\n");
 }
